@@ -8,7 +8,8 @@
 import Cocoa
 
 struct DocumentState: Equatable, Codable {
-
+    var thread: ThreadModel = .init()
+    var folder: URL?
 }
 
 class Document: NSDocument {

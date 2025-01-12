@@ -6,8 +6,10 @@ struct ContentViewWrapper: View {
 
     var body: some View {
         if let document = document {
-            ContentView()
-                .environment(\.document, document)
+            VStack(spacing: 0) {
+                ChatView()
+            }
+            .environment(\.document, document)
         } else {
             Color.clear
         }
