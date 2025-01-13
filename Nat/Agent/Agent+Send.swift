@@ -6,7 +6,7 @@ extension AgentThreadStore {
         message: LLMMessage,
         llm: any FunctionCallingLLM,
         tools: [Tool],
-        systemPrompt: String = "[[CONTEXT]]",
+        systemPrompt: String = Prompts.mainAgentPrompt,
         agentName: String = "Agent",
         folderURL: URL?,
         maxIterations: Int = 20,

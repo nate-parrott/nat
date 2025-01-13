@@ -1,3 +1,4 @@
+import SwiftUI
 import Foundation
 import ChatToys
 
@@ -60,9 +61,46 @@ struct FileEditorTool: Tool {
         if edits.isEmpty {
             return nil
         }
-        return try await edits.asyncThrowingMap { edit in
-            try await apply(edit: edit, context: context)
-        }.joined(separator: "\n\n")
+
+        var responseStrings = [String]()
+        for (i, edit) in edits.enumerated() {
+            do {
+                let path = try context.resolvePath(edit.path)
+                let adjustedEdit = adjustEditIndices(edit: edit, previousEdits: edits[0..<i].asArray)
+                let confirmation = try await context.presentUI { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
+                    FileEditorReviewPanel(path: path, edit: adjustedEdit, finish: { result in
+                        dismiss(result)
+                    }).asAny
+                }
+                switch confirmation {
+                case .accept:
+                    responseStrings.append(try await apply(edit: adjustedEdit, context: context))
+                case .reject:
+                    responseStrings.append("User rejected edit \(edit.description)")
+                    let remaining = edits[i+1..<edits.count]
+                    if remaining.count > 0 {
+                        responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply them after the user has approved the edits.")
+                    }
+                    break
+                case .requestChanged(let message):
+                    responseStrings.append("User requested changes to this edit: \(edit.description). Here is what they said:\n[BEGIN USER FEEDBACK]\n\(message)\n[END USER FEEDBACK]")
+                    let remaining = edits[i+1..<edits.count]
+                    if remaining.count > 0 {
+                        responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply based on the user's feedback.")
+                    }
+                    break
+                }
+            } catch {
+                print("FAILED TO APPLY EDIT: \(edit)")
+                responseStrings.append("Edit '\(edit)' failed to apply due to error: \(error).")
+                let remaining = edits[i+1..<edits.count]
+                if remaining.count > 0 {
+                    responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply when fixed.")
+                }
+                break
+            }
+        }
+        return responseStrings.joined(separator: "\n\n")
     }
 
     private func apply(edit: CodeEdit, context: ToolContext) async throws -> String {
@@ -71,28 +109,56 @@ struct FileEditorTool: Tool {
             let url = try context.resolvePath(path)
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try content.write(to: url, atomically: true, encoding: .utf8)
-            return "Created file at \(path)"
+            return "Successfully created file at \(path)"
         case .replace(path: let path, lineRangeStart: let start, lineRangeEnd: let end, content: let content):
             let url = try context.resolvePath(path)
             let existingContent = try String(contentsOf: url, encoding: .utf8)
-            var lines = existingContent.components(separatedBy: .newlines)
-            
-            // Ensure the range is valid
-            guard start >= 0, end <= lines.count else {
-                throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid line range \(start)-\(end) for file with \(lines.count) lines"])
-            }
-            
-            // Replace the specified lines with new content
-            let newLines = content.components(separatedBy: .newlines)
-            lines.replaceSubrange(start..<end, with: newLines)
+            let newContent = try applyReplacement(existing: existingContent, lineRangeStart: start, lineRangeEnd: end, new: content)
             
             // Write back to file
-            let newContent = lines.joined(separator: "\n")
             try newContent.write(to: url, atomically: true, encoding: .utf8)
             
-            return "Modified file at \(path). New content::\n\n\(stringWithLineNumbers(newContent))"
+            return "Successfully modified file at \(path). New content:\n\n\(stringWithLineNumbers(newContent))"
         }
     }
+}
+
+private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> CodeEdit {
+    guard case .replace(path: let path, lineRangeStart: var start, lineRangeEnd: var end, content: let content) = edit else {
+        return edit
+    }
+    // Adjust indices based on previous edits to the same file
+    for previousEdit in previousEdits {
+        // Only consider edits to the same file
+        guard previousEdit.path == path,
+              case .replace(_, let prevStart, let prevEnd, let prevContent) = previousEdit else {
+            continue
+        }
+        
+        let prevLines = prevContent.components(separatedBy: .newlines)
+        let linesChanged = prevLines.count - (prevEnd - prevStart)
+        
+        // If this edit starts after the previous edit, adjust both start and end
+        if start >= prevEnd {
+            start += linesChanged
+            end += linesChanged
+        }
+        // If this edit overlaps or comes before the previous edit, we don't adjust
+        // as those edits should be handled separately or rejected
+    }
+    return .replace(path: path, lineRangeStart: start, lineRangeEnd: end, content: content)
+}
+
+private func applyReplacement(existing: String, lineRangeStart: Int, lineRangeEnd: Int, new: String) throws -> String {
+    var lines = existing.components(separatedBy: .newlines)
+
+    // Ensure the range is valid
+    guard lineRangeStart >= 0, lineRangeEnd <= lines.count else {
+        throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid line range \(lineRangeStart)-\(lineRangeEnd) for file with \(lines.count) lines"])
+    }
+
+    lines.replaceSubrange(lineRangeStart..<lineRangeEnd, with: new.components(separatedBy: .newlines))
+    return lines.joined(separator: "\n")
 }
 
 private func stringWithLineNumbers(_ string: String) -> String {
@@ -104,6 +170,25 @@ private func stringWithLineNumbers(_ string: String) -> String {
 enum CodeEdit {
     case replace(path: String, lineRangeStart: Int, lineRangeEnd: Int, content: String)
     case create(path: String, content: String)
+
+    var description: String {
+        // include name and line range
+        switch self {
+        case .replace(path: let path, lineRangeStart: let start, lineRangeEnd: let end, _):
+            return "Replace \(path):\(start)-\(end)"
+        case .create(path: let path, _):
+            return "Create \(path)"
+        }
+    }
+
+    var path: String {
+        switch self {
+        case .replace(path: let path, _, _, _): return path
+        case .create(path: let path, _): return path
+        }
+    }
+    
+    
 
     static func edits(fromString string: String) -> [CodeEdit] {
         var edits = [CodeEdit]()
@@ -160,5 +245,38 @@ enum CodeEdit {
         }
         
         return edits
+    }
+}
+
+enum FileEditorReviewPanelResult: Equatable {
+    case accept
+    case reject
+    case requestChanged(String)
+}
+
+struct FileEditorReviewPanel: View {
+    var path: URL
+    var edit: CodeEdit
+    var finish: (FileEditorReviewPanelResult) -> Void
+
+    var body: some View {
+        // TODO: Present diff
+        NavigationView {
+            ScrollView {
+                Text("\(edit)")
+                .lineLimit(nil)
+                .font(.system(.body, design: .monospaced))
+                .padding()
+            }
+            .navigationTitle("Review changes")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { finish(.reject) }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Accept") { finish(.accept) }
+                }
+            }
+        }
     }
 }

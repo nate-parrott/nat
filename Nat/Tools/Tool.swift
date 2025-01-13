@@ -1,3 +1,5 @@
+import AppKit
+import SwiftUI
 import ChatToys
 import Foundation
 
@@ -58,5 +60,26 @@ extension ToolContext {
 
         return resolved
     }
+
+    // Pass a block that takes a `dismiss` block and renders AnyView. The `dismiss` block lets you pass a result.
+    @MainActor
+    func presentUI<Result>(@ViewBuilder _ viewBlock: @MainActor @escaping (@escaping (Result) -> Void) -> AnyView) async throws -> Result {
+        // HACK
+        guard let baseVC = NSApplication.shared.mainWindow?.contentViewController else {
+            throw ToolUIError.noWindow
+        }
+        return await withCheckedContinuation { cont in
+            DispatchQueue.main.async {
+                let anyView = viewBlock {
+                    cont.resume(returning: $0)
+                }
+                let modal = NSHostingController(rootView: anyView)
+                baseVC.presentAsSheet(modal)
+            }
+        }
+    }
 }
 
+private enum ToolUIError: Error {
+    case noWindow
+}
