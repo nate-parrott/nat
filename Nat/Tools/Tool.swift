@@ -70,14 +70,24 @@ extension ToolContext {
         }
         return await withCheckedContinuation { cont in
             DispatchQueue.main.async {
+                let modalBox = Box<NSViewController>()
                 let anyView = viewBlock {
+                    if let modal = modalBox.value {
+                        baseVC.dismiss(modal)
+                    }
                     cont.resume(returning: $0)
                 }
                 let modal = NSHostingController(rootView: anyView)
+                modalBox.value = modal
+                modal.view.frame = CGRect(x: 0, y: 0, width: 600, height: 500)
                 baseVC.presentAsSheet(modal)
             }
         }
     }
+}
+
+class Box<T> {
+    var value: T?
 }
 
 private enum ToolUIError: Error {
