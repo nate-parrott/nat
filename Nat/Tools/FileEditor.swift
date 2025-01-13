@@ -259,14 +259,19 @@ struct FileEditorReviewPanel: View {
     var edit: CodeEdit
     var finish: (FileEditorReviewPanelResult) -> Void
 
+    @State private var diffText: Text?
+
     var body: some View {
         // TODO: Present diff
-        NavigationView {
+        NavigationStack {
             ScrollView {
-                Text("\(edit)")
+                (diffText ?? Text("?"))
                 .lineLimit(nil)
                 .font(.system(.body, design: .monospaced))
                 .padding()
+            }
+            .onAppear {
+                diffText = try? edit.asDiff(filePath: path).asText(font: Font.system(size: 14, weight: .regular, design: .monospaced))
             }
             .navigationTitle("Review changes")
             .toolbar {
@@ -277,6 +282,40 @@ struct FileEditorReviewPanel: View {
                     Button("Accept") { finish(.accept) }
                 }
             }
+        }
+        .frame(minWidth: 600, minHeight: 400)
+    }
+}
+
+extension CodeEdit {
+    func asDiff(filePath: URL) throws -> Diff {
+        switch self {
+        case .replace(let path, let lineRangeStart, let lineRangeEnd, let content):
+            let existingContent = try String(contentsOf: filePath, encoding: .utf8)
+            let existingLines = existingContent.components(separatedBy: .newlines)
+            let newLines = content.components(separatedBy: .newlines)
+            
+            var diff = Diff(lines: [])
+            for (i, existingLine) in existingLines.enumerated() {
+                if i == lineRangeStart {
+                   for newLine in newLines {
+                       diff.lines.append(.insert(newLine))
+                   }
+                } 
+                if i >= lineRangeStart && i < lineRangeEnd {
+                    diff.lines.append(.delete(existingLine))
+                } else {
+                    diff.lines.append(.same(existingLine))
+                }
+            }
+            return diff
+        case .create(let path, let content):
+            let newLines = content.components(separatedBy: .newlines)
+            var diff = Diff(lines: [])
+            for newLine in newLines {
+                diff.lines.append(.insert(newLine))
+            }
+            return diff
         }
     }
 }
