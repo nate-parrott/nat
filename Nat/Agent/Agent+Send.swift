@@ -6,7 +6,7 @@ extension AgentThreadStore {
         message: LLMMessage,
         llm: any FunctionCallingLLM,
         tools: [Tool],
-        systemPrompt: String = "",
+        systemPrompt: String = "[[CONTEXT]]",
         agentName: String = "Agent",
         folderURL: URL?,
         maxIterations: Int = 20,
@@ -33,6 +33,12 @@ extension AgentThreadStore {
             allFunctions.append(finishFunction)
         }
 
+        assert(systemPrompt.contains("[[CONTEXT]]"), "[\(agentName)] system prompt must have a [[CONTEXT]] token.")
+        let initialCtx = try await tools.asyncThrowingMap { tool in
+            try await tool.contextToInsertAtBeginningOfThread(context: toolCtx)
+        }.compactMap({ $0 }).joined(separator: "\n\n")
+        let sysMsg = LLMMessage(role: .system, content: systemPrompt.replacingOccurrences(of: "[[CONTEXT]]", with: initialCtx))
+
         // Generate completions:
         var finishResult: LLMMessage.FunctionCall?
         do {
@@ -46,8 +52,8 @@ extension AgentThreadStore {
             while true {
                 // Loop and handle function calls
                 var llmMessages = await readThreadModel().steps.flatMap(\.asLLMMessages)
-                if let systemPrompt = systemPrompt.nilIfEmpty {
-                    llmMessages.insert(.init(role: .system, content: systemPrompt), at: 0)
+                if let systemPrompt = sysMsg.content.nilIfEmpty {
+                    llmMessages.insert(sysMsg, at: 0)
                 }
                 for try await partial in llm.completeStreaming(prompt: llmMessages, functions: allFunctions) {
                     step.appendOrUpdatePartialResponse(partial)
@@ -55,7 +61,9 @@ extension AgentThreadStore {
                         state.appendOrUpdate(step)
                     }
                 }
-                print("[\(agentName)] N functions: \(step.pendingFunctionCallsToExecute.count)")
+                print("[\(agentName)] Got response with \(step.pendingFunctionCallsToExecute.count) functions")
+
+                // If message has function calls, handle:
                 if step.pendingFunctionCallsToExecute.count > 0 {
                     if let finish = step.pendingFunctionCallsToExecute.first(where: { $0.name == finishFunction?.name }) {
                         finishResult = finish
@@ -71,7 +79,27 @@ extension AgentThreadStore {
                     await modifyThreadModel { state in
                         state.appendOrUpdate(step)
                     }
-                } else {
+                }
+                // If message has psuedo-functions, handle those:
+                else if let assistantMsg = step.assistantMessageForUser, let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: assistantMsg.content, agentName: agentName, tools: tools, toolCtx: toolCtx) {
+                    print("""
+                    [\(agentName)] Psuedo function call:
+                    \(assistantMsg.content)
+                    
+                    [\(agentName)] Psuedo function response:
+                    \(psuedoFnResponse)
+                    """)
+
+                    // This is a psuedo-fn, so it's tool use too!
+                    step.toolUseLoop.append(ThreadModel.Step.ToolUseStep(
+                        initialResponse: assistantMsg,
+                        computerResponse: [],
+                        psuedoFunctionResponse: LLMMessage(role: .user, content: psuedoFnResponse)
+                    ))
+                    step.assistantMessageForUser = nil
+                }
+                // Handle response with no tools:
+                else {
                     print("[\(agentName)] Received final response (no function calls)")
                     // expect assistantMessageForUser has been set by appendOrUpdatePartialResponse
                     break // we're done!
@@ -94,6 +122,16 @@ extension AgentThreadStore {
             state.isTyping = false
         }
         return finishResult
+    }
+
+    private func handlePsuedoFunction(plaintextResponse: String?, agentName: String, tools: [Tool], toolCtx: ToolContext) async throws -> String? {
+        guard let plaintextResponse else { return nil }
+        for tool in tools {
+            if let resp = try await tool.handlePsuedoFunction(fromPlaintext: plaintextResponse, context: toolCtx) {
+                return resp
+            }
+        }
+        return nil
     }
 
     private func handleFunctionCalls(_ calls: [LLMMessage.FunctionCall], tools: [Tool], agentName: String, toolCtx: ToolContext) async throws -> [LLMMessage.FunctionResponse] {

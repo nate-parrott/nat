@@ -29,6 +29,8 @@ func codeSearch(prompt: String, folderURL: URL) async throws -> String {
     \(fileTree)
     [END FILE TREE]
     
+    [[CONTEXT]]
+    
     Next, the engineer will provide their search prompt:
     """
 

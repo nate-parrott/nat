@@ -14,8 +14,11 @@ struct ThreadModel: Equatable, Codable {
         var assistantMessageForUser: LLMMessage? // Message with no function calls and role=assistant
 
         struct ToolUseStep: Equatable, Codable {
-            var initialResponse: LLMMessage // Will include >= 1 fn call
+            var initialResponse: LLMMessage // Will include >= 1 fn call, unless psuedo-function
+
+            // These two are mutually exclusive
             var computerResponse: [LLMMessage.FunctionResponse]
+            var psuedoFunctionResponse: LLMMessage?
         }
     }
 }
@@ -33,6 +36,9 @@ extension ThreadModel.Step {
         for step in toolUseLoop {
             messages.append(step.initialResponse)
             messages.append(LLMMessage(functionResponses: step.computerResponse))
+            if let psuedoFunctionResponse = step.psuedoFunctionResponse {
+                messages.append(psuedoFunctionResponse)
+            }
         }
         if let assistantMessageForUser {
             messages.append(assistantMessageForUser)
