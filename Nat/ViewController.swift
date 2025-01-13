@@ -6,8 +6,16 @@ struct ContentViewWrapper: View {
 
     var body: some View {
         if let document = document {
-            VStack(spacing: 0) {
+            TabView {
                 ChatView()
+                    .tabItem {
+                        Text("Chat")
+                    }
+
+                SearchView()
+                    .tabItem {
+                        Text("Search")
+                    }
             }
             .environment(\.document, document)
         } else {

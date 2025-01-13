@@ -18,3 +18,33 @@ protocol Tool {
 enum Tools {
     static let forMainAgent: [any Tool] = []
 }
+
+
+// MARK: - Helpers
+
+extension ToolContext {
+    enum PathError: Error {
+        case noActiveDirectory
+        case outsideWorkspace
+        case invalidPath
+    }
+    
+    func resolvePath(_ path: String) throws -> URL {
+        guard let activeDirectory else {
+            throw PathError.noActiveDirectory
+        }
+        guard let resolved = URL(string: path, relativeTo: activeDirectory) else {
+            throw PathError.invalidPath
+        }
+        var directoryStr = activeDirectory.absoluteString
+        if !directoryStr.hasSuffix("/") {
+            directoryStr += "/"
+        }
+        if directoryStr.starts(with: resolved.absoluteString) {
+            throw PathError.outsideWorkspace
+        }
+
+        return resolved
+    }
+}
+

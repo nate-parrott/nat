@@ -56,26 +56,17 @@ struct ChatView: View {
             try! msg.add(image: imageAttachment, detail: .low)
             self.imageAttachment = nil
         }
+        let folderURL = document.store.model.folder
 
         Task {
             do {
-                try await document.send(message: msg, tools: Tools.forMainAgent)
+                try await document.send(message: msg, llm: LLMs.smartAgentModel(), tools: Tools.forMainAgent, folderURL: folderURL)
             } catch {
                 // Do nothing (We already handle it)
             }
         }
     }
 }
-
-//extension LLMMessage {
-//    var displayText: String {
-//        var parts = [content]
-//        if images.count > 0 {
-//            parts.append("[\(images.count) images]")
-//        }
-//        return parts.joined(separator: " ")
-//    }
-//}
 
 struct ChatInputView_Multimodal: View {
     public let placeholder: String
