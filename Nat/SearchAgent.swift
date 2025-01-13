@@ -3,7 +3,7 @@ import Foundation
 
 func codeSearch(prompt: String, folderURL: URL) async throws -> String {
     let agent = EphemeralAgent(model: .init())
-    let fileTree = FileTree.chunksOfEntriesFromDir(url: folderURL, entriesInChunk: 5000)[0] // Just use whole tree
+    let fileTree = FileTree.fullTree(url: folderURL) // Just use whole tree
     let systemPrompt = """
     Act as an expert engineer pair-programming with another engineer in an unfamiliar codebase.
     The other programmer will write the code, but they can only read parts of the codebase that you provide to them.

@@ -111,6 +111,10 @@ private struct Entry {
 }
 
 enum FileTree {
+    static func fullTree(url: URL) -> String {
+        chunksOfEntriesFromDir(url: url, entriesInChunk: 30).joined(separator: "\n")
+    }
+
     static func chunksOfEntriesFromDir(url: URL, entriesInChunk: Int = 100) -> [String] {
         guard let entries = try? Entry.fromDir(url: url) else { return [] }
 

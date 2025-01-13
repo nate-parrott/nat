@@ -57,8 +57,7 @@ struct SearchView: View {
             throw SearchError.generic("No folder found")
         }
 
-        let chunks = FileTree.chunksOfEntriesFromDir(url: url)
-        return chunks.joined(separator: "\n\n[CHUNK]\n\n")
+        return FileTree.fullTree(url: url)
     }
 }
 

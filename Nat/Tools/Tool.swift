@@ -32,11 +32,6 @@ extension Tool {
 
 }
 
-enum Tools {
-    static let forMainAgent: [any Tool] = []
-}
-
-
 // MARK: - Helpers
 
 extension ToolContext {
