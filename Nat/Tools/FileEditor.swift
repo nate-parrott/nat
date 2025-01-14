@@ -107,7 +107,9 @@ struct FileEditorTool: Tool {
         switch edit {
         case .create(path: let path, content: let content):
             let url = try context.resolvePath(path)
-            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if !FileManager.default.fileExists(atPath: url.deletingLastPathComponent().path(percentEncoded: false)) {
+                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            }
             try content.write(to: url, atomically: true, encoding: .utf8)
             return "Successfully created file at \(path)"
         case .replace(path: let path, lineRangeStart: let start, lineRangeEnd: let end, content: let content):

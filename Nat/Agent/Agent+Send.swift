@@ -97,6 +97,9 @@ extension AgentThreadStore {
                         psuedoFunctionResponse: LLMMessage(role: .user, content: psuedoFnResponse)
                     ))
                     step.assistantMessageForUser = nil
+                    await modifyThreadModel { state in
+                        state.appendOrUpdate(step)
+                    }
                 }
                 // Handle response with no tools:
                 else {
@@ -110,11 +113,15 @@ extension AgentThreadStore {
                     if step.assistantMessageForUser == nil {
                         step.assistantMessageForUser = .init(role: .assistant, content: "[Agent timed out]")
                     }
+                    await modifyThreadModel { state in
+                        state.appendOrUpdate(step)
+                    }
                 }
             }
         } catch {
             await modifyThreadModel { state in
                 state.lastError = "Error: \(error)"
+                state.isTyping = false
             }
             throw error
         }
@@ -210,12 +217,8 @@ extension ThreadModel.Step {
     }
 
     var pendingFunctionCallsToExecute: [LLMMessage.FunctionCall] {
-        if let step = toolUseLoop.last {
-            if step.computerResponse.isEmpty {
-                return step.initialResponse.functionCalls
-            } else {
-                return []
-            }
+        if let step = toolUseLoop.last, !step.isComplete {
+            return step.initialResponse.functionCalls
         }
         return []
     }

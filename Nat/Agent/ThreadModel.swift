@@ -19,6 +19,10 @@ struct ThreadModel: Equatable, Codable {
             // These two are mutually exclusive
             var computerResponse: [LLMMessage.FunctionResponse]
             var psuedoFunctionResponse: LLMMessage?
+
+            var isComplete: Bool {
+                computerResponse.count > 0 || psuedoFunctionResponse != nil
+            }
         }
     }
 }
@@ -26,7 +30,7 @@ struct ThreadModel: Equatable, Codable {
 extension ThreadModel.Step {
     // incomplete thread steps reflect actions that failed partway thru. We can't send these in a new thread because they miss part of the necessary message responses
     var isComplete: Bool {
-        return assistantMessageForUser != nil && toolUseLoop.allSatisfy({ $0.computerResponse.count > 0 })
+        return assistantMessageForUser != nil && toolUseLoop.allSatisfy({ $0.isComplete })
     }
 }
 

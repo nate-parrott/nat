@@ -19,6 +19,7 @@ extension ThreadModel {
         for step in steps {
             cells.append(MessageCellModel(id: step.id + "/initial", content: .userMessage(step.initialRequest.contentDescription)))
             if step.toolUseLoop.count > 0 {
+                // TODO: Include names of psuedo-functions
                 let toolUseNames = step.toolUseLoop.flatMap({ $0.initialResponse.functionCalls.map(\.name) })
                 cells.append(MessageCellModel(id: step.id + "/tools", content: .toolUse("Used tools: \(toolUseNames.joined(separator: ", "))")))
             }
@@ -46,6 +47,6 @@ extension LLMMessage {
                 parts.append("[\(images.count) images]")
             }
         }
-        return parts.joined(separator: " ")
+        return parts.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

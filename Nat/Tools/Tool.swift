@@ -47,6 +47,10 @@ extension ToolContext {
         guard let activeDirectory else {
             throw PathError.noActiveDirectory
         }
+        var path = path
+        if path.starts(with: "/") {
+            path = String(path.dropFirst())
+        }
         guard let resolved = URL(string: path, relativeTo: activeDirectory) else {
             throw PathError.invalidPath
         }
@@ -54,7 +58,7 @@ extension ToolContext {
         if !directoryStr.hasSuffix("/") {
             directoryStr += "/"
         }
-        if directoryStr.starts(with: resolved.absoluteString) {
+        if !resolved.absoluteString.starts(with: directoryStr) {
             throw PathError.outsideWorkspace
         }
 

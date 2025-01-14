@@ -24,8 +24,13 @@ struct FileReaderTool: Tool {
         if let args = fn.checkMatch(call: call) {
             let path = args.path
             let offset = args.line_offset ?? 0
-            let output = try generateReadFileString(path: path, context: context, offset: offset)
-            return call.response(text: output)
+            do {
+                let output = try generateReadFileString(path: path, context: context, offset: offset)
+                return call.response(text: output)
+            }
+            catch {
+                return call.response(text: "[File Reader] Unable to read '\(args.path)': \(error)")
+            }
         }
         return nil
     }
