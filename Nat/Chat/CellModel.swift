@@ -18,10 +18,6 @@ extension ThreadModel {
         var cells = [MessageCellModel]()
         for step in steps {
             cells.append(MessageCellModel(id: step.id + "/initial", content: .userMessage(step.initialRequest.contentDescription)))
-//            cells += step.toolUseLoop.flatMap(\.userVisibleLogs).enumerated().map({ pair in
-//                let (i, log) = pair
-//                return MessageCellModel(id: step.id + "/log/\(i)", content: .toolLog(log))
-//            })
             for (i, loopItem) in step.toolUseLoop.enumerated() {
                 if let text = loopItem.initialResponse.content.nilIfEmpty {
                     cells.append(MessageCellModel(id: step.id + "/tools/\(i)/initial", content: .assistantMessage(text.trimmingCharacters(in: .whitespacesAndNewlines))))
@@ -30,11 +26,6 @@ extension ThreadModel {
                     cells.append(MessageCellModel(id: step.id + "/tools/\(i)/logs/\(j)", content: .toolLog(log)))
                 }
             }
-//            if step.toolUseLoop.count > 0 {
-//                // TODO: Include names of psuedo-functions
-//                let toolUseNames = step.toolUseLoop.flatMap({ $0.initialResponse.functionCalls.map(\.name) })
-//                cells.append(MessageCellModel(id: step.id + "/tools", content: .toolUse("Used tools: \(toolUseNames.joined(separator: ", "))")))
-//            }
             if let last = step.assistantMessageForUser {
                 cells.append(MessageCellModel(id: step.id + "/last", content: .assistantMessage(last.contentDescription)))
             }

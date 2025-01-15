@@ -64,6 +64,7 @@ private struct Entry {
     }
 
     static func fromDir(url: URL) throws -> [Entry] {
+        // First try git ls-files
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
         process.arguments = ["ls-files", "--cached", "--others", "--exclude-standard"]
@@ -72,21 +73,91 @@ private struct Entry {
         let pipe = Pipe()
         process.standardOutput = pipe
         
-        try process.run()
-        process.waitUntilExit()
-        
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        guard let output = String(data: data, encoding: .utf8) else {
-            throw NSError(domain: "FileTree", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to decode git output"])
+        do {
+            try process.run()
+            process.waitUntilExit()
+            
+            // Only use git output if successful
+            if process.terminationStatus == 0 {
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                guard let output = String(data: data, encoding: .utf8) else {
+                    throw NSError(domain: "FileTree", code: 1, 
+                                userInfo: [NSLocalizedDescriptionKey: "Failed to decode git output"])
+                }
+                print("🟢 file_tree used git successfully")
+
+                return try entriesFromPaths(files: output.components(separatedBy: .newlines)
+                    .filter { !$0.isEmpty }
+                    .sorted())
+            }
+        } catch {
+            // Fall through to FileManager if git fails
+            print("🟡 file_tree git error: \(error)")
         }
-        
+        print("🟡 file_tree failed to use git. Falling back to listing the FS.")
+
+        // Fallback to FileManager
+        return try recursivelyListFiles(at: url)
+    }
+    
+    private static func recursivelyListFiles(at url: URL) throws -> [Entry] {
+        let fileManager = FileManager.default
         var entries: [Entry] = []
         var currentDirPath: [String] = []
         var currentLeafNames: [String] = []
         
-        let files = output.components(separatedBy: .newlines).filter { !$0.isEmpty }.sorted()
+        // Get relative paths from base URL
+        func relativePath(of fileURL: URL) -> String {
+            return fileURL.path.replacingOccurrences(of: url.path + "/", with: "")
+        }
         
-        for file in files {
+        func processDirectory(_ dirURL: URL) throws {
+            let contents = try fileManager.contentsOfDirectory(at: dirURL,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles])
+            
+            let sortedContents = contents.sorted { $0.path < $1.path }
+            
+            for itemURL in sortedContents {
+                let isDirectory = try itemURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory ?? false
+                let relativePath = relativePath(of: itemURL)
+                
+                if isDirectory {
+                    try processDirectory(itemURL)
+                } else {
+                    let components = relativePath.components(separatedBy: "/")
+                    let dirPath = components.count > 1 ? Array(components.dropLast()) : []
+                    let fileName = components.last!
+                    
+                    if dirPath != currentDirPath {
+                        if !currentLeafNames.isEmpty {
+                            entries.append(Entry(dirPath: currentDirPath, leafChildNames: currentLeafNames))
+                        }
+                        currentDirPath = dirPath
+                        currentLeafNames = [fileName]
+                    } else {
+                        currentLeafNames.append(fileName)
+                    }
+                }
+            }
+        }
+        
+        try processDirectory(url)
+        
+        if !currentLeafNames.isEmpty {
+            entries.append(Entry(dirPath: currentDirPath, leafChildNames: currentLeafNames))
+        }
+        
+        return entries
+    }
+    
+    private static func entriesFromPaths(files: [String]) throws -> [Entry] {
+        var entries: [Entry] = []
+        var currentDirPath: [String] = []
+        var currentLeafNames: [String] = []
+        
+        let sortedFiles = files.sorted()
+        for file in sortedFiles {
             let components = file.components(separatedBy: "/")
             let dirPath = components.count > 1 ? Array(components.dropLast()) : []
             let fileName = components.last!
