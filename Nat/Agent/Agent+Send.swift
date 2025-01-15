@@ -27,11 +27,13 @@ extension AgentThreadStore {
             throw AgentError.alreadyRunning
         }
 
-        let toolCtx = ToolContext(activeDirectory: folderURL)
         var allFunctions = tools.flatMap({ $0.functions })
         if let finishFunction {
             allFunctions.append(finishFunction)
         }
+        
+        var collectedLogs = [UserVisibleLog]()
+        let toolCtx = ToolContext(activeDirectory: folderURL, log: { collectedLogs.append($0) })
 
         assert(systemPrompt.contains("[[CONTEXT]]"), "[\(agentName)] system prompt must have a [[CONTEXT]] token.")
         let initialCtx = try await tools.asyncThrowingMap { tool in
@@ -42,11 +44,18 @@ extension AgentThreadStore {
         // Generate completions:
         var finishResult: LLMMessage.FunctionCall?
         do {
+            // Create a new 'step' to handle this message send and all resulting agent loops:
             var step = ThreadModel.Step(id: UUID().uuidString, initialRequest: message, toolUseLoop: [])
             await modifyThreadModel { state in
                 state.appendOrUpdate(step)
                 state.isTyping = true
             }
+            func saveStep() async { // causes ui to update
+                await modifyThreadModel { state in
+                    state.appendOrUpdate(step)
+                }
+            }
+
             let llm = try LLMs.smartAgentModel()
             var i = 0
             while true {
@@ -57,9 +66,7 @@ extension AgentThreadStore {
                 }
                 for try await partial in llm.completeStreaming(prompt: llmMessages, functions: allFunctions) {
                     step.appendOrUpdatePartialResponse(partial)
-                    await modifyThreadModel { state in
-                        state.appendOrUpdate(step)
-                    }
+                    await saveStep()
                 }
                 print("[\(agentName)] Got response with \(step.pendingFunctionCallsToExecute.count) functions")
 
@@ -76,9 +83,9 @@ extension AgentThreadStore {
                         toolCtx: toolCtx
                     )
                     step.toolUseLoop[step.toolUseLoop.count - 1].computerResponse = fnResponses
-                    await modifyThreadModel { state in
-                        state.appendOrUpdate(step)
-                    }
+                    step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs += collectedLogs
+                    collectedLogs.removeAll()
+                    await saveStep()
                 }
                 // If message has psuedo-functions, handle those:
                 else if let assistantMsg = step.assistantMessageForUser, let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: assistantMsg.content, agentName: agentName, tools: tools, toolCtx: toolCtx) {
@@ -94,12 +101,12 @@ extension AgentThreadStore {
                     step.toolUseLoop.append(ThreadModel.Step.ToolUseStep(
                         initialResponse: assistantMsg,
                         computerResponse: [],
-                        psuedoFunctionResponse: LLMMessage(role: .user, content: psuedoFnResponse)
+                        psuedoFunctionResponse: LLMMessage(role: .user, content: psuedoFnResponse),
+                        userVisibleLogs: collectedLogs
                     ))
+                    collectedLogs.removeAll()
                     step.assistantMessageForUser = nil
-                    await modifyThreadModel { state in
-                        state.appendOrUpdate(step)
-                    }
+                    await saveStep()
                 }
                 // Handle response with no tools:
                 else {
@@ -113,11 +120,10 @@ extension AgentThreadStore {
                     if step.assistantMessageForUser == nil {
                         step.assistantMessageForUser = .init(role: .assistant, content: "[Agent timed out]")
                     }
-                    await modifyThreadModel { state in
-                        state.appendOrUpdate(step)
-                    }
+                    await saveStep()
                 }
             }
+            await saveStep()
         } catch {
             await modifyThreadModel { state in
                 state.lastError = "Error: \(error)"

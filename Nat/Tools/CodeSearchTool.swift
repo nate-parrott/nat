@@ -20,11 +20,14 @@ struct CodeSearchTool: Tool {
 
     func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> LLMMessage.FunctionResponse? {
         if let args = fn.checkMatch(call: call) {
+            for q in args.questions {
+                context.log(.codeSearch(q))
+            }
             guard let folderURL = context.activeDirectory else {
                 return call.response(text: "Tell the user they need to choose a folder before you can search the codebase.")
             }
             let answers = try await args.questions.concurrentMapThrowing { prompt in
-                let text = try await codeSearch(prompt: prompt, folderURL: folderURL)
+                let text = try await codeSearch(prompt: prompt, folderURL: folderURL, emitLog: context.log)
                 return "# Results for '\(prompt)'\n\(text)"
             }
             return call.response(text: answers.joined(separator: "\n\n"))

@@ -20,11 +20,26 @@ struct ThreadModel: Equatable, Codable {
             var computerResponse: [LLMMessage.FunctionResponse]
             var psuedoFunctionResponse: LLMMessage?
 
+            var userVisibleLogs = [UserVisibleLog]()
+
             var isComplete: Bool {
                 computerResponse.count > 0 || psuedoFunctionResponse != nil
             }
         }
     }
+}
+
+// Used for events that will render cards into the feed
+enum UserVisibleLog: Equatable, Codable {
+    case readFile(String)
+
+    case editedFile(String)
+    case rejectedEdit(String)
+    case requestedChanges(String)
+
+    case createdFile(String)
+    case codeSearch(String)
+    case listedFiles
 }
 
 extension ThreadModel.Step {

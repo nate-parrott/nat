@@ -5,6 +5,7 @@ import Foundation
 
 struct ToolContext {
     var activeDirectory: URL?
+    var log: (UserVisibleLog) -> Void
 }
 
 protocol Tool {

@@ -55,8 +55,9 @@ extension LLMMessage.FunctionCall {
 }
 
 func generateReadFileString(path: String, context: ToolContext, offset: Int = 0, nLines: Int = 1000) throws -> String {
+    context.log(.readFile((path as NSString).lastPathComponent))
+
     let absoluteURL = try context.resolvePath(path)
-    
     var encoding: String.Encoding = .utf8
     guard let contents = try? String(contentsOf: absoluteURL, usedEncoding: &encoding) else {
         throw FileReaderError.fileNotFound(absoluteURL.path(percentEncoded: false))

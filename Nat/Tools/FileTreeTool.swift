@@ -17,6 +17,7 @@ struct FileTreeTool: Tool {
 
     func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> LLMMessage.FunctionResponse? {
         if let args = fn.checkMatch(call: call) {
+            context.log(.listedFiles)
             guard let folderURL = context.activeDirectory else {
                 return call.response(text: "Tell the user they need to choose a folder before you can search the codebase.")
             }

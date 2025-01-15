@@ -74,8 +74,13 @@ struct FileEditorTool: Tool {
                 }
                 switch confirmation {
                 case .accept:
+                    switch adjustedEdit {
+                    case .create: context.log(.createdFile((path as NSURL).lastPathComponent ?? ""))
+                    case .replace: context.log(.editedFile((path as NSURL).lastPathComponent ?? ""))
+                    }
                     responseStrings.append(try await apply(edit: adjustedEdit, context: context))
                 case .reject:
+                    context.log(.rejectedEdit((path as NSURL).lastPathComponent ?? ""))
                     responseStrings.append("User rejected edit \(edit.description)")
                     let remaining = edits[i+1..<edits.count]
                     if remaining.count > 0 {
@@ -83,6 +88,7 @@ struct FileEditorTool: Tool {
                     }
                     break
                 case .requestChanged(let message):
+                    context.log(.requestedChanges((path as NSURL).lastPathComponent ?? ""))
                     responseStrings.append("User requested changes to this edit: \(edit.description). Here is what they said:\n[BEGIN USER FEEDBACK]\n\(message)\n[END USER FEEDBACK]")
                     let remaining = edits[i+1..<edits.count]
                     if remaining.count > 0 {
@@ -189,8 +195,6 @@ enum CodeEdit {
         case .create(path: let path, _): return path
         }
     }
-    
-    
 
     static func edits(fromString string: String) -> [CodeEdit] {
         var edits = [CodeEdit]()
@@ -266,16 +270,22 @@ struct FileEditorReviewPanel: View {
     var body: some View {
         // TODO: Present diff
         NavigationStack {
-            ScrollView {
-                (diffText ?? Text("?"))
-                .lineLimit(nil)
-                .font(.system(.body, design: .monospaced))
-                .padding()
+            VStack(alignment: .leading) {
+                Text(edit.description)
+                    .multilineTextAlignment(.leading)
+                    .font(.headline)
+
+                ScrollView {
+                    (diffText ?? Text("?"))
+                    .lineLimit(nil)
+                    .font(.system(.body, design: .monospaced))
+                    .padding()
+                }
             }
+            .navigationTitle("Review Changes")
             .onAppear {
                 diffText = try? edit.asDiff(filePath: path).asText(font: Font.system(size: 14, weight: .regular, design: .monospaced))
             }
-            .navigationTitle("Review changes")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { finish(.reject) }

@@ -1,7 +1,7 @@
 import ChatToys
 import Foundation
 
-func codeSearch(prompt: String, folderURL: URL) async throws -> String {
+func codeSearch(prompt: String, folderURL: URL, emitLog: ((UserVisibleLog) -> Void)? = nil) async throws -> String {
     let agent = EphemeralAgent(model: .init())
     let fileTree = FileTree.fullTree(url: folderURL) // Just use whole tree
     let systemPrompt = """
@@ -54,7 +54,7 @@ func codeSearch(prompt: String, folderURL: URL) async throws -> String {
     guard let args = finish.decodeArguments(as: CodeSearchFinishFunctionArgs.self, stream: false) else {
         throw SearchAgentError.invalidResultFromAgent
     }
-    return try args.assembleContext(ctx: ToolContext(activeDirectory: folderURL))
+    return try args.assembleContext(ctx: ToolContext(activeDirectory: folderURL, log: emitLog ?? { _ in () }))
 }
 
 private enum SearchAgentError: Error {
