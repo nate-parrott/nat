@@ -6,20 +6,29 @@ struct FileEditorTool: Tool {
     func contextToInsertAtBeginningOfThread(context: ToolContext) async throws -> String? {
         """
         # Editing files
-        Use code fences to edit files. Each edit requires a path, a line range to delete, and new code to insert at that location. 
-        You can replace single lines, larger segments, or the entire file.
+        Use code fences to edit files. 
+                
+        To edit a file, open a code fence, then provide an editing command on the next line. Valid commands are:
+        > Replace [path]:[line range start](-[line range end]?)
+        > Insert [path]:[line index]
+        > Create [path]
+        
+        After the command, use subsequent lines to provide code to be inserted. Then close the code fence.
+        
         Do not use functions concurrently with code edits in the same response.
-        Make sure to properly indent so that your replacement file as coherent indentation.
+        You can use multiple code fences in a single response.
+        Make sure to properly indent so that your new file has coherent indentation.
+        When refactoring more than 60% of a file, replace the whole thing; otherwise try to make targeted edits or insertions.
         
         Your edits will be applied directly to the file, and your code may be linted or syntax-checked, so never say things like "...existing unchanged..." etc.
-        
-        To insert content without deleting, choose a target line and replace it with the existing line PLUS new lines you want to insert.
-        
+                
         When editing existing files, you MUST read the file first using read_file. After editing a file, I'll echo back the new version on disk post-edit.
+        
+        Line numbers are zero-indexed and inclusive. So replacing lines 0-2 would replace the first two lines of a file.
         
         # Editing examples
         
-        This replaces lines 5-20 (up to but not including line 20) of file.swift:
+        This replaces lines 5-20 inclusive of file.swift:
         ```
         > Replace /path/file.swift:5-20
             new_val = input * 2
@@ -28,20 +37,20 @@ struct FileEditorTool: Tool {
         
         To replace line 0:
         ```
-        > Replace /file2.swift:0-1
+        > Replace /file2.swift:0
         def main(arg):
         ```
         
         To insert at the top of a file:
         ```
-        > Replace /file3.swift:0-0
+        > Insert /file3.swift:0
         # New line
         # Another new line
         ```
         
         To replace the entire content of a 100-line file:
         ```
-        > Replace /path/file4.swift:0-100
+        > Replace /path/file4.swift:0-99
         ...new content...
         ```
         
@@ -57,7 +66,7 @@ struct FileEditorTool: Tool {
     }
 
     func handlePsuedoFunction(fromPlaintext response: String, context: ToolContext) async throws -> String? {
-        let edits = CodeEdit.edits(fromString: response)
+        let edits = try CodeEdit.edits(fromString: response, toolContext: context)
         if edits.isEmpty {
             return nil
         }
@@ -65,30 +74,29 @@ struct FileEditorTool: Tool {
         var responseStrings = [String]()
         for (i, edit) in edits.enumerated() {
             do {
-                let path = try context.resolvePath(edit.path)
                 let adjustedEdit = adjustEditIndices(edit: edit, previousEdits: edits[0..<i].asArray)
                 let confirmation = try await context.presentUI { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
-                    FileEditorReviewPanel(path: path, edit: adjustedEdit, finish: { result in
+                    FileEditorReviewPanel(path: edit.url, edit: adjustedEdit, finish: { result in
                         dismiss(result)
                     }).asAny
                 }
                 switch confirmation {
                 case .accept:
                     switch adjustedEdit {
-                    case .create: context.log(.createdFile((path as NSURL).lastPathComponent ?? ""))
-                    case .replace: context.log(.editedFile((path as NSURL).lastPathComponent ?? ""))
+                    case .create: context.log(.createdFile((edit.url as NSURL).lastPathComponent ?? ""))
+                    case .replace: context.log(.editedFile((edit.url as NSURL).lastPathComponent ?? ""))
                     }
                     responseStrings.append(try await apply(edit: adjustedEdit, context: context))
                 case .reject:
-                    context.log(.rejectedEdit((path as NSURL).lastPathComponent ?? ""))
-                    responseStrings.append("User rejected edit \(edit.description)")
+                    context.log(.rejectedEdit((edit.url as NSURL).lastPathComponent ?? ""))
+                    responseStrings.append("User rejected edit \(edit.description). Take a beat and let the user tell you more about what they wanted.")
                     let remaining = edits[i+1..<edits.count]
                     if remaining.count > 0 {
                         responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply them after the user has approved the edits.")
                     }
                     break
                 case .requestChanged(let message):
-                    context.log(.requestedChanges((path as NSURL).lastPathComponent ?? ""))
+                    context.log(.requestedChanges((edit.url as NSURL).lastPathComponent ?? ""))
                     responseStrings.append("User requested changes to this edit: \(edit.description). Here is what they said:\n[BEGIN USER FEEDBACK]\n\(message)\n[END USER FEEDBACK]")
                     let remaining = edits[i+1..<edits.count]
                     if remaining.count > 0 {
@@ -112,33 +120,31 @@ struct FileEditorTool: Tool {
     private func apply(edit: CodeEdit, context: ToolContext) async throws -> String {
         switch edit {
         case .create(path: let path, content: let content):
-            let url = try context.resolvePath(path)
-            if !FileManager.default.fileExists(atPath: url.deletingLastPathComponent().path(percentEncoded: false)) {
-                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if !FileManager.default.fileExists(atPath: edit.url.deletingLastPathComponent().path(percentEncoded: false)) {
+                try FileManager.default.createDirectory(at: edit.url.deletingLastPathComponent(), withIntermediateDirectories: true)
             }
-            try content.write(to: url, atomically: true, encoding: .utf8)
+            try content.write(to: edit.url, atomically: true, encoding: .utf8)
             return "Successfully created file at \(path)"
-        case .replace(path: let path, lineRangeStart: let start, lineRangeEnd: let end, content: let content):
-            let url = try context.resolvePath(path)
-            let existingContent = try String(contentsOf: url, encoding: .utf8)
-            let newContent = try applyReplacement(existing: existingContent, lineRangeStart: start, lineRangeEnd: end, new: content)
-            
+        case .replace(path: let path, lineRangeStart: let start, lineRangeLen: let len, content: let content):
+            let existingContent = try String(contentsOf: path, encoding: .utf8)
+            let newContent = try applyReplacement(existing: existingContent, lineRangeStart: start, len: len, new: content)
+
             // Write back to file
-            try newContent.write(to: url, atomically: true, encoding: .utf8)
-            
+            try newContent.write(to: path, atomically: true, encoding: .utf8)
+
             return "Successfully modified file at \(path). New content:\n\n\(stringWithLineNumbers(newContent))"
         }
     }
 }
 
 private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> CodeEdit {
-    guard case .replace(path: let path, lineRangeStart: var start, lineRangeEnd: var end, content: let content) = edit else {
+    guard case .replace(path: let url, lineRangeStart: var start, lineRangeLen: let len, content: let content) = edit else {
         return edit
     }
     // Adjust indices based on previous edits to the same file
     for previousEdit in previousEdits {
         // Only consider edits to the same file
-        guard previousEdit.path == path,
+        guard previousEdit.url == url,
               case .replace(_, let prevStart, let prevEnd, let prevContent) = previousEdit else {
             continue
         }
@@ -149,23 +155,22 @@ private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> Cod
         // If this edit starts after the previous edit, adjust both start and end
         if start >= prevEnd {
             start += linesChanged
-            end += linesChanged
         }
         // If this edit overlaps or comes before the previous edit, we don't adjust
         // as those edits should be handled separately or rejected
     }
-    return .replace(path: path, lineRangeStart: start, lineRangeEnd: end, content: content)
+    return .replace(path: url, lineRangeStart: start, lineRangeLen: len, content: content)
 }
 
-private func applyReplacement(existing: String, lineRangeStart: Int, lineRangeEnd: Int, new: String) throws -> String {
+private func applyReplacement(existing: String, lineRangeStart: Int, len: Int, new: String) throws -> String {
     var lines = existing.components(separatedBy: .newlines)
 
     // Ensure the range is valid
-    guard lineRangeStart >= 0, lineRangeEnd <= lines.count else {
-        throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid line range \(lineRangeStart)-\(lineRangeEnd) for file with \(lines.count) lines"])
+    guard lineRangeStart >= 0, lineRangeStart + len <= lines.count else {
+        throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid line range \(lineRangeStart) len \(len)for file with \(lines.count) lines"])
     }
 
-    lines.replaceSubrange(lineRangeStart..<lineRangeEnd, with: new.components(separatedBy: .newlines))
+    lines.replaceSubrange(lineRangeStart..<(lineRangeStart + len), with: new.components(separatedBy: .newlines))
     return lines.joined(separator: "\n")
 }
 
@@ -176,158 +181,106 @@ private func stringWithLineNumbers(_ string: String) -> String {
 }
 
 enum CodeEdit {
-    case replace(path: String, lineRangeStart: Int, lineRangeEnd: Int, content: String)
-    case create(path: String, content: String)
+    // line range end is INCLUSIVE and zero-indexed.
+    case replace(path: URL, lineRangeStart: Int, lineRangeLen: Int, content: String)
+    case create(path: URL, content: String)
 
     var description: String {
         // include name and line range
         switch self {
-        case .replace(path: let path, lineRangeStart: let start, lineRangeEnd: let end, _):
-            return "Replace \(path):\(start)-\(end)"
+        case .replace(path: let path, lineRangeStart: let start, lineRangeLen: let len, _):
+            if len == 0 {
+                return "Insert \(path):\(start)"
+            } else {
+                return "Replace \(path):\(start)-\(start+len-1)" // subtract b/c a string range like 1:1 is equal to a len of zero
+            }
         case .create(path: let path, _):
             return "Create \(path)"
         }
     }
 
-    var path: String {
+    var url: URL {
         switch self {
-        case .replace(path: let path, _, _, _): return path
-        case .create(path: let path, _): return path
+        case .replace(path: let url, _, _, _): return url
+        case .create(path: let url, _): return url
         }
     }
 
-    static func edits(fromString string: String) -> [CodeEdit] {
+    static func edits(fromString string: String, toolContext: ToolContext) throws -> [CodeEdit] {
         var edits = [CodeEdit]()
-        var currentCommand: (type: String, path: String, start: Int?, end: Int?)? = nil
-        var currentContent = [String]()
-        
         let lines = string.components(separatedBy: .newlines)
-        var inCodeBlock = false
+        var currentContent = [String]()
+        var currentCommand: (type: String, path: String, range: String)?
+        
+        // Command patterns
+        let createPattern = try NSRegularExpression(pattern: #"^>\s*Create\s+([^\s:]+)\s*$"#)
+        let replacePattern = try NSRegularExpression(pattern: #"^>\s*Replace\s+([^:]+):(\d+(?:-\d+)?)\s*$"#)
+        let insertPattern = try NSRegularExpression(pattern: #"^>\s*Insert\s+([^:]+):(\d+)\s*$"#)
         
         for line in lines {
             if line.hasPrefix("```") {
-                if inCodeBlock {
-                    // End of block - process the command if we have one
-                    if let command = currentCommand {
-                        let content = currentContent.joined(separator: "\n")
-                        if command.type == "Replace",
-                           let start = command.start,
-                           let end = command.end {
-                            edits.append(.replace(path: command.path, 
-                                               lineRangeStart: start, 
-                                               lineRangeEnd: end, 
-                                               content: content))
-                        } else if command.type == "Create" {
-                            edits.append(.create(path: command.path, content: content))
+                if currentCommand != nil {
+                    // End of code block - process the edit
+                    if currentContent.isEmpty { continue }
+                    
+                    let content = currentContent.joined(separator: "\n")
+                    let cmd = currentCommand!
+                    
+                    // Resolve the path relative to workspace
+                    let resolvedPath = try toolContext.resolvePath(cmd.path)
+
+                    if cmd.type == "Create" {
+                        edits.append(.create(path: resolvedPath, content: content))
+                    } else if cmd.type == "Replace" || cmd.type == "Insert" {
+                        // Parse the range
+                        let rangeParts = cmd.range.split(separator: "-")
+                        if rangeParts.isEmpty { continue }
+                        
+                        guard let start = Int(rangeParts[0]) else { continue }
+                        
+                        if cmd.type == "Insert" {
+                            edits.append(.replace(path: resolvedPath, lineRangeStart: start, lineRangeLen: 0, content: content))
+                        } else {
+                            let end: Int
+                            if rangeParts.count > 1 {
+                                guard let parsedEnd = Int(rangeParts[1]) else { continue }
+                                end = parsedEnd
+                            } else {
+                                end = start
+                            }
+                            let len = end - start + 1
+                            edits.append(.replace(path: resolvedPath, lineRangeStart: start, lineRangeLen: len, content: content))
                         }
                     }
+                    
                     currentCommand = nil
                     currentContent = []
+                } else {
+                    // Start of code block - look for command
+                    currentContent = []
                 }
-                inCodeBlock = !inCodeBlock
-                continue
-            }
-            
-            guard inCodeBlock else { continue }
-            
-            if line.hasPrefix("> Replace ") {
-                let parts = line.dropFirst("> Replace ".count)
-                    .components(separatedBy: ":")
-                if parts.count == 2 {
-                    let path = parts[0]
-                    let range = parts[1].components(separatedBy: "-")
-                    if range.count == 2,
-                       let start = Int(range[0]),
-                       let end = Int(range[1]) {
-                        currentCommand = ("Replace", path, start, end)
-                    }
-                }
-            } else if line.hasPrefix("> Create ") {
-                let path = String(line.dropFirst("> Create ".count))
-                currentCommand = ("Create", path, nil, nil)
-            } else if currentCommand != nil {
+            } else if let cmd = currentCommand {
+                // Inside a code block - accumulate content
                 currentContent.append(line)
+            } else if line.hasPrefix(">") {
+                // Try each pattern in turn
+                let range = NSRange(line.startIndex..<line.endIndex, in: line)
+                
+                if let match = createPattern.firstMatch(in: line, range: range) {
+                    let path = String(line[Range(match.range(at: 1), in: line)!])
+                    currentCommand = (type: "Create", path: path, range: "")
+                } else if let match = replacePattern.firstMatch(in: line, range: range) {
+                    let path = String(line[Range(match.range(at: 1), in: line)!])
+                    let range = String(line[Range(match.range(at: 2), in: line)!])
+                    currentCommand = (type: "Replace", path: path, range: range)
+                } else if let match = insertPattern.firstMatch(in: line, range: range) {
+                    let path = String(line[Range(match.range(at: 1), in: line)!])
+                    let range = String(line[Range(match.range(at: 2), in: line)!])
+                    currentCommand = (type: "Insert", path: path, range: range)
+                }
             }
         }
         
         return edits
-    }
-}
-
-enum FileEditorReviewPanelResult: Equatable {
-    case accept
-    case reject
-    case requestChanged(String)
-}
-
-struct FileEditorReviewPanel: View {
-    var path: URL
-    var edit: CodeEdit
-    var finish: (FileEditorReviewPanelResult) -> Void
-
-    @State private var diffText: Text?
-
-    var body: some View {
-        // TODO: Present diff
-        NavigationStack {
-            VStack(alignment: .leading) {
-                Text(edit.description)
-                    .multilineTextAlignment(.leading)
-                    .font(.headline)
-
-                ScrollView {
-                    (diffText ?? Text("?"))
-                    .lineLimit(nil)
-                    .font(.system(.body, design: .monospaced))
-                    .padding()
-                }
-            }
-            .navigationTitle("Review Changes")
-            .onAppear {
-                diffText = try? edit.asDiff(filePath: path).asText(font: Font.system(size: 14, weight: .regular, design: .monospaced))
-            }
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { finish(.reject) }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Accept") { finish(.accept) }
-                }
-            }
-        }
-        .frame(minWidth: 600, minHeight: 400)
-    }
-}
-
-extension CodeEdit {
-    func asDiff(filePath: URL) throws -> Diff {
-        switch self {
-        case .replace(let path, let lineRangeStart, let lineRangeEnd, let content):
-            let existingContent = try String(contentsOf: filePath, encoding: .utf8)
-            let existingLines = existingContent.components(separatedBy: .newlines)
-            let newLines = content.components(separatedBy: .newlines)
-            
-            var diff = Diff(lines: [])
-            for (i, existingLine) in existingLines.enumerated() {
-                if i == lineRangeStart {
-                   for newLine in newLines {
-                       diff.lines.append(.insert(newLine))
-                   }
-                } 
-                if i >= lineRangeStart && i < lineRangeEnd {
-                    diff.lines.append(.delete(existingLine))
-                } else {
-                    diff.lines.append(.same(existingLine))
-                }
-            }
-            return diff
-        case .create(let path, let content):
-            let newLines = content.components(separatedBy: .newlines)
-            var diff = Diff(lines: [])
-            for newLine in newLines {
-                diff.lines.append(.insert(newLine))
-            }
-            return diff
-        }
     }
 }
