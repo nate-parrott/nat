@@ -62,7 +62,7 @@ extension AgentThreadStore {
             while true {
                 // Loop and handle function calls
                 var llmMessages = await readThreadModel().steps.flatMap(\.asLLMMessages)
-                if let systemPrompt = sysMsg.content.nilIfEmpty {
+                if sysMsg.content.count > 0 {
                     llmMessages.insert(sysMsg, at: 0)
                 }
                 for try await partial in llm.completeStreaming(prompt: llmMessages, functions: allFunctions) {
