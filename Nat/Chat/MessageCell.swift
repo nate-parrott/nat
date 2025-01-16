@@ -9,10 +9,7 @@ struct MessageCell: View {
         case .userMessage(let string):
             TextMessageBubble(Text(string), isFromUser: true)
         case .assistantMessage(let string):
-            Text(string)
-                .textSelection(.enabled)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            AssistantMessageView(text: string)
 //            TextMessageBubble(Text(string), isFromUser: false)
         case .toolLog(let log):
             switch log {
@@ -58,5 +55,34 @@ private struct LogView: View {
         Label(LocalizedStringKey(markdown), systemImage: symbol)
             .foregroundStyle(.purple)
             .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct AssistantMessageView: View {
+    var text: String
+    @State private var expanded = false
+
+    var body: some View {
+        Group {
+            if text.count > 1200 {
+                if expanded {
+                    Text(text)
+                    Text("Collapse").foregroundStyle(.blue).onTapGesture {
+                        expanded = false
+                    }
+                } else {
+                    Text(text.prefix(600) + "…")
+                    Text("Show hidden").foregroundStyle(.blue).onTapGesture {
+                        expanded = true
+                    }
+                    Text("…" + text.suffix(600))
+                }
+            } else {
+                Text(text)
+            }
+        }
+        .textSelection(.enabled)
+        .multilineTextAlignment(.leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

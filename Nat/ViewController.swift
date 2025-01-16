@@ -6,17 +6,21 @@ struct ContentViewWrapper: View {
 
     var body: some View {
         if let document = document {
-            TabView {
-                ChatView()
-                    .tabItem {
-                        Text("Chat")
-                    }
-
-                SearchView()
-                    .tabItem {
-                        Text("Search")
-                    }
-            }
+//            TabView {
+//                ChatView()
+//                    .tabItem {
+//                        Text("Chat")
+//                    }
+//
+//                SearchView()
+//                    .tabItem {
+//                        Text("Search")
+//                    }
+//            }
+            ChatView()
+                .tabItem {
+                    Text("Chat")
+                }
             .environment(\.document, document)
         } else {
             Color.clear
