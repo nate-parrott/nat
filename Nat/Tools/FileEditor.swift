@@ -9,20 +9,22 @@ struct FileEditorTool: Tool {
         Use code fences to edit files. 
                 
         To edit a file, open a code fence, then provide an editing command on the next line. Valid commands are:
-        > Replace [path]:[line range start](-[line range end]?)
-        > Insert [path]:[line index]
+        > Replace [path]:[line range start](-[line range end]?) // lines are 0-indexed, inclusive
+        > Insert [path]:[line index] // Content will be inserted BEFORE line at this index!
         > Create [path]
         
-        After the command, use subsequent lines to provide code to be inserted. Then close the code fence.
+        After the command, use subsequent lines to provide code to be added. Then close the code fence.
         
         Do not use functions concurrently with code edits in the same response.
         You can use multiple code fences in a single response.
         Make sure to properly indent so that your new file has coherent indentation.
         When refactoring more than 60% of a file, replace the whole thing; otherwise try to make targeted edits or insertions.
+        If you want to write code that includes lines that equal ```, you need to escape it by writing \\```. Make sure to escape!
         
         Your edits will be applied directly to the file, and your code may be linted or syntax-checked, so never say things like "...existing unchanged..." etc.
                 
         When editing existing files, you MUST read the file first using read_file. After editing a file, I'll echo back the new version on disk post-edit.
+        When editing, make sure your edits reference the MOST RECENT copy of the file in the thread.
         
         Line numbers are zero-indexed and inclusive. So replacing lines 0-2 would replace the first two lines of a file.
         
@@ -52,6 +54,15 @@ struct FileEditorTool: Tool {
         ```
         > Replace /path/file4.swift:0-99
         ...new content...
+        ```
+        
+        Escaping example:
+        ```
+        > Insert /readme.md 10
+        Here is how to run the code:
+        \\```
+        npm install
+        \\```
         ```
         
         # Creating a new file
@@ -261,7 +272,11 @@ enum CodeEdit {
                 }
             } else if let cmd = currentCommand {
                 // Inside a code block - accumulate content
-                currentContent.append(line)
+                if line == "\\```" {
+                    currentContent.append("```")
+                } else {
+                    currentContent.append(line)
+                }
             } else if line.hasPrefix(">") {
                 // Try each pattern in turn
                 let range = NSRange(line.startIndex..<line.endIndex, in: line)

@@ -51,6 +51,7 @@ extension AgentThreadStore {
                 state.isTyping = true
             }
             func saveStep() async { // causes ui to update
+                if Task.isCancelled { return }
                 await modifyThreadModel { state in
                     state.appendOrUpdate(step)
                 }
@@ -76,14 +77,21 @@ extension AgentThreadStore {
                         finishResult = finish
                         break
                     }
+                    // Use this new tool context to immediately grab logs and display 'em
+                    let childToolCtx = ToolContext(activeDirectory: folderURL, log: {
+                        step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs.append($0)
+                        Task {
+                            await saveStep()
+                        }
+                    })
                     let fnResponses = try await self.handleFunctionCalls(
                         step.pendingFunctionCallsToExecute,
                         tools: tools,
                         agentName: agentName,
-                        toolCtx: toolCtx
+                        toolCtx: childToolCtx
                     )
                     step.toolUseLoop[step.toolUseLoop.count - 1].computerResponse = fnResponses
-                    step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs += collectedLogs
+//                    step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs += collectedLogs
                     collectedLogs.removeAll()
                     await saveStep()
                 }

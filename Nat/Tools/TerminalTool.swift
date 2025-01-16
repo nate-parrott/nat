@@ -1,7 +1,2 @@
-//
-//  TerminalTool.swift
-//  Nat
-//
-//  Created by nate parrott on 1/13/25.
-//
 
+//xcodebuild test -scheme epubs -destination 'platform=macOS' -only-testing:epubsTests/OPFtests/testDeletion -quiet
