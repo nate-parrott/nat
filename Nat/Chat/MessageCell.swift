@@ -29,6 +29,11 @@ struct MessageCell: View {
                 LogView(markdown: "Listed files", symbol: "list.bullet")
             case .toolError(let error):
                 LogView(markdown: error, symbol: "exclamationmark.triangle.fill")
+            case .terminal(command: let command):
+                Label(command, systemImage: "apple.terminal")
+                    .font(Font.body.monospaced())
+                    .foregroundStyle(.purple)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 //        case .toolUse(let string):
 //            Text("\(string)")

@@ -28,8 +28,8 @@ struct TerminalTool: Tool {
         guard let args = fn.checkMatch(call: call) else { return nil }
         
         let command = args.command
-        context.log(.info("Running command: \(command)"))
-        
+        context.log(.terminal(command: "\(command)"))
+
         guard let activeDirectory = context.activeDirectory else {
             return call.response(text: "No active directory selected")
         }

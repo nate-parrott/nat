@@ -42,6 +42,7 @@ enum UserVisibleLog: Equatable, Codable {
     case listedFiles
 
     case toolError(String)
+    case terminal(command: String)
 }
 
 extension ThreadModel.Step {
