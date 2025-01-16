@@ -9,7 +9,11 @@ struct MessageCell: View {
         case .userMessage(let string):
             TextMessageBubble(Text(string), isFromUser: true)
         case .assistantMessage(let string):
-            TextMessageBubble(Text(string), isFromUser: false)
+            Text(string)
+                .textSelection(.enabled)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+//            TextMessageBubble(Text(string), isFromUser: false)
         case .toolLog(let log):
             switch log {
             case .readFile(let string):
