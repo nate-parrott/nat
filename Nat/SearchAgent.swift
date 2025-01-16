@@ -23,7 +23,7 @@ func codeSearch(prompt: String, folderURL: URL, emitLog: ((UserVisibleLog) -> Vo
     If you don't know where to look, review a few of the most relevant-sounding files.
     
     You are limited to 3 steps of execution, so you should read several files (up to 10) in parallel by using multiple function calls at once.
-    When you're done, call your finish function with a list of paths and snippets to provide to your engineer.
+    When you have the information you need, or have surpassed 3 steps, you MUST call `finish` with a list of paths and snippets to provide to your engineer.
     
     [BEGIN FILE TREE]
     \(fileTree)

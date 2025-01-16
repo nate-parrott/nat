@@ -30,6 +30,8 @@ struct MessageCell: View {
                 LogView(markdown: "Code search for _\(string)_", symbol: "magnifyingglass")
             case .listedFiles:
                 LogView(markdown: "Listed files", symbol: "list.bullet")
+            case .toolError(let error):
+                LogView(markdown: error, symbol: "exclamationmark.triangle.fill")
             }
 //        case .toolUse(let string):
 //            Text("\(string)")

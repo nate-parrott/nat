@@ -27,8 +27,13 @@ struct CodeSearchTool: Tool {
                 return call.response(text: "Tell the user they need to choose a folder before you can search the codebase.")
             }
             let answers = try await args.questions.concurrentMapThrowing { prompt in
-                let text = try await codeSearch(prompt: prompt, folderURL: folderURL, emitLog: context.log)
-                return "# Results for '\(prompt)'\n\(text)"
+                do {
+                    let text = try await codeSearch(prompt: prompt, folderURL: folderURL, emitLog: context.log)
+                    return "# Results for '\(prompt)'\n\(text)"
+                } catch {
+                    context.log(.toolError("Error on code_search('\(prompt)'): \(error)"))
+                    return "code_search query '\(prompt)' failed with error: \(error)"
+                }
             }
             return call.response(text: answers.joined(separator: "\n\n"))
         }

@@ -40,6 +40,8 @@ enum UserVisibleLog: Equatable, Codable {
     case createdFile(String)
     case codeSearch(String)
     case listedFiles
+
+    case toolError(String)
 }
 
 extension ThreadModel.Step {
