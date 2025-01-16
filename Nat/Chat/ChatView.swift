@@ -58,7 +58,7 @@ struct ChatView: View {
 
         Task {
             do {
-                try await document.send(message: msg, llm: LLMs.smartAgentModel(), tools: [FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool()], folderURL: folderURL)
+try await document.send(message: msg, llm: LLMs.smartAgentModel(), tools: [FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(), TerminalTool()], folderURL: folderURL)
             } catch {
                 // Do nothing (We already handle it)
             }
