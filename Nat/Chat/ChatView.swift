@@ -23,12 +23,13 @@ struct ChatView: View {
                 headerView: AnyView(AgentSettings())
             )
             Divider()
-            ChatInputView_Multimodal(
-                placeholder: "Message",
-                text: $text,
-                imageAttachment: $imageAttachment,
-                sendAction: sendMessage
-            )
+            ChatInput(send: sendMessage(text:))
+//            ChatInputView_Multimodal(
+//                placeholder: "Message",
+//                text: $text,
+//                imageAttachment: $imageAttachment,
+//                sendAction: sendMessage
+//            )
         }
         .onReceive(document.store.publisher.map(\.thread.isTyping).removeDuplicates(), perform: { self.typing = $0 })
         .onReceive(document.store.publisher.map(\.thread.cellModels).removeDuplicates(), perform: { self.messageCellModels = $0 })
@@ -47,10 +48,7 @@ struct ChatView: View {
         imageAttachment = nil
     }
 
-    private func sendMessage() {
-        let text = self.text
-        self.text = ""
-
+    private func sendMessage(text: String) {
         var msg = LLMMessage(role: .user, content: text)
         if let imageAttachment {
             try! msg.add(image: imageAttachment, detail: .low)
