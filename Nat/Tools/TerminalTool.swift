@@ -31,7 +31,11 @@ struct TerminalTool: Tool {
         guard let activeDirectory = context.activeDirectory else {
             return call.response(text: "No active directory selected")
         }
-        
+
+        if context.confirmTerminalCommands, await !Alerts.showAppConfirmationDialog(title: "Run terminal command?", message: "Would run \(command) in \(activeDirectory.path())", yesTitle: "Run", noTitle: "Deny") {
+            return call.response(text: "User blocked this command from running. Take a beat and ask them what they want to do.")
+        }
+
         do {
             let output = try await runCommand(command, in: activeDirectory)
             return call.response(text: output)

@@ -6,6 +6,7 @@ import Foundation
 struct ToolContext {
     var activeDirectory: URL?
     var log: (UserVisibleLog) -> Void
+    var confirmTerminalCommands = true
 }
 
 protocol Tool {

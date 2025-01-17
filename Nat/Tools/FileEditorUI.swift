@@ -17,19 +17,24 @@ struct FileEditorReviewPanel: View {
     var body: some View {
         // TODO: Present diff
         NavigationStack {
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(edit.description)
                     .multilineTextAlignment(.leading)
                     .font(.headline)
+                    .lineLimit(nil)
+                    .padding()
+                    .background(.thickMaterial)
+
+                Divider()
 
                 ScrollView {
-                    (diffText ?? Text("?"))
+                    diffText
                     .lineLimit(nil)
                     .font(.system(.body, design: .monospaced))
                     .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .navigationTitle("Review Changes")
             .onAppear {
                 diffText = try? edit.asDiff(filePath: path).asText(font: Font.system(size: 14, weight: .regular, design: .monospaced))
             }
@@ -41,6 +46,7 @@ struct FileEditorReviewPanel: View {
                     Button("Accept") { finish(.accept) }
                 }
             }
+            .navigationTitle("Review Changes")
         }
         .frame(minWidth: 600, minHeight: 400)
     }
