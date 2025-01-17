@@ -77,9 +77,9 @@ private struct AssistantMessageView: View {
                     }
                 } else {
                     Text(text.prefix(600) + "…")
-                    Text("Show hidden").foregroundStyle(.blue).onTapGesture {
-                        expanded = true
-                    }
+                    Label("Show all", systemImage: "scissors")
+                        .foregroundStyle(.blue)
+                        .onTapGesture {  expanded = true }
                     Text("…" + text.suffix(600))
                 }
             } else {
