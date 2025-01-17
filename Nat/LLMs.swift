@@ -12,7 +12,7 @@ enum LLMs {
 //        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("meta-llama/llama-3.3-70b-instruct", 1_000_000), baseURL: .openRouterOpenAIChatEndpoint))
     }
 
-    private static func openrouterKey() throws -> String {
+    static func openrouterKey() throws -> String {
         if let key = DefaultsKeys.openrouterKey.stringValue().nilIfEmpty {
             return key
         }

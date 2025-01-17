@@ -84,6 +84,7 @@ extension ToolContext {
                     cont.resume(returning: $0)
                 }
                 let modal = NSHostingController(rootView: anyView)
+                modal.title = "Test hehe"
                 modalBox.value = modal
                 modal.view.frame = CGRect(x: 0, y: 0, width: 600, height: 500)
                 baseVC.presentAsSheet(modal)

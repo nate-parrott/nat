@@ -22,6 +22,7 @@ struct FileEditorReviewPanel: View {
                     .multilineTextAlignment(.leading)
                     .font(.headline)
                     .lineLimit(nil)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
                     .background(.thickMaterial)
 

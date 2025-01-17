@@ -67,7 +67,7 @@ extension AgentThreadStore {
                 }
                 // If we're at the last step of the run, and there's a finish function, ONLY allow the finish function
                 let allowedFns = i > 0 && i + 1 == maxIterations && finishFunction != nil ? [finishFunction!] : allFunctions
-                for try await partial in llm.completeStreaming(prompt: llmMessages, functions: allFunctions) {
+                for try await partial in llm.completeStreaming(prompt: llmMessages, functions: allowedFns) {
                     step.appendOrUpdatePartialResponse(partial)
                     await saveStep()
                 }
@@ -123,7 +123,7 @@ extension AgentThreadStore {
                 }
                 // Handle response with no tools:
                 else {
-                    print("[\(agentName)] Received final response (no function calls)")
+                    print("[\(agentName)] Received final response (no function calls): \(step.assistantMessageForUser?.content ?? "[None!!!]")")
                     // expect assistantMessageForUser has been set by appendOrUpdatePartialResponse
                     break // we're done!
                 }

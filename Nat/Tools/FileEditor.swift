@@ -201,12 +201,12 @@ enum CodeEdit {
         switch self {
         case .replace(path: let path, lineRangeStart: let start, lineRangeLen: let len, _):
             if len == 0 {
-                return "Insert \(path):\(start)"
+                return "Insert \(path.absoluteString):\(start)"
             } else {
-                return "Replace \(path):\(start)-\(start+len-1)" // subtract b/c a string range like 1:1 is equal to a len of zero
+                return "Replace \(path.absoluteString):\(start)-\(start+len-1)" // subtract b/c a string range like 1:1 is equal to a len of zero
             }
         case .create(path: let path, _):
-            return "Create \(path)"
+            return "Create \(path.absoluteString)"
         }
     }
 
