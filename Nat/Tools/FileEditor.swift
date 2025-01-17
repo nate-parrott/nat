@@ -83,9 +83,10 @@ struct FileEditorTool: Tool {
         }
 
         var responseStrings = [String]()
+        var prevEdits = [CodeEdit]()
         for (i, edit) in edits.enumerated() {
             do {
-                let edit = adjustEditIndices(edit: edit, previousEdits: edits[0..<i].asArray)
+                let edit = adjustEditIndices(edit: edit, previousEdits: prevEdits)
                 let confirmation = try await context.presentUI(title: "Accept Edit?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
                     FileEditorReviewPanel(path: edit.url, edit: edit, finish: { result in
                         dismiss(result)
@@ -98,6 +99,7 @@ struct FileEditorTool: Tool {
                     case .replace: context.log(.editedFile((edit.url as NSURL).lastPathComponent ?? ""))
                     }
                     responseStrings.append(try await apply(edit: edit, context: context))
+                    prevEdits.append(edit)
                 case .reject:
                     context.log(.rejectedEdit((edit.url as NSURL).lastPathComponent ?? ""))
                     responseStrings.append("User rejected edit \(edit.description). Take a beat and let the user tell you more about what they wanted.")
