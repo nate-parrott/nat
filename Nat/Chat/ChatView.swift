@@ -9,19 +9,25 @@ struct ChatView: View {
     @Environment(\.document) private var document
     @State private var typing = false
     @State private var messageCellModels = [MessageCellModel]()
+    @State private var debug = false
 
     var body: some View {
         VStack(spacing: 0) {
-            ChatThreadView(
-                messages: messageCellModels,
-                id: { cell, idx in cell.id },
-                messageView: { message in
-                    MessageCell(model: message)
-//                    TextMessageBubble(Text(message.displayText), isFromUser: message.role == .user)
-                },
-                typingIndicator: typing,
-                headerView: AnyView(AgentSettings())
-            )
+            if debug {
+                DebugThreadView()
+            } else {
+                ChatThreadView(
+                    messages: messageCellModels,
+                    id: { cell, idx in cell.id },
+                    messageView: { message in
+                        MessageCell(model: message)
+                            .frame(maxWidth: 800, alignment: .leading)
+    //                    TextMessageBubble(Text(message.displayText), isFromUser: message.role == .user)
+                    },
+                    typingIndicator: typing,
+                    headerView: AnyView(AgentSettings())
+                )
+            }
             Divider()
             ChatInput(send: sendMessage(text:))
 //            ChatInputView_Multimodal(
@@ -36,6 +42,9 @@ struct ChatView: View {
         .contextMenu {
             Button(action: clear) {
                 Text("Clear")
+            }
+            Button(action: { debug.toggle() }) {
+                Text("Debug")
             }
         }
     }
@@ -58,7 +67,10 @@ struct ChatView: View {
 
         Task {
             do {
-try await document.send(message: msg, llm: LLMs.smartAgentModel(), tools: [FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(), TerminalTool()], folderURL: folderURL)
+                let tools: [Tool] = [
+                    FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(), TerminalTool(), WebResearchTool()
+                ]
+                try await document.send(message: msg, llm: LLMs.smartAgentModel(), tools: tools, folderURL: folderURL)
             } catch {
                 // Do nothing (We already handle it)
             }

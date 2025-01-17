@@ -85,19 +85,19 @@ struct FileEditorTool: Tool {
         var responseStrings = [String]()
         for (i, edit) in edits.enumerated() {
             do {
-                let adjustedEdit = adjustEditIndices(edit: edit, previousEdits: edits[0..<i].asArray)
+                let edit = adjustEditIndices(edit: edit, previousEdits: edits[0..<i].asArray)
                 let confirmation = try await context.presentUI { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
-                    FileEditorReviewPanel(path: edit.url, edit: adjustedEdit, finish: { result in
+                    FileEditorReviewPanel(path: edit.url, edit: edit, finish: { result in
                         dismiss(result)
                     }).asAny
                 }
                 switch confirmation {
                 case .accept:
-                    switch adjustedEdit {
+                    switch edit {
                     case .create: context.log(.createdFile((edit.url as NSURL).lastPathComponent ?? ""))
                     case .replace: context.log(.editedFile((edit.url as NSURL).lastPathComponent ?? ""))
                     }
-                    responseStrings.append(try await apply(edit: adjustedEdit, context: context))
+                    responseStrings.append(try await apply(edit: edit, context: context))
                 case .reject:
                     context.log(.rejectedEdit((edit.url as NSURL).lastPathComponent ?? ""))
                     responseStrings.append("User rejected edit \(edit.description). Take a beat and let the user tell you more about what they wanted.")
@@ -156,16 +156,17 @@ private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> Cod
     for previousEdit in previousEdits {
         // Only consider edits to the same file
         guard previousEdit.url == url,
-              case .replace(_, let prevStart, let prevEnd, let prevContent) = previousEdit else {
+              case .replace(_, let prevStart, let prevRangeLen, let prevContent) = previousEdit else {
             continue
         }
         
-        let prevLines = prevContent.components(separatedBy: .newlines)
-        let linesChanged = prevLines.count - (prevEnd - prevStart)
-        
+        let addedLineCount = prevContent.components(separatedBy: .newlines).count
+        let delta = addedLineCount - prevRangeLen
+        let prevEnd = prevStart + prevRangeLen
+
         // If this edit starts after the previous edit, adjust both start and end
         if start >= prevEnd {
-            start += linesChanged
+            start += delta
         }
         // If this edit overlaps or comes before the previous edit, we don't adjust
         // as those edits should be handled separately or rejected

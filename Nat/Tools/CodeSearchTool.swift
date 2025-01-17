@@ -13,7 +13,7 @@ struct CodeSearchTool: Tool {
 
         static var schema: [String: LLMFunction.JsonSchema] {
             [
-                "questions": .array(description: nil, itemType: .string(description: "concise list of SPECIFIC pieces of information you need. 1-many."))
+                "questions": .array(description: nil, itemType: .string(description: "concise list of SPECIFIC pieces of information you need. Don't use more than you need."))
             ]
         }
     }

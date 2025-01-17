@@ -6,7 +6,7 @@ struct ThreadModel: Equatable, Codable {
     var isTyping = false
     var lastError: String?
 
-    struct Step: Equatable, Codable {
+    struct Step: Equatable, Codable, Identifiable {
         var id: String
         // Every sequence begins with a user request, continues through a series of tool calls, and ends with an open-ended message from the model without tool calls
         var initialRequest: LLMMessage // Must be role=user

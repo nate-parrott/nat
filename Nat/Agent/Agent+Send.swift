@@ -133,8 +133,8 @@ extension AgentThreadStore {
                     if step.assistantMessageForUser == nil {
                         step.assistantMessageForUser = .init(role: .assistant, content: "[Agent timed out]")
                     }
-                    await saveStep()
                 }
+                await saveStep()
             }
             await saveStep()
         } catch {

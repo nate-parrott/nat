@@ -37,7 +37,7 @@ struct WebResearchTool: Tool {
                 
                 var result = ""
                 for try await partial in llm.completeStreaming(prompt: messages) {
-                    result = partial.delta ?? partial.content ?? result
+                    result = partial.content
                 }
                 
                 return call.response(text: result)

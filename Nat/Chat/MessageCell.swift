@@ -76,11 +76,10 @@ private struct AssistantMessageView: View {
                         expanded = false
                     }
                 } else {
-                    Text(text.prefix(600) + "…")
+                    Text(text.prefix(1200) + "…")
                     Label("Show all", systemImage: "scissors")
                         .foregroundStyle(.blue)
                         .onTapGesture {  expanded = true }
-                    Text("…" + text.suffix(600))
                 }
             } else {
                 Text(text)
