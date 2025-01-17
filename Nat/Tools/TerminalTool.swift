@@ -7,8 +7,9 @@ struct TerminalTool: Tool {
     }
     
     let fn = TypedFunction<Args>(name: "terminal", description: """
-        Execute a terminal command and return its output. Only use this for commands that will complete quickly (within 10 minutes) like running tests, interacting with git, etc. 
-        NEVER use this for long-running or indefinite programs like servers, processes, interactive programs.
+        Execute a terminal command and return its output. 
+        Only use this for commands that will complete quickly (within 10 minutes) like running tests, interacting with git, etc. 
+        NEVER use for long-running or indefinite programs like servers, processes, interactive programs.
         Always add -y or --yes flags when available to avoid prompts. Use quiet/minimal output flags when available (e.g. --quiet for build commands).
         """, type: Args.self)
     

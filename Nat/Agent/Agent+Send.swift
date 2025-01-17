@@ -65,6 +65,8 @@ extension AgentThreadStore {
                 if sysMsg.content.count > 0 {
                     llmMessages.insert(sysMsg, at: 0)
                 }
+                // If we're at the last step of the run, and there's a finish function, ONLY allow the finish function
+                let allowedFns = i > 0 && i + 1 == maxIterations && finishFunction != nil ? [finishFunction!] : allFunctions
                 for try await partial in llm.completeStreaming(prompt: llmMessages, functions: allFunctions) {
                     step.appendOrUpdatePartialResponse(partial)
                     await saveStep()
