@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5F1FC3312D3AF53500C8C87C /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 5F1FC3302D3AF53500C8C87C /* SwiftTerm */; };
 		5F34CEF02D2B3F5900DFD051 /* ChatToys in Frameworks */ = {isa = PBXBuildFile; productRef = 5F34CEEF2D2B3F5900DFD051 /* ChatToys */; };
 /* End PBXBuildFile section */
 
@@ -40,6 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5F1FC3312D3AF53500C8C87C /* SwiftTerm in Frameworks */,
 				5F34CEF02D2B3F5900DFD051 /* ChatToys in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -85,6 +87,7 @@
 			name = Nat;
 			packageProductDependencies = (
 				5F34CEEF2D2B3F5900DFD051 /* ChatToys */,
+				5F1FC3302D3AF53500C8C87C /* SwiftTerm */,
 			);
 			productName = Nat;
 			productReference = 5F34CED82D2B3F2500DFD051 /* Nat.app */;
@@ -116,6 +119,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				5F34CEEE2D2B3F5900DFD051 /* XCLocalSwiftPackageReference "../chattoys" */,
+				5F1FC32F2D3AF53500C8C87C /* XCRemoteSwiftPackageReference "SwiftTerm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5F34CED92D2B3F2500DFD051 /* Products */;
@@ -381,7 +385,23 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		5F1FC32F2D3AF53500C8C87C /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.5;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		5F1FC3302D3AF53500C8C87C /* SwiftTerm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5F1FC32F2D3AF53500C8C87C /* XCRemoteSwiftPackageReference "SwiftTerm" */;
+			productName = SwiftTerm;
+		};
 		5F34CEEF2D2B3F5900DFD051 /* ChatToys */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ChatToys;

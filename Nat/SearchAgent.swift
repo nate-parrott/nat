@@ -42,6 +42,7 @@ func codeSearch(prompt: String, folderURL: URL, emitLog: ((UserVisibleLog) -> Vo
     guard let finish = try await agent.send(
         message: LLMMessage(role: .user, content: prompt),
         llm: LLMs.quickModel(),
+        document: nil,
         tools: [FileReaderTool()],
         systemPrompt: systemPrompt,
         agentName: "🔎 CodeSearch",

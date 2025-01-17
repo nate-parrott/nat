@@ -7,6 +7,7 @@ struct ToolContext {
     var activeDirectory: URL?
     var log: (UserVisibleLog) -> Void
     var confirmTerminalCommands = true
+    var document: Document?
 }
 
 protocol Tool {

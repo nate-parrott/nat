@@ -5,6 +5,7 @@ extension AgentThreadStore {
     @discardableResult func send(
         message: LLMMessage,
         llm: any FunctionCallingLLM,
+        document: Document?,
         tools: [Tool],
         systemPrompt: String = Prompts.mainAgentPrompt,
         agentName: String = "Agent",
@@ -33,7 +34,7 @@ extension AgentThreadStore {
         }
         
         var collectedLogs = [UserVisibleLog]()
-        let toolCtx = ToolContext(activeDirectory: folderURL, log: { collectedLogs.append($0) })
+        let toolCtx = ToolContext(activeDirectory: folderURL, log: { collectedLogs.append($0) }, document: document)
 
         assert(systemPrompt.contains("[[CONTEXT]]"), "[\(agentName)] system prompt must have a [[CONTEXT]] token.")
         let initialCtx = try await tools.asyncThrowingMap { tool in
@@ -91,7 +92,7 @@ extension AgentThreadStore {
                         Task {
                             await saveStep()
                         }
-                    })
+                    }, document: document)
                     var fnResponses = try await self.handleFunctionCalls(
                         step.pendingFunctionCallsToExecute,
                         tools: tools,

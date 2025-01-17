@@ -10,6 +10,7 @@ import Cocoa
 struct DocumentState: Equatable, Codable {
     var thread: ThreadModel = .init()
     var folder: URL?
+    var terminalVisible = false
 }
 
 class Document: NSDocument {
@@ -40,6 +41,16 @@ class Document: NSDocument {
         try store.loadFromData(data)
     }
 
+    var terminal: ScriptableTerminalView?
 
+    @MainActor
+    func getOrCreateTerminal() -> ScriptableTerminalView {
+        if let terminal {
+            return terminal
+        }
+        terminal = ScriptableTerminalView(workingDir: store.model.folder ?? .homeDirectory)
+        store.model.terminalVisible = true
+        return terminal!
+    }
 }
 

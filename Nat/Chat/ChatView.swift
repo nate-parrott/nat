@@ -27,6 +27,9 @@ struct ChatView: View {
                     typingIndicator: typing,
                     headerView: AnyView(AgentSettings())
                 )
+                .overlay(alignment: .bottomTrailing) {
+                    TerminalThumbnail()
+                }
             }
             Divider()
             ChatInput(send: sendMessage(text:))
@@ -70,7 +73,7 @@ struct ChatView: View {
                 let tools: [Tool] = [
                     FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(), TerminalTool(), WebResearchTool()
                 ]
-                try await document.send(message: msg, llm: LLMs.smartAgentModel(), tools: tools, folderURL: folderURL)
+                try await document.send(message: msg, llm: LLMs.smartAgentModel(), document: document, tools: tools, folderURL: folderURL)
             } catch {
                 // Do nothing (We already handle it)
             }
