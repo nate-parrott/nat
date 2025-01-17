@@ -86,7 +86,7 @@ struct FileEditorTool: Tool {
         for (i, edit) in edits.enumerated() {
             do {
                 let edit = adjustEditIndices(edit: edit, previousEdits: edits[0..<i].asArray)
-                let confirmation = try await context.presentUI { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
+                let confirmation = try await context.presentUI(title: "Accept Edit?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
                     FileEditorReviewPanel(path: edit.url, edit: edit, finish: { result in
                         dismiss(result)
                     }).asAny

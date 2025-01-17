@@ -69,7 +69,7 @@ extension ToolContext {
 
     // Pass a block that takes a `dismiss` block and renders AnyView. The `dismiss` block lets you pass a result.
     @MainActor
-    func presentUI<Result>(@ViewBuilder _ viewBlock: @MainActor @escaping (@escaping (Result) -> Void) -> AnyView) async throws -> Result {
+    func presentUI<Result>(title: String, @ViewBuilder _ viewBlock: @MainActor @escaping (@escaping (Result) -> Void) -> AnyView) async throws -> Result {
         // HACK
         guard let baseVC = NSApplication.shared.mainWindow?.contentViewController else {
             throw ToolUIError.noWindow
@@ -84,7 +84,7 @@ extension ToolContext {
                     cont.resume(returning: $0)
                 }
                 let modal = NSHostingController(rootView: anyView)
-                modal.title = "Test hehe"
+                modal.title = title
                 modalBox.value = modal
                 modal.view.frame = CGRect(x: 0, y: 0, width: 600, height: 500)
                 baseVC.presentAsSheet(modal)
