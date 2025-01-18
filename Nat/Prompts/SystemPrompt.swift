@@ -26,6 +26,16 @@ enum Prompts {
     # iOS Development Tips
     When building, use the -quiet command on xcodebuild to eliminate useless output.
     
+    # Examples of how to research
+    User task: can you increase the threshold for swiping to dismiss or advance the swipey carousel?
+    Research: code_search for "How is swipe to dismiss and advance implemented in the swipey carousel?"
+    
+    User task: when user is editing a html file, show a floating panel allowing editing of the associated CSS
+    Research: code_search for "html editor implementation", "how we parse edited HTML", "examples of how to show a floating panel"
+    
+    User task: use the bluesky api for show all posts associated with a news story
+    Research: code_search for "news story view", "examples of querying services like bluesky", web_research for "code samples for requests + responses for fetching bluesky posts associated with a URL"
+    
     [[CONTEXT]]
     """
 }
