@@ -25,17 +25,6 @@ struct AgentSettings: View {
                     Text("Select Folder...")
                 }
             }
-//            if let folderURL {
-//                Image(systemName: "Folder")
-//                Text("\(folderURL.lastPathComponent)")
-//                Button(action: { pickingFolder = true }) {
-//                    Text("Change...")
-//                }
-//            } else {
-//                Button(action: { pickingFolder = true }) {
-//                    Text("Select Folder...")
-//                }
-//            }
         }
         .fileImporter(isPresented: $pickingFolder, allowedContentTypes: [.directory], onCompletion: { result in
             if let url = try? result.get() {

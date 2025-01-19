@@ -7,10 +7,28 @@
 
 import Cocoa
 
+enum DocumentMode: String, Equatable, Codable, CaseIterable {
+    case agent
+    case fast
+    case codeSearch
+
+    var displayName: String {
+        switch self {
+        case .agent:
+            return "Agent"
+        case .fast:
+            return "Simple"
+        case .codeSearch:
+            return "Search"
+        }
+    }
+}
+
 struct DocumentState: Equatable, Codable {
     var thread: ThreadModel = .init()
     var folder: URL?
     var terminalVisible = false
+    var mode = DocumentMode.agent
 }
 
 class Document: NSDocument {

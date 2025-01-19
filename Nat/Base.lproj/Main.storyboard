@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23094" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -693,6 +693,45 @@
                         <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
                         <rect key="contentRect" x="196" y="240" width="480" height="270"/>
                         <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
+                        <toolbar key="toolbar" implicitIdentifier="AE891D1C-8E25-4E08-9571-F9081D97B840" explicitIdentifier="Folder" autosavesConfiguration="NO" allowsUserCustomization="NO" showsBaselineSeparator="NO" displayMode="iconOnly" sizeMode="regular" id="kc9-ND-50q">
+                            <allowedToolbarItems>
+                                <toolbarItem implicitItemIdentifier="NSToolbarShowColorsItem" id="21e-Zv-zjJ"/>
+                                <toolbarItem implicitItemIdentifier="NSToolbarShowFontsItem" id="UNP-Uu-Jpg"/>
+                                <toolbarItem implicitItemIdentifier="NSToolbarPrintItem" id="NoJ-Wv-P9u"/>
+                                <toolbarItem implicitItemIdentifier="NSToolbarSpaceItem" id="Jjb-Pg-eBX"/>
+                                <toolbarItem implicitItemIdentifier="NSToolbarFlexibleSpaceItem" id="Cvm-KK-SvT"/>
+                                <toolbarItem implicitItemIdentifier="172E3048-980D-4170-98B6-B2155075085F" explicitItemIdentifier="Mode" label="Mode" paletteLabel="Mode" sizingBehavior="auto" id="mpi-D8-iH0">
+                                    <nil key="toolTip"/>
+                                    <segmentedControl key="view" verticalHuggingPriority="750" id="UaK-eI-TrG">
+                                        <rect key="frame" x="0.0" y="14" width="64" height="26"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                        <segmentedCell key="cell" borderStyle="border" alignment="left" style="texturedSquare" trackingMode="selectOne" id="GTr-Gt-zqc">
+                                            <font key="font" metaFont="system"/>
+                                            <segments>
+                                                <segment label="A"/>
+                                                <segment label="B" selected="YES" tag="1"/>
+                                                <segment label="C"/>
+                                            </segments>
+                                        </segmentedCell>
+                                    </segmentedControl>
+                                </toolbarItem>
+                                <toolbarItem implicitItemIdentifier="EE6D202B-BDAA-497F-87C0-D92A170BFD8C" explicitItemIdentifier="Folder" label="Folder" paletteLabel="Folder" title="Button" sizingBehavior="auto" id="TaW-TO-eUD">
+                                    <nil key="toolTip"/>
+                                    <button key="view" verticalHuggingPriority="750" id="7jQ-jY-ZsG">
+                                        <rect key="frame" x="0.0" y="14" width="82" height="32"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                        <buttonCell key="cell" type="push" title="Button" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="wjL-6e-bSC">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                    </button>
+                                </toolbarItem>
+                            </allowedToolbarItems>
+                            <defaultToolbarItems>
+                                <toolbarItem reference="mpi-D8-iH0"/>
+                                <toolbarItem reference="TaW-TO-eUD"/>
+                            </defaultToolbarItems>
+                        </toolbar>
                         <connections>
                             <outlet property="delegate" destination="jGA-0Y-lOj" id="98r-iN-zZc"/>
                         </connections>

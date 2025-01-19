@@ -24,8 +24,7 @@ struct ChatView: View {
                             .frame(maxWidth: 800, alignment: .leading)
     //                    TextMessageBubble(Text(message.displayText), isFromUser: message.role == .user)
                     },
-                    typingIndicator: typing,
-                    headerView: AnyView(AgentSettings())
+                    typingIndicator: typing
                 )
                 .overlay(alignment: .bottomTrailing) {
                     TerminalThumbnail()
