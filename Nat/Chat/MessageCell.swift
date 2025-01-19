@@ -23,6 +23,8 @@ struct MessageCell: View {
                 LogView(markdown: "Requested change to edit of **\(string)**", symbol: "shuffle")
             case .createdFile(let string):
                 LogView(markdown: "Created **\(string)**", symbol: "plus")
+            case .deletedFile(let string):
+                LogView(markdown: "Deleted **\(string)**", symbol: "trash")
             case .codeSearch(let string):
                 LogView(markdown: "Code search for _\(string)_", symbol: "magnifyingglass")
             case .listedFiles:
@@ -35,7 +37,6 @@ struct MessageCell: View {
                     .foregroundStyle(.purple)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-//        case .toolUse(let string):
 //            Text("\(string)")
 //                .font(.caption)
 //                .foregroundStyle(.secondary)

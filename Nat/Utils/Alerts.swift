@@ -1,9 +1,14 @@
 import AppKit
 
 enum Alerts {
+    // TODO: associate with the particular doc
+    private static var windowForAlerts: NSWindow? {
+        NSApplication.shared.mainWindow ?? NSApplication.shared.windows.last
+    }
+
     @MainActor
     static func showAppAlert(title: String, message: String) async {
-        guard let mainWin = NSApplication.shared.mainWindow else { return }
+        guard let mainWin = windowForAlerts else { return }
         // Written by Phil
         let alert = NSAlert()
         alert.alertStyle = .warning
@@ -21,7 +26,7 @@ enum Alerts {
     @MainActor
     static func showAppConfirmationDialog(title: String, message: String, yesTitle: String, noTitle: String) async -> Bool {
         // Written by Phil
-        guard let mainWin = NSApplication.shared.mainWindow else { return false }
+        guard let mainWin = windowForAlerts else { return false }
         let alert = NSAlert()
         alert.alertStyle = .informational
         alert.messageText = title
@@ -46,7 +51,7 @@ enum Alerts {
         submitTitle: String,
         cancelTitle: String
     ) async -> String? {
-        guard let mainWin = NSApplication.shared.mainWindow else { return nil }
+        guard let mainWin = windowForAlerts else { return nil }
 
         let alert = NSAlert()
         alert.alertStyle = .informational

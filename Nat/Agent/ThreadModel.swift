@@ -38,6 +38,7 @@ enum UserVisibleLog: Equatable, Codable {
     case requestedChanges(String)
 
     case createdFile(String)
+    case deletedFile(String)  // Added this case
     case codeSearch(String)
     case listedFiles
 
