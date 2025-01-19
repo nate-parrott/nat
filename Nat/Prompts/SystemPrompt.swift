@@ -24,7 +24,8 @@ enum Prompts {
     Comment code well.
     
     # iOS Development Tips
-    When building, use the -quiet command on xcodebuild to eliminate useless output.
+    When building, use xcodebuild. List schemes first, then build the relevant scheme.
+    Use the -quiet option.
     
     # Examples of how to research
     User task: can you increase the threshold for swiping to dismiss or advance the swipey carousel?
