@@ -36,7 +36,7 @@ func codeSearch(prompt: String, folderURL: URL, emitLog: ((UserVisibleLog) -> Vo
 
     print("[🔎 CodeSearch] File tree: \n\(fileTree)")
 
-    let codeSearchFinishTool = TypedFunction(name: "finish", description: "Call this to provide your answer snippets", type: CodeSearchFinishFunctionArgs.self)
+    let codeSearchFinishTool = TypedFunction(name: "finish", description: "Call this to provide your answer snippets", type: CodeSearchFinishFunctionArgs.self, strict: true)
 
     // TODO: intercept logs
     guard let finish = try await agent.send(
