@@ -102,7 +102,7 @@ extension CodeSearchFinishFunctionArgs {
                 throw SearchAgentError.noResultFromAgent
             }
             
-            let allLines = contents.components(separatedBy: .newlines)
+            let allLines = contents.lines
             let totalLines = allLines.count
             
             for rangeStr in snippet.ranges {

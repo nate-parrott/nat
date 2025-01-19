@@ -22,7 +22,8 @@ struct SearchView: View {
                         guard let folderURL = document.store.model.folder else { return }
                         Task {
                             do {
-                                let results = try await codeSearch(prompt: query, folderURL: folderURL)
+//                                let results = try await codeSearch(prompt: query, folderURL: folderURL)
+                                let results = try await grepToSnippets(pattern: query, folder: folderURL, linesAroundMatchToInclude: 4, limit: 50).map({ $0.asString }).joined(separator: "\n\n")
                                 status = .done(results)
                             } catch {
                                 status = .error("\(error)")

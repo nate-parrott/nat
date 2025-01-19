@@ -196,7 +196,7 @@ private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> Cod
             continue
         }
         
-        let addedLineCount = prevContent.components(separatedBy: .newlines).count
+        let addedLineCount = prevContent.lines.count
         let delta = addedLineCount - prevRangeLen
         let prevEnd = prevStart + prevRangeLen
 
@@ -211,19 +211,19 @@ private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> Cod
 }
 
 private func applyReplacement(existing: String, lineRangeStart: Int, len: Int, new: String) throws -> String {
-    var lines = existing.components(separatedBy: .newlines)
+    var lines = existing.lines
 
     // Ensure the range is valid
     guard lineRangeStart >= 0, lineRangeStart + len <= lines.count else {
         throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid line range \(lineRangeStart) len \(len)for file with \(lines.count) lines"])
     }
 
-    lines.replaceSubrange(lineRangeStart..<(lineRangeStart + len), with: new.components(separatedBy: .newlines))
+    lines.replaceSubrange(lineRangeStart..<(lineRangeStart + len), with: new.lines)
     return lines.joined(separator: "\n")
 }
 
 private func stringWithLineNumbers(_ string: String) -> String {
-    var lines = string.components(separatedBy: .newlines)
+    var lines = string.lines
     lines = lines.enumerated().map { "\($0.offset): \($0.element)" }
     return lines.joined(separator: "\n")
 }
@@ -281,7 +281,7 @@ enum CodeEdit {
 
     static func edits(fromString string: String, toolContext: ToolContext) throws -> [CodeEdit] {
         var edits = [CodeEdit]()
-        let lines = string.components(separatedBy: .newlines)
+        let lines = string.lines
         var currentContent = [String]()
         var currentCommand: (type: String, path: String, range: String)?
         

@@ -5,6 +5,14 @@ private struct Entry {
     var dirPath: [String] // Path items from root dir, may be []
     var leafChildNames: [String] // e.g. ["a.txt", "b.txt"]
 
+    func leafFileURLs(rootFolder: URL) -> [URL] {
+        var url = rootFolder
+        for path in dirPath {
+            url = url.appendingPathComponent(path, isDirectory: true)
+        }
+        return leafChildNames.map { url.appendingPathComponent($0, isDirectory: false) }
+    }
+
     static func formatAsString(entries: [Entry]) -> String {
         // Group entries by their first directory component (or empty for root)
         var entriesByFirstComponent: [String?: [Entry]] = [:]
@@ -63,6 +71,11 @@ private struct Entry {
         return formatLevel(entries: entries, indent: "").joined(separator: "\n")
     }
 
+    enum FileTreeError: Error {
+        case noData
+        case failedToDecode
+    }
+
     static func fromDir(url: URL) throws -> [Entry] {
         // First try git ls-files
         let process = Process()
@@ -72,17 +85,18 @@ private struct Entry {
         
         let pipe = Pipe()
         process.standardOutput = pipe
-        
+
         do {
             try process.run()
+            guard let data = try pipe.fileHandleForReading.readToEnd() else {
+                throw FileTreeError.noData
+            }
             process.waitUntilExit()
             
             // Only use git output if successful
             if process.terminationStatus == 0 {
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
                 guard let output = String(data: data, encoding: .utf8) else {
-                    throw NSError(domain: "FileTree", code: 1, 
-                                userInfo: [NSLocalizedDescriptionKey: "Failed to decode git output"])
+                    throw FileTreeError.failedToDecode
                 }
                 print("🟢 file_tree used git successfully")
 
@@ -184,6 +198,10 @@ private struct Entry {
 enum FileTree {
     static func fullTree(url: URL) -> String {
         chunksOfEntriesFromDir(url: url, entriesInChunk: 30).joined(separator: "\n")
+    }
+
+    static func allFileURLs(folder: URL) throws -> [URL] {
+        try Entry.fromDir(url: folder).flatMap({ $0.leafFileURLs(rootFolder: folder) })
     }
 
     static func chunksOfEntriesFromDir(url: URL, entriesInChunk: Int = 100) -> [String] {

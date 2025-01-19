@@ -63,7 +63,7 @@ func generateReadFileString(path: String, context: ToolContext, offset: Int = 0,
         throw FileReaderError.fileNotFound(absoluteURL.path(percentEncoded: false))
     }
     
-    let lines = contents.components(separatedBy: .newlines)
+    let lines = contents.lines
     let totalLines = lines.count
     let startLine = min(offset, totalLines)
     let endLine = min(startLine + nLines, totalLines)

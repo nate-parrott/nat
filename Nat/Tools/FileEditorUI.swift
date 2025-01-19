@@ -66,7 +66,7 @@ extension FileEdit {
     func asDiff() throws -> Diff {
         if edits.count == 0 { return .init(lines: []) }
         if edits.count == 1, case .create(path: _, content: let content) = edits[0] {
-            let newLines = content.components(separatedBy: .newlines)
+            let newLines = content.lines
             var diff = Diff(lines: [])
             for newLine in newLines {
                 diff.lines.append(.insert(newLine))
@@ -84,13 +84,13 @@ extension FileEdit {
         }
 
         var lines = [Diff.Line]()
-        var remainingSourceLines = try String(contentsOf: path, encoding: .utf8).components(separatedBy: .newlines)
+        var remainingSourceLines = try String(contentsOf: path, encoding: .utf8).lines
         while remainingSourceLines.count > 0 {
             if let editNow = editsByStartLine[lines.count] {
                 switch editNow {
                 case .create: fatalError()
                 case .replace(path: _, lineRangeStart: _, lineRangeLen: let deletionLen, content: let content):
-                    lines += content.components(separatedBy: .newlines).map({ Diff.Line.insert($0) })
+                    lines += content.lines.map({ Diff.Line.insert($0) })
                     for deletedLine in remainingSourceLines.prefix(deletionLen) {
                         lines.append(.delete(deletedLine))
                     }
@@ -110,8 +110,8 @@ extension CodeEdit {
         switch self {
         case .replace(_, let lineRangeStart, let len, let content):
             let existingContent = try String(contentsOf: filePath, encoding: .utf8)
-            let existingLines = existingContent.components(separatedBy: .newlines)
-            let newLines = content.components(separatedBy: .newlines)
+            let existingLines = existingContent.lines
+            let newLines = content.lines
 
             var diff = Diff(lines: [])
             for (i, existingLine) in existingLines.enumerated() {
@@ -128,7 +128,7 @@ extension CodeEdit {
             }
             return diff
         case .create(_, let content):
-            let newLines = content.components(separatedBy: .newlines)
+            let newLines = content.lines
             var diff = Diff(lines: [])
             for newLine in newLines {
                 diff.lines.append(.insert(newLine))
