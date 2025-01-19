@@ -53,6 +53,14 @@ private struct StepView: View {
                             Text("[No response attached]").italic()
                         }
                     }
+                    if let pfr = loopStep.psuedoFunctionResponse {
+                        Text("Message above was parsed as a psuedo-function. Response:")
+                            .italic()
+                            .foregroundStyle(.red)
+                        Text(pfr.content)
+                            .italic()
+                            .foregroundStyle(Color.blue)
+                    }
                 }
                 .padding(.leading)
                 .overlay(alignment: .leading) {

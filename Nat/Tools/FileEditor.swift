@@ -77,77 +77,111 @@ struct FileEditorTool: Tool {
     }
 
     func handlePsuedoFunction(fromPlaintext response: String, context: ToolContext) async throws -> String? {
-        let edits = try CodeEdit.edits(fromString: response, toolContext: context)
-        if edits.isEmpty {
+        let codeEdits = try CodeEdit.edits(fromString: response, toolContext: context)
+        if codeEdits.isEmpty {
             return nil
         }
+        let fileEdits = FileEdit.edits(fromCodeEdits: codeEdits)
+        let editsDesc = fileEdits.map(\.description).joined(separator: ", ")
 
         var responseStrings = [String]()
-        var prevEdits = [CodeEdit]()
-        for (i, edit) in edits.enumerated() {
-            do {
-                let edit = adjustEditIndices(edit: edit, previousEdits: prevEdits)
-                let confirmation = try await context.presentUI(title: "Accept Edit?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
-                    FileEditorReviewPanel(path: edit.url, edit: edit, finish: { result in
-                        dismiss(result)
-                    }).asAny
-                }
-                switch confirmation {
-                case .accept:
+        do {
+//            let edit = adjustEditIndices(edit: edit, previousEdits: prevEdits)
+            let confirmation = try await context.presentUI(title: "Accept Edits?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
+                FileEditorReviewPanel(edits: fileEdits, finish: { result in
+                    dismiss(result)
+                }).asAny
+            }
+            switch confirmation {
+            case .accept:
+                for edit in codeEdits { // TODO: use `fileEdits` instead
                     switch edit {
                     case .create: context.log(.createdFile((edit.url as NSURL).lastPathComponent ?? ""))
                     case .replace: context.log(.editedFile((edit.url as NSURL).lastPathComponent ?? ""))
                     }
-                    responseStrings.append(try await apply(edit: edit, context: context))
-                    prevEdits.append(edit)
-                case .reject:
-                    context.log(.rejectedEdit((edit.url as NSURL).lastPathComponent ?? ""))
-                    responseStrings.append("User rejected edit \(edit.description). Take a beat and let the user tell you more about what they wanted.")
-                    let remaining = edits[i+1..<edits.count]
-                    if remaining.count > 0 {
-                        responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply them after the user has approved the edits.")
-                    }
-                    break
-                case .requestChanged(let message):
-                    context.log(.requestedChanges((edit.url as NSURL).lastPathComponent ?? ""))
-                    responseStrings.append("User requested changes to this edit: \(edit.description). Here is what they said:\n[BEGIN USER FEEDBACK]\n\(message)\n[END USER FEEDBACK]")
-                    let remaining = edits[i+1..<edits.count]
-                    if remaining.count > 0 {
-                        responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply based on the user's feedback.")
-                    }
-                    break
                 }
-            } catch {
-                print("FAILED TO APPLY EDIT: \(edit)")
-                responseStrings.append("Edit '\(edit)' failed to apply due to error: \(error).")
-                let remaining = edits[i+1..<edits.count]
-                if remaining.count > 0 {
-                    responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply when fixed.")
-                }
+
+                responseStrings.append(try await apply(fileEdits: fileEdits, context: context))
+//                prevEdits.append(edit)
+            case .reject:
+                context.log(.rejectedEdit(editsDesc)) // TODO
+                responseStrings.append("User rejected your latest message's edits. They were rolled back Take a beat and let the user tell you more about what they wanted.")
+//                let remaining = edits[i+1..<edits.count]
+//                if remaining.count > 0 {
+//                    responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply them after the user has approved the edits.")
+//                }
+                break
+            case .requestChanged(let message):
+//                context.log(.requestedChanges((edit.url as NSURL).lastPathComponent ?? ""))
+                context.log(.requestedChanges(editsDesc))
+                responseStrings.append("User requested changes to the edits in your last message. They were rolled back. Here is what they said:\n[BEGIN USER FEEDBACK]\n\(message)\n[END USER FEEDBACK]")
+//                let remaining = edits[i+1..<edits.count]
+//                if remaining.count > 0 {
+//                    responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply based on the user's feedback.")
+//                }
                 break
             }
+        } catch {
+            print("FAILED TO APPLY EDITS: \(editsDesc)")
+            responseStrings.append("Edits '\(editsDesc)' failed to apply due to error: \(error).")
+//            let remaining = edits[i+1..<edits.count]
+//            if remaining.count > 0 {
+//                responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply when fixed.")
+//            }
+//            break
         }
         return responseStrings.joined(separator: "\n\n")
     }
 
-    private func apply(edit: CodeEdit, context: ToolContext) async throws -> String {
-        switch edit {
-        case .create(path: let path, content: let content):
-            if !FileManager.default.fileExists(atPath: edit.url.deletingLastPathComponent().path(percentEncoded: false)) {
-                try FileManager.default.createDirectory(at: edit.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+    private func apply(fileEdits: [FileEdit], context: ToolContext) async throws -> String {
+        var allWrites = [(URL, String)]()
+        var summaries = [String]()
+
+        for fileEdit in fileEdits {
+            var content: String?
+            for codeEdit in fileEdit.edits {
+                switch codeEdit {
+                case .create(path: let path, content: let newContent):
+                    content = newContent
+                case .replace(path: let path, lineRangeStart: let rangeStart, lineRangeLen: let rangeLen, content: let newContent):
+                    if content == nil {
+                        content = try String(contentsOf: path, encoding: .utf8)
+                    }
+                    content = try applyReplacement(existing: content!, lineRangeStart: rangeStart, len: rangeLen, new: newContent)
+                }
             }
-            try content.write(to: edit.url, atomically: true, encoding: .utf8)
-            return "Successfully created file at \(path)"
-        case .replace(path: let path, lineRangeStart: let start, lineRangeLen: let len, content: let content):
-            let existingContent = try String(contentsOf: path, encoding: .utf8)
-            let newContent = try applyReplacement(existing: existingContent, lineRangeStart: start, len: len, new: content)
-
-            // Write back to file
-            try newContent.write(to: path, atomically: true, encoding: .utf8)
-
-            return "Successfully modified file at \(path). New content:\n\n\(stringWithLineNumbers(newContent))"
+            if let content {
+                allWrites.append((fileEdit.path, content))
+            }
         }
+        for (path, content) in allWrites {
+            if !FileManager.default.fileExists(atPath: path.deletingLastPathComponent().path(percentEncoded: false)) {
+                try FileManager.default.createDirectory(at: path.deletingLastPathComponent(), withIntermediateDirectories: true)
+            }
+            try content.write(to: path, atomically: true, encoding: .utf8)
+            summaries.append("Updated \(path.path). New content:\n\(stringWithLineNumbers(content))\n")
+        }
+        return summaries.joined(separator: "\n\n")
     }
+
+//    private func apply(edit: CodeEdit, context: ToolContext) async throws -> String {
+//        switch edit {
+//        case .create(path: let path, content: let content):
+//            if !FileManager.default.fileExists(atPath: edit.url.deletingLastPathComponent().path(percentEncoded: false)) {
+//                try FileManager.default.createDirectory(at: edit.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+//            }
+//            try content.write(to: edit.url, atomically: true, encoding: .utf8)
+//            return "Successfully created file at \(path)"
+//        case .replace(path: let path, lineRangeStart: let start, lineRangeLen: let len, content: let content):
+//            let existingContent = try String(contentsOf: path, encoding: .utf8)
+//            let newContent = try applyReplacement(existing: existingContent, lineRangeStart: start, len: len, new: content)
+//
+//            // Write back to file
+//            try newContent.write(to: path, atomically: true, encoding: .utf8)
+//
+//            return "Successfully modified file at \(path). New content:\n\n\(stringWithLineNumbers(newContent))"
+//        }
+//    }
 }
 
 private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> CodeEdit {
@@ -192,6 +226,31 @@ private func stringWithLineNumbers(_ string: String) -> String {
     var lines = string.components(separatedBy: .newlines)
     lines = lines.enumerated().map { "\($0.offset): \($0.element)" }
     return lines.joined(separator: "\n")
+}
+
+struct FileEdit {
+    var path: URL
+    var edits: [CodeEdit] // Line numbers are already adjusted, so can be applied immediately
+
+    static func edits(fromCodeEdits codeEdits: [CodeEdit]) -> [FileEdit] {
+        let byPath = codeEdits.grouped(\.url)
+        return byPath.map { pair in
+            let (path, edits) = pair
+            var adjustedEdits = [CodeEdit]()
+            for edit in edits {
+                adjustedEdits.append(adjustEditIndices(edit: edit, previousEdits: adjustedEdits))
+            }
+            return .init(path: path, edits: adjustedEdits)
+        }
+    }
+
+    var description: String {
+        if edits.count == 0 { return "Empty edit" } // unexpected
+        if edits.count == 1 {
+            return edits[0].description
+        }
+        return "Multiple edits to \(edits[0].url.absoluteString)"
+    }
 }
 
 enum CodeEdit {

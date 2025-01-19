@@ -8,36 +8,45 @@ enum FileEditorReviewPanelResult: Equatable {
 }
 
 struct FileEditorReviewPanel: View {
-    var path: URL
-    var edit: CodeEdit
+    var edits: [FileEdit]
     var finish: (FileEditorReviewPanelResult) -> Void
 
-    @State private var diffText: Text?
+    @State private var diffs: [Diff] = [] // one for each edit
 
     var body: some View {
         // TODO: Present diff
         NavigationStack {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(edit.description)
-                    .multilineTextAlignment(.leading)
-                    .font(.headline)
-                    .lineLimit(nil)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(.thickMaterial)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(edits.enumerated()), id: \.offset) { pair in
+                        let (i, edit) = pair
+                        let diff: Diff = i < diffs.count ? diffs[i] : Diff(lines: [])
+                        
+                        Text(edit.description)
+                            .multilineTextAlignment(.leading)
+                            .font(.headline)
+                            .lineLimit(nil)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(.thickMaterial)
+                        
+                        Divider()
 
-                Divider()
-
-                ScrollView {
-                    diffText
-                    .lineLimit(nil)
-                    .font(.system(.body, design: .monospaced))
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 2) {
+                            DiffView(diff: diff)
+                                .lineLimit(nil)
+                                .font(.system(.body, design: .monospaced))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                    }
                 }
             }
             .onAppear {
-                diffText = try? edit.asDiff(filePath: path).asText(font: Font.system(size: 14, weight: .regular, design: .monospaced))
+                diffs = []
+                for edit in edits {
+                    diffs.append((try? edit.asDiff()) ?? Diff(lines: []))
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -53,10 +62,53 @@ struct FileEditorReviewPanel: View {
     }
 }
 
+extension FileEdit {
+    func asDiff() throws -> Diff {
+        if edits.count == 0 { return .init(lines: []) }
+        if edits.count == 1, case .create(path: _, content: let content) = edits[0] {
+            let newLines = content.components(separatedBy: .newlines)
+            var diff = Diff(lines: [])
+            for newLine in newLines {
+                diff.lines.append(.insert(newLine))
+            }
+            return diff
+        }
+
+        var editsByStartLine = [Int: CodeEdit]()
+        for edit in edits {
+            switch edit {
+            case .replace(_, let lineRangeStart, _, _):
+                editsByStartLine[lineRangeStart] = edit
+            case .create: () // skip, unexpected
+            }
+        }
+
+        var lines = [Diff.Line]()
+        var remainingSourceLines = try String(contentsOf: path, encoding: .utf8).components(separatedBy: .newlines)
+        while remainingSourceLines.count > 0 {
+            if let editNow = editsByStartLine[lines.count] {
+                switch editNow {
+                case .create: fatalError()
+                case .replace(path: _, lineRangeStart: _, lineRangeLen: let deletionLen, content: let content):
+                    lines += content.components(separatedBy: .newlines).map({ Diff.Line.insert($0) })
+                    for deletedLine in remainingSourceLines.prefix(deletionLen) {
+                        lines.append(.delete(deletedLine))
+                    }
+                    remainingSourceLines = remainingSourceLines.dropFirst(deletionLen).asArray
+                }
+            } else {
+                lines.append(.same(remainingSourceLines.removeFirst()))
+            }
+        }
+
+        return Diff(lines: lines)
+    }
+}
+
 extension CodeEdit {
     func asDiff(filePath: URL) throws -> Diff {
         switch self {
-        case .replace(let path, let lineRangeStart, let len, let content):
+        case .replace(_, let lineRangeStart, let len, let content):
             let existingContent = try String(contentsOf: filePath, encoding: .utf8)
             let existingLines = existingContent.components(separatedBy: .newlines)
             let newLines = content.components(separatedBy: .newlines)
@@ -75,7 +127,7 @@ extension CodeEdit {
                 }
             }
             return diff
-        case .create(let path, let content):
+        case .create(_, let content):
             let newLines = content.components(separatedBy: .newlines)
             var diff = Diff(lines: [])
             for newLine in newLines {
@@ -85,3 +137,7 @@ extension CodeEdit {
         }
     }
 }
+
+//extension FileEdit {
+//    
+//}
