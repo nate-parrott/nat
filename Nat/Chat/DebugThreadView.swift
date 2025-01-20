@@ -40,13 +40,15 @@ private struct StepView: View {
                     .font(.caption)
 
                 VStack(alignment: .leading) {
-                    Text(loopStep.initialResponse.asPlainText)
+//                    Text(loopStep.initialResponse.asPlainText)
+                    ContextItemView(items: loopStep.initialResponse.content)
+
                     ForEachUnidentifiable(items: loopStep.initialResponse.functionCalls) { call in
                         Text("\(call.name)(\(call.arguments))").font(Font.body.monospaced())
                             .foregroundStyle(Color.purple)
 
                         if let resp = loopStep.computerResponse.first(where: { $0.functionId == call.id }) {
-                            Text(resp.asLLMResponse.text)
+                            ContextItemView(items: resp.content)
                                 .italic()
                                 .foregroundStyle(Color.blue)
                         } else {
@@ -57,7 +59,8 @@ private struct StepView: View {
                         Text("Message above was parsed as a psuedo-function. Response:")
                             .italic()
                             .foregroundStyle(.red)
-                        Text(pfr.asLLMMessage().content)
+
+                        ContextItemView(items: pfr.content)
                             .italic()
                             .foregroundStyle(Color.blue)
                     }
@@ -72,11 +75,30 @@ private struct StepView: View {
                 Text("Final assistant msg:")
                     .font(.caption)
 
-                Text(final.asPlainText)
+                ContextItemView(items: final.content)
             }
         }
         .multilineTextAlignment(.leading)
         .lineLimit(nil)
         Divider()
+    }
+}
+
+private struct ContextItemView: View {
+    var items: [ContextItem]
+
+    var body: some View {
+        ForEachUnidentifiable(items: items) { item in
+            switch item {
+            case .fileSnippet(let snippet):
+                Text(snippet.asString)
+                    .padding(4)
+                    .background(RoundedRectangle(cornerRadius: 5).opacity(0.2))
+            case .text(let text):
+                Text(text)
+            case .image:
+                Text("[Image]")
+            }
+        }
     }
 }
