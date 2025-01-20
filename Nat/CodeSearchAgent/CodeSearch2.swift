@@ -6,7 +6,10 @@ func codeSearch2(queries: [String], folder: URL, context: ToolContext) async thr
     let results: [(Int, FileSnippet)] = try await chunks.concurrentMapThrowing {
         try await _codeSearch2(queries: queries, folder: folder, context: context, chunkOfFileTree: $0)
     }.flatMap({ $0 })
-    let topResults: [FileSnippet] = results.sorted(by: { $0.0 > $1.0 }).prefix(30).map({ $0.1 }).asArray
+    let topResults: [FileSnippet] = results
+        .sorted(by: { $0.0 > $1.0 })
+        .prefix(Constants.codeSearchToolMaxSnippetsToReturn).map({ $0.1 })
+        .asArray
     return topResults
 }
 
@@ -59,7 +62,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     var snippetRanges: [FileSnippetRange] = []
     for file in relevantItems.paths.prefix(Constants.codeSearchFilesToReadPerChunk) {
         let resolvedPath = try context.resolvePath(file)
-        print(resolvedPath.path)
+//        print(resolvedPath.path)
         snippetRanges.append(.init(path: resolvedPath, lineRangeStart: 0, lineRangeEnd: Constants.codeSearchLinesToRead))
         context.log(.readFile(resolvedPath.lastPathComponent))
     }
@@ -70,6 +73,20 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     if snippetRanges.count == 0 {
         return []
     }
+    // STEP 2:
+    messages.removeAll()
+    messages.append(.init(role: .system, content: """
+    Act as an expert engineer pair-programming with another engineer in an unfamiliar codebase.
+    The other programmer will write the code, but they can only read parts of the codebase that you provide to them.
+    They have passed you a question or topic, relevant to a coding task they're doing.
+    It is your job to dive into the codebase and bring them snippets of code that they'll be able to use.
+    You will be evaluated on the comprehensiveness of the snippets you provide, and the signal to noise ratio; don't make them sift through too much junk.
+    
+    You will be given a prompt that they need you to answer, and a list of file snippets.
+    Your job is to identify identify which snippets (if any) of these files seem most promising.
+    These will be provided to the engineer.
+    """))
+
     let snippets: String = FileSnippetRange.mergeOverlaps(ranges: snippetRanges)
         .compactMap({
             do {
@@ -81,7 +98,6 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
         })
         .map(\.asString)
         .joined(separator: "\n\n")
-
     messages.append(.init(role: .user, content: snippets))
     messages.append(.init(role: .user, content: """
     OK, great. There's some data you requested. Keep in mind I've only shown you the first 1000 lines of each file.
@@ -89,6 +105,8 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     Now, your job is to think back to the engineer's original question, and extract
     the most relevant parts of this file. Extract ALL parts of the file that would be necessary
     to answer the question and make a related code edit.
+    ONLY include snippets of files you have READ and can see the content above.
+    
     ONLY include useful, valuable data; it's ok to return nothing if nothing is relevant to the question.
     As a reminder, the original queries were:
     \(queriesList)
