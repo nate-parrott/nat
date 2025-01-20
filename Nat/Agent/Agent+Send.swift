@@ -58,7 +58,10 @@ extension AgentThreadStore {
                 }
             }
 
-            let llm = try LLMs.smartAgentModel()
+            var llm = try LLMs.smartAgentModel()
+            llm.reportUsage = { usage in
+                print("[💰 Usage]: \(usage.prompt_tokens) prompt, \(usage.completion_tokens) completion for model \(llm.options.model.name)")
+            }
             var i = 0
             while true {
                 // Loop and handle function calls
