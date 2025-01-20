@@ -57,6 +57,22 @@ struct TaggedLLMMessage: Equatable, Codable {
         msg.content = contentLines.joined(separator: "\n\n")
         return msg
     }
+
+    var asPlainText: String {
+        var lines = [String]()
+        // complete
+        for item in content {
+            switch item {
+            case .text(let string):
+                lines.append(string)
+            case .fileSnippet(let fileSnippet):
+                lines.append(fileSnippet.asString)
+            case .image(let image):
+                lines.append("[Image]")
+            }
+        }
+        return lines.joined(separator: "\n\n")
+    }
 }
 
 // Type representing a piece of context data in a thread

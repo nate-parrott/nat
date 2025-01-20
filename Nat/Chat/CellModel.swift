@@ -17,9 +17,9 @@ extension ThreadModel {
     var cellModels: [MessageCellModel] {
         var cells = [MessageCellModel]()
         for step in steps {
-            cells.append(MessageCellModel(id: step.id + "/initial", content: .userMessage(step.initialRequest.contentDescription)))
+            cells.append(MessageCellModel(id: step.id + "/initial", content: .userMessage(step.initialRequest.asLLMMessage().contentDescription)))
             for (i, loopItem) in step.toolUseLoop.enumerated() {
-                if let text = loopItem.initialResponse.content.nilIfEmpty {
+                if let text = loopItem.initialResponse.asPlainText.nilIfEmpty {
                     cells.append(MessageCellModel(id: step.id + "/tools/\(i)/initial", content: .assistantMessage(text.trimmingCharacters(in: .whitespacesAndNewlines))))
                 }
                 for (j, log) in loopItem.userVisibleLogs.enumerated() {
@@ -38,7 +38,7 @@ extension ThreadModel {
 }
 
 extension LLMMessage {
-    fileprivate var contentDescription: String {
+    var contentDescription: String {
         var parts = [String]()
         if let content = content.nilIfEmpty {
             parts.append(content)

@@ -30,7 +30,7 @@ private struct StepView: View {
                 .font(.caption)
 
             MessageBubble(isFromUser: true) {
-                Text(step.initialRequest.content)
+                Text(step.initialRequest.asLLMMessage().contentDescription)
                     .padding(6)
             }
 
@@ -40,7 +40,7 @@ private struct StepView: View {
                     .font(.caption)
 
                 VStack(alignment: .leading) {
-                    Text(loopStep.initialResponse.content)
+                    Text(loopStep.initialResponse.asPlainText)
                     ForEachUnidentifiable(items: loopStep.initialResponse.functionCalls) { call in
                         Text("\(call.name)(\(call.arguments))").font(Font.body.monospaced())
                             .foregroundStyle(Color.purple)
@@ -80,4 +80,3 @@ private struct StepView: View {
         Divider()
     }
 }
-

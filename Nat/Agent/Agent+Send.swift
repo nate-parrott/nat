@@ -46,7 +46,7 @@ extension AgentThreadStore {
         var finishResult: LLMMessage.FunctionCall?
         do {
             // Create a new 'step' to handle this message send and all resulting agent loops:
-            var step = ThreadModel.Step(id: UUID().uuidString, initialRequest: message, toolUseLoop: [])
+            var step = ThreadModel.Step(id: UUID().uuidString, initialRequest: TaggedLLMMessage(message: message), toolUseLoop: [])
             await modifyThreadModel { state in
                 state.appendOrUpdate(step)
                 state.isTyping = true
@@ -82,7 +82,7 @@ extension AgentThreadStore {
                 if step.pendingFunctionCallsToExecute.count > 0 {
                     // Handle edge case where we get function calls AND psuedo-functions in the same response:
                     var prependToFirstFnResponse: String? = nil
-                    if let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: step.toolUseLoop.last?.initialResponse.content ?? "", agentName: agentName, tools: tools, toolCtx: toolCtx) {
+                    if let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: step.toolUseLoop.last?.initialResponse.asPlainText ?? "", agentName: agentName, tools: tools, toolCtx: toolCtx) {
                         prependToFirstFnResponse = psuedoFnResponse
                     }
 
@@ -117,7 +117,7 @@ extension AgentThreadStore {
 
                     // This is a psuedo-fn, so it's tool use too!
                     step.toolUseLoop.append(ThreadModel.Step.ToolUseStep(
-                        initialResponse: assistantMsg,
+                        initialResponse: TaggedLLMMessage(message: assistantMsg),
                         computerResponse: [],
                         psuedoFunctionResponse: LLMMessage(role: .user, content: psuedoFnResponse),
                         userVisibleLogs: collectedLogs
@@ -229,10 +229,10 @@ extension ThreadModel.Step {
             assistantMessageForUser = nil
             if let lastToolUseStep = toolUseLoop.last, lastToolUseStep.computerResponse.isEmpty {
                 // Update existing tool use step
-                toolUseLoop[toolUseLoop.count - 1] = .init(initialResponse: response, computerResponse: [])
+                toolUseLoop[toolUseLoop.count - 1] = .init(initialResponse: TaggedLLMMessage(message: response), computerResponse: [])
             } else {
                 // Append to tool use step
-                toolUseLoop.append(.init(initialResponse: response, computerResponse: []))
+                toolUseLoop.append(.init(initialResponse: TaggedLLMMessage(message: response), computerResponse: []))
             }
         } else {
             // This is a plaintext response
