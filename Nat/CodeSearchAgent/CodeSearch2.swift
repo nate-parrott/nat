@@ -86,8 +86,8 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     Act as an expert engineer pair-programming with another engineer in an unfamiliar codebase.
     The other programmer will write the code, but they can only read parts of the codebase that you provide to them.
     They have passed you a question or topic, relevant to a coding task they're doing.
-    It is your job to dive into the codebase and bring them snippets of code that they'll be able to use.
-    You will be evaluated on the comprehensiveness of the snippets you provide, and the signal to noise ratio; don't make them sift through too much junk.
+    It is your job to dive into the codebase and bring them snippets of code that answer their question.
+    You will be evaluated on whether you return ONLY snippets that answer the user question.
     
     You will be given a prompt that they need you to answer, and a list of file snippets.
     Your job is to identify identify which snippets (if any) of these files seem most promising.
@@ -117,7 +117,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     
     Now, your job is to think back to the engineer's original question, and extract
     the most relevant parts of this file. Extract ALL parts of the file that would be necessary
-    to answer the question and make a related code edit.
+    to answer the question and make a related code edit, but ONLY if relevant to one of these queries. (Be precise!)
     ONLY include snippets of files you have READ and can see the content above.
     
     ONLY include useful, valuable data; it's ok to return nothing if nothing is relevant to the question.
@@ -132,7 +132,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
             ranges: string[],
             score: number // 0-100 how relevant is this file?
         }[] 
-        // `ranges` is an array of line ranges in format "START-END", like 0-100
+        // `ranges` is an array of line ranges in format "START-END", like 0-15
     }
     ```
     """))
