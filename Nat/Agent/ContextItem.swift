@@ -1,9 +1,80 @@
 import SwiftUI
+import ChatToys
+
+// An LLMessage where each piece of content is tagged with data about priority, etc
+struct TaggedLLMMessage: Equatable, Codable {
+    var role: LLMMessage.Role
+    var content: [ContextItem]
+    var functionCalls: [LLMMessage.FunctionCall]
+    var functionResponses: [FunctionResponse]
+
+    struct FunctionResponse: Equatable, Codable {
+        var functionId: String?
+        var functionName: String
+        var content: [ContextItem]
+
+        var asLLMResponse: LLMMessage.FunctionResponse {
+            var resp = LLMMessage.FunctionResponse(id: functionId, functionName: functionName, text: "")
+            var textItems = [String]()
+            for item in content {
+                let (str, img) = item.asStringOrImage
+                if let str {
+                    textItems.append(str)
+                }
+                if let img {
+                    // TODO: support adding images
+                    fatalError("Cannot add images as function response")
+                }
+            }
+            resp.text = textItems.joined(separator: "\n\n")
+            return resp
+        }
+    }
+
+    init(message: LLMMessage) {
+        role = message.role
+        content = [.text(message.content)] + message.images.map({ ContextItem.image($0) })
+        functionCalls = message.functionCalls
+        functionResponses = message.functionResponses.map({ resp in
+            FunctionResponse(functionId: resp.id, functionName: resp.functionName, content: [.text(resp.text)])
+        })
+    }
+
+    func asLLMMessage() -> LLMMessage {
+        var msg = LLMMessage(role: role, content: "")
+        msg.functionCalls = self.functionCalls
+        msg.functionResponses = self.functionResponses.map(\.asLLMResponse)
+        var contentLines = [String]()
+        for content in content {
+            let (str, img) = content.asStringOrImage
+            if let str {
+                contentLines.append(str)
+            }
+            if let img {
+                msg.images.append(img)
+            }
+        }
+        msg.content = contentLines.joined(separator: "\n\n")
+        return msg
+    }
+}
 
 // Type representing a piece of context data in a thread
 enum ContextItem: Equatable, Codable {
     case text(String)
     case fileSnippet(FileSnippet)
+    case image(LLMMessage.Image)
+
+    var asStringOrImage: (String?, LLMMessage.Image?) {
+        switch self {
+        case .text(let string):
+            return (string, nil)
+        case .fileSnippet(let fileSnippet):
+            return (fileSnippet.asString, nil)
+        case .image(let image):
+            return (nil, image)
+        }
+    }
 }
 
 // Type representing a snippet of a file in the context
