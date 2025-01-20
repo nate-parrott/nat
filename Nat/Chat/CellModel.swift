@@ -27,7 +27,7 @@ extension ThreadModel {
                 }
             }
             if let last = step.assistantMessageForUser {
-                cells.append(MessageCellModel(id: step.id + "/last", content: .assistantMessage(last.contentDescription)))
+                cells.append(MessageCellModel(id: step.id + "/last", content: .assistantMessage(last.asPlainText)))
             }
         }
         if let lastError {

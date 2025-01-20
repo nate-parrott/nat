@@ -114,11 +114,11 @@ extension AgentThreadStore {
                     await saveStep()
                 }
                 // If message has psuedo-functions only, handle those. In this case, we will have a final `assistantMessageForUser` set, but we want to remove it and make it into a step in the loop:
-                else if let assistantMsg = step.assistantMessageForUser, let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: assistantMsg.content, agentName: agentName, tools: tools, toolCtx: toolCtx) {
+                else if let assistantMsg = step.assistantMessageForUser, let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: assistantMsg.asPlainText, agentName: agentName, tools: tools, toolCtx: toolCtx) {
 
                     // This is a psuedo-fn, so it's tool use too!
                     step.toolUseLoop.append(ThreadModel.Step.ToolUseStep(
-                        initialResponse: TaggedLLMMessage(message: assistantMsg),
+                        initialResponse: assistantMsg,
                         computerResponse: [],
                         psuedoFunctionResponse: TaggedLLMMessage(role: .user, content: psuedoFnResponse), // LLMMessage(role: .user, content: psuedoFnResponse),
                         userVisibleLogs: collectedLogs
@@ -129,7 +129,7 @@ extension AgentThreadStore {
                 }
                 // Handle response with no tools:
                 else {
-                    print("[\(agentName)] Received final response (no function calls): \(step.assistantMessageForUser?.content ?? "[None!!!]")")
+                    print("[\(agentName)] Received final response (no function calls): \(step.assistantMessageForUser?.asPlainText ?? "[None!!!]")")
                     // expect assistantMessageForUser has been set by appendOrUpdatePartialResponse
                     break // we're done!
                 }
@@ -137,7 +137,7 @@ extension AgentThreadStore {
                 if i >= maxIterations {
                     print("[\(agentName) Ran too many iterations (\(i)) and timed out!")
                     if step.assistantMessageForUser == nil {
-                        step.assistantMessageForUser = .init(role: .assistant, content: "[Agent timed out]")
+                        step.assistantMessageForUser = TaggedLLMMessage(role: .assistant, content: [.text("[Agent timed out]")])
                     }
                 }
                 await saveStep()
@@ -237,7 +237,7 @@ extension ThreadModel.Step {
             }
         } else {
             // This is a plaintext response
-            assistantMessageForUser = response
+            assistantMessageForUser = TaggedLLMMessage(message: response)
         }
     }
 

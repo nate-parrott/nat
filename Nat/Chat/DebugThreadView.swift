@@ -72,7 +72,7 @@ private struct StepView: View {
                 Text("Final assistant msg:")
                     .font(.caption)
 
-                Text(final.content)
+                Text(final.asPlainText)
             }
         }
         .multilineTextAlignment(.leading)

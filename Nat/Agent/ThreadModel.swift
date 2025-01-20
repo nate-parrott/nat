@@ -11,7 +11,7 @@ struct ThreadModel: Equatable, Codable {
         // Every sequence begins with a user request, continues through a series of tool calls, and ends with an open-ended message from the model without tool calls
         var initialRequest: TaggedLLMMessage // Must be role=user
         var toolUseLoop: [ToolUseStep]
-        var assistantMessageForUser: LLMMessage? // Message with no function calls and role=assistant
+        var assistantMessageForUser: TaggedLLMMessage? // Message with no function calls and role=assistant
 
         struct ToolUseStep: Equatable, Codable {
             var initialResponse: TaggedLLMMessage // Will include >= 1 fn call, unless psuedo-function
@@ -67,7 +67,7 @@ extension ThreadModel.Step {
             }
         }
         if let assistantMessageForUser {
-            messages.append(assistantMessageForUser)
+            messages.append(assistantMessageForUser.asLLMMessage())
         }
         return messages
     }
