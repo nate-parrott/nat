@@ -36,8 +36,11 @@ func grepToSnippetRanges(pattern: String, folder: URL, linesAroundMatchToInclude
 }
 
 func grepToSnippets(pattern: String, folder: URL, linesAroundMatchToInclude spread: Int, limit: Int) async throws -> [FileSnippet] {
-    try await grepToSnippetRanges(pattern: pattern, folder: folder, linesAroundMatchToInclude: spread, limit: limit).map { range in
-        try! FileSnippet(path: range.path, lineStart: range.lineRangeStart, linesCount: range.lineRangeEnd - range.lineRangeStart)
+    try await grepToSnippetRanges(pattern: pattern, folder: folder, linesAroundMatchToInclude: spread, limit: limit).compactMap { range -> FileSnippet? in
+        guard let relative = range.path.asPathRelativeTo(base: folder) else {
+            return nil
+        }
+        return try! FileSnippet(path: range.path, projectRelativePath: relative, lineStart: range.lineRangeStart, linesCount: range.lineRangeEnd - range.lineRangeStart)
     }
 }
 

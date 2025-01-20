@@ -103,14 +103,16 @@ enum ContextItem: Equatable, Codable {
 // Type representing a snippet of a file in the context
 struct FileSnippet: Equatable, Codable {
     var path: URL
+    var projectRelativePath: String
     var lineStart: Int // 0-indexed
     var linesCount: Int
     var fileTotalLen: Int
     var content: String
 
-    init(path: URL, lineStart: Int, linesCount: Int) throws {
+    init(path: URL, projectRelativePath: String, lineStart: Int, linesCount: Int) throws {
         // Written by Phil
         self.path = path
+        self.projectRelativePath = projectRelativePath
         self.lineStart = lineStart
 
         var enc: String.Encoding = .utf8
@@ -132,7 +134,7 @@ struct FileSnippet: Equatable, Codable {
 
     var asString: String {
         var output = [String]()
-        output.append("%% BEGIN FILE SNIPPET [\(path.path)] Lines \(lineStart)-\(lineStart + fileTotalLen) of \(fileTotalLen) %%\n")
+        output.append("%% BEGIN FILE SNIPPET [\(projectRelativePath)] Lines \(lineStart)-\(lineStart + fileTotalLen) of \(fileTotalLen) %%\n")
 
         let lines = content.lines
 

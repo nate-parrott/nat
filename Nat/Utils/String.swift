@@ -30,3 +30,21 @@ extension String {
     }
 }
 
+
+extension URL {
+    // If self is /abc/def/ghi and base is /abc, then returns def/ghi
+    // TODO: Should we do ../ etc?
+    func asPathRelativeTo(base: URL) -> String? {
+        var baseStr = base.standardizedFileURL.absoluteString
+        if !baseStr.hasSuffix("/") {
+            baseStr += "/"
+        }
+        let selfStr = standardizedFileURL.absoluteString
+        if selfStr.hasPrefix(baseStr) {
+            let relativePath = selfStr.dropFirst(baseStr.count)
+            return String(relativePath)
+        } else {
+            return nil
+        }
+    }
+}

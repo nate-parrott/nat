@@ -16,6 +16,10 @@ func codeSearch2(queries: [String], folder: URL, context: ToolContext, effort: C
     return topResults
 }
 
+enum CodeSearchError: Error {
+    case notRelativeToProjectDir
+}
+
 // Returns scored snippets
 private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, chunkOfFileTree: String, effort: CodeSearchEffort) async throws -> [(Int, FileSnippet)] {
     print(chunkOfFileTree)
@@ -95,7 +99,10 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     let snippets: String = FileSnippetRange.mergeOverlaps(ranges: snippetRanges)
         .compactMap({
             do {
-                return try FileSnippet(path: $0.path, lineStart: $0.lineRangeStart, linesCount: $0.lineRangeEnd)
+                guard let relative = $0.path.asPathRelativeTo(base: folder) else {
+                    throw CodeSearchError.notRelativeToProjectDir
+                }
+                return try FileSnippet(path: $0.path, projectRelativePath: relative, lineStart: $0.lineRangeStart, linesCount: $0.lineRangeEnd)
             } catch {
                 print("[CodeSearch2] Error: \(error)")
                 return nil
@@ -149,7 +156,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
             if let (start, end) = parseRange(range) {
                 try items.append((
                     snippet.score,
-                    FileSnippet(path: path, lineStart: start, linesCount: end - start + 1)
+                    FileSnippet(path: path, projectRelativePath: snippet.path, lineStart: start, linesCount: end - start + 1)
                 ))
             }
         }
