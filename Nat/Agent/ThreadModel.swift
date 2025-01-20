@@ -32,6 +32,7 @@ struct ThreadModel: Equatable, Codable {
 // Used for events that will render cards into the feed
 enum UserVisibleLog: Equatable, Codable {
     case readFile(String)
+    case grepped(String)
 
     case editedFile(String)
     case rejectedEdit(String)

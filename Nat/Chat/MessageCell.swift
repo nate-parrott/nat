@@ -23,6 +23,8 @@ struct MessageCell: View {
                 LogView(markdown: "Requested change to edit of **\(string)**", symbol: "shuffle")
             case .createdFile(let string):
                 LogView(markdown: "Created **\(string)**", symbol: "plus")
+            case .grepped(let str):
+                LogView(markdown: "Searched for `\(str)`", symbol: "magnifyingglass")
             case .deletedFile(let string):
                 LogView(markdown: "Deleted **\(string)**", symbol: "trash")
             case .codeSearch(let string):

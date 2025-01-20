@@ -22,8 +22,10 @@ struct SearchView: View {
                         guard let folderURL = document.store.model.folder else { return }
                         Task {
                             do {
-//                                let results = try await codeSearch(prompt: query, folderURL: folderURL)
-                                let results = try await grepToSnippets(pattern: query, folder: folderURL, linesAroundMatchToInclude: 4, limit: 50).map({ $0.asString }).joined(separator: "\n\n")
+                                let ctx = ToolContext(activeDirectory: folderURL, log: {_ in () })
+//                                let results = try await codeSearch2(queries: [query], folder: folderURL, context: ctx).map(\.asString).joined(separator: "\n\n")
+                                let results = FileTree.fullTree(url: folderURL)
+//                                let results = try await grepToSnippets(pattern: query, folder: folderURL, linesAroundMatchToInclude: 4, limit: 50).map({ $0.asString }).joined(separator: "\n\n")
                                 status = .done(results)
                             } catch {
                                 status = .error("\(error)")

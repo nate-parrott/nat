@@ -37,23 +37,14 @@ private struct Entry {
             let entriesWithPath = entries.filter { !$0.dirPath.isEmpty }
             let groupedByFirst = Dictionary(grouping: entriesWithPath) { $0.dirPath[0] }
             
-            // If this is a directory with no subdirs and ≤3 files, show it on one line
-            if !fullPath.isEmpty && groupedByFirst.isEmpty && allFiles.count <= 3 {
-                let path = fullPath.joined(separator: "/")
-                if !allFiles.isEmpty {
-                    lines.append("\(indent)\(path)/ -> \(allFiles.joined(separator: ", "))")
-                }
-                return lines
-            }
-            
             // Otherwise show normal tree structure
             if !allFiles.isEmpty {
                 lines.append("\(indent)\(allFiles.joined(separator: ", "))")
             }
             
             for (dirname, subentries) in groupedByFirst.sorted(by: { $0.key < $1.key }) {
-                lines.append("\(indent)\(dirname)/")
-                
+                lines.append("\(indent)\(dirname.quotedIfHasSpace)/")
+
                 // Remove first component of dirPath for recursive call
                 let subentriesStripped = subentries.map { entry in
                     Entry(dirPath: Array(entry.dirPath.dropFirst()), 
@@ -77,7 +68,7 @@ private struct Entry {
     }
 
     static func fromDir(url: URL) throws -> [Entry] {
-        // First try git ls-files
+        // First try git ls-files --cached --others --exclude-standard
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
         process.arguments = ["ls-files", "--cached", "--others", "--exclude-standard"]
@@ -192,6 +183,15 @@ private struct Entry {
         }
         
         return entries
+    }
+}
+
+extension String {
+    var quotedIfHasSpace: String {
+        if rangeOfCharacter(from: .whitespaces) != nil {
+            return "'\(self)'"
+        }
+        return self
     }
 }
 

@@ -26,16 +26,22 @@ struct CodeSearchTool: Tool {
             guard let folderURL = context.activeDirectory else {
                 return call.response(text: "Tell the user they need to choose a folder before you can search the codebase.")
             }
-            let answers = try await args.questions.concurrentMapThrowing { prompt in
-                do {
-                    let text = try await codeSearch(prompt: prompt, folderURL: folderURL, emitLog: context.log)
-                    return "# Results for '\(prompt)'\n\(text)"
-                } catch {
-                    context.log(.toolError("Error on code_search('\(prompt)'): \(error)"))
-                    return "code_search query '\(prompt)' failed with error: \(error)"
-                }
-            }
-            return call.response(text: answers.joined(separator: "\n\n"))
+            let answers: String = try await codeSearch2(queries: args.questions, folder: folderURL, context: context)
+                .map({ $0.asString })
+                .joined(separator: "\n\n")
+
+            let instruction = "^ Code search results above. Use additional code_search calls, read_file or other tools to get more information if you need it."
+            return call.response(text: "\(answers)\n\n\(instruction)")
+//            let answers = try await args.questions.concurrentMapThrowing { prompt in
+//                do {
+//                    let text = try await codeSearch(prompt: prompt, folderURL: folderURL, emitLog: context.log)
+//                    return "# Results for '\(prompt)'\n\(text)"
+//                } catch {
+//                    context.log(.toolError("Error on code_search('\(prompt)'): \(error)"))
+//                    return "code_search query '\(prompt)' failed with error: \(error)"
+//                }
+//            }
+//            return call.response(text: answers.joined(separator: "\n\n"))
         }
         return nil
     }
