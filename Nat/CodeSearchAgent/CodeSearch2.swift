@@ -1,20 +1,23 @@
 import ChatToys
 import Foundation
 
-func codeSearch2(queries: [String], folder: URL, context: ToolContext) async throws -> [FileSnippet] {
+func codeSearch2(queries: [String], folder: URL, context: ToolContext, effort: CodeSearchEffort = .one) async throws -> [FileSnippet] {
+    if queries.isEmpty {
+        return []
+    }
     let chunks: [String] = FileTree.chunksOfEntriesFromDir(url: folder, entriesInChunk: 200)
     let results: [(Int, FileSnippet)] = try await chunks.concurrentMapThrowing {
-        try await _codeSearch2(queries: queries, folder: folder, context: context, chunkOfFileTree: $0)
+        try await _codeSearch2(queries: queries, folder: folder, context: context, chunkOfFileTree: $0, effort: effort)
     }.flatMap({ $0 })
     let topResults: [FileSnippet] = results
         .sorted(by: { $0.0 > $1.0 })
-        .prefix(Constants.codeSearchToolMaxSnippetsToReturn).map({ $0.1 })
+        .prefix(effort.maxSnippetsToReturn).map({ $0.1 })
         .asArray
     return topResults
 }
 
 // Returns scored snippets
-private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, chunkOfFileTree: String) async throws -> [(Int, FileSnippet)] {
+private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, chunkOfFileTree: String, effort: CodeSearchEffort) async throws -> [(Int, FileSnippet)] {
     print(chunkOfFileTree)
     let queriesList = queries.joined(separator: "\n- ")
     let prompt = """
@@ -60,10 +63,10 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     let llm = try LLMs.quickModel()
     let relevantItems = try await llm.completeJSONObject(prompt: messages, type: Response1.self)
     var snippetRanges: [FileSnippetRange] = []
-    for file in relevantItems.paths.prefix(Constants.codeSearchFilesToReadPerChunk) {
+    for file in relevantItems.paths.prefix(effort.filesToReadPerChunk) {
         let resolvedPath = try context.resolvePath(file)
 //        print(resolvedPath.path)
-        snippetRanges.append(.init(path: resolvedPath, lineRangeStart: 0, lineRangeEnd: Constants.codeSearchLinesToRead))
+        snippetRanges.append(.init(path: resolvedPath, lineRangeStart: 0, lineRangeEnd: effort.linesToRead))
         context.log(.readFile(resolvedPath.lastPathComponent))
     }
 //    for grep in relevantItems.greps.prefix(3) {

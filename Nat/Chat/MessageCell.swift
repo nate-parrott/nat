@@ -103,6 +103,8 @@ extension UserVisibleLog {
             return ("Running: `\(command)`", "terminal")
         case .tokenUsage(let prompt, let completion, let model):
             return ("Token usage: \(prompt) prompt + \(completion) completion (\(model))", "dollarsign.circle")
+        case .effort(let effort):
+            return (effort, "fire")
         }
     }
 }
