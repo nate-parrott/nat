@@ -70,7 +70,8 @@ struct ChatView: View {
         Task {
             do {
                 let tools: [Tool] = [
-                    FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(), TerminalTool(), WebResearchTool(), DeleteFileTool()
+                    FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(),
+                    TerminalTool(), WebResearchTool(), DeleteFileTool(), GrepTool(),
                 ]
                 try await document.send(message: msg, llm: LLMs.smartAgentModel(), document: document, tools: tools, folderURL: folderURL)
             } catch {

@@ -28,7 +28,7 @@ struct FileSnippet: Equatable, Codable {
 //        }
 
         let end = min(allLines.count, lineStart + linesCount)
-        let start = min(lineStart, max(0, linesCount - 1))
+        let start = min(lineStart, max(0, allLines.count - 1))
 
         let selectedLines = allLines[start..<end]
         self.linesCount = min(linesCount, selectedLines.count)
@@ -38,7 +38,7 @@ struct FileSnippet: Equatable, Codable {
 
     var asString: String {
         var output = [String]()
-        output.append("%% BEGIN FILE SNIPPET [\(path)] Lines \(lineStart)-\(lineStart + fileTotalLen) of \(fileTotalLen) %%\n")
+        output.append("%% BEGIN FILE SNIPPET [\(path.path)] Lines \(lineStart)-\(lineStart + fileTotalLen) of \(fileTotalLen) %%\n")
 
         let lines = content.lines
 

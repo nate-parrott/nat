@@ -41,7 +41,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     Respond using JSON, in this exact format:
     ```
     {
-        paths: [String] // The paths of the most relevant files you want to read. Can be empty if absolutely nothing seems relevant to any of the queries. Most relevant first.
+        paths: [String] // The paths of the most relevant files you want to read. Include at least 1, up to 10, relevant files, sorted most relevant first.
     }
     ```
     
@@ -85,6 +85,8 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     You will be given a prompt that they need you to answer, and a list of file snippets.
     Your job is to identify identify which snippets (if any) of these files seem most promising.
     These will be provided to the engineer.
+    
+    [BEGIN FILE SNIPPETS]
     """))
 
     let snippets: String = FileSnippetRange.mergeOverlaps(ranges: snippetRanges)
@@ -100,7 +102,8 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
         .joined(separator: "\n\n")
     messages.append(.init(role: .user, content: snippets))
     messages.append(.init(role: .user, content: """
-    OK, great. There's some data you requested. Keep in mind I've only shown you the first 1000 lines of each file.
+    [END FILE SNIPPETS]
+    Keep in mind I've only shown you the first 1000 lines of each file.
     
     Now, your job is to think back to the engineer's original question, and extract
     the most relevant parts of this file. Extract ALL parts of the file that would be necessary
@@ -108,7 +111,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     ONLY include snippets of files you have READ and can see the content above.
     
     ONLY include useful, valuable data; it's ok to return nothing if nothing is relevant to the question.
-    As a reminder, the original queries were:
+    Here's what the user is looking for:
     \(queriesList)
     
     Choose file snippets by responding in this exact JSON format:

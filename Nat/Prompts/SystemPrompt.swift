@@ -20,7 +20,7 @@ enum Prompts {
     Don't go "above and beyond" -- implement the feature the user requested robustly but stop there unless the user tells you otherwise.
     Only ask the user if you need to clarify important aspects of their instructions, or to confirm big decisions.
     For efficiency, be terse and concise in thoughts.
-    If you need to use multiple tool calls, do them concurrently in the same message if possible.
+    Speed is important so do multiple function calls concurrently whenever possible.
     Comment code well.
     
     # iOS Development Tips
