@@ -2,7 +2,7 @@ import ChatToys
 import Foundation
 
 func codeSearch2(queries: [String], folder: URL, context: ToolContext) async throws -> [FileSnippet] {
-    let chunks: [String] = FileTree.chunksOfEntriesFromDir(url: folder, entriesInChunk: 500)
+    let chunks: [String] = FileTree.chunksOfEntriesFromDir(url: folder, entriesInChunk: 200)
     let results: [(Int, FileSnippet)] = try await chunks.concurrentMapThrowing {
         try await _codeSearch2(queries: queries, folder: folder, context: context, chunkOfFileTree: $0)
     }.flatMap({ $0 })
@@ -29,7 +29,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     [BEGIN FILE TREE]
     \(chunkOfFileTree)
     [END FILE TREE]
-    
+        
     [[CONTEXT]]
     
     Next, here are ALL the individual search queries the engineer is interested in:
@@ -38,13 +38,16 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     Respond using JSON, in this exact format:
     ```
     {
-        files: [String] // The paths of the most relevant files you want to read. Can be empty if absolutely nothing seems relevant to any of the queries. Most relevant first. Be precise in your path construction, paying attention to the hierarchy.
+        paths: [String] // The paths of the most relevant files you want to read. Can be empty if absolutely nothing seems relevant to any of the queries. Most relevant first.
     }
     ```
+    
+    Pass ONLY valid paths proper paths from the file tree.
+    (Paths may contain spaces.)
     """
 
     struct Response1: Codable {
-        var files: [String]
+        var paths: [String]
     }
 
     var messages = [
@@ -54,7 +57,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     let llm = try LLMs.quickModel()
     let relevantItems = try await llm.completeJSONObject(prompt: messages, type: Response1.self)
     var snippetRanges: [FileSnippetRange] = []
-    for file in relevantItems.files.prefix(Constants.codeSearchFilesToReadPerChunk) {
+    for file in relevantItems.paths.prefix(Constants.codeSearchFilesToReadPerChunk) {
         let resolvedPath = try context.resolvePath(file)
         print(resolvedPath.path)
         snippetRanges.append(.init(path: resolvedPath, lineRangeStart: 0, lineRangeEnd: Constants.codeSearchLinesToRead))
@@ -67,8 +70,15 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     if snippetRanges.count == 0 {
         return []
     }
-    let snippets: String = try FileSnippetRange.mergeOverlaps(ranges: snippetRanges)
-        .map({ try FileSnippet(path: $0.path, lineStart: $0.lineRangeStart, linesCount: $0.lineRangeEnd) })
+    let snippets: String = FileSnippetRange.mergeOverlaps(ranges: snippetRanges)
+        .compactMap({
+            do {
+                return try FileSnippet(path: $0.path, lineStart: $0.lineRangeStart, linesCount: $0.lineRangeEnd)
+            } catch {
+                print("[CodeSearch2] Error: \(error)")
+                return nil
+            }
+        })
         .map(\.asString)
         .joined(separator: "\n\n")
 
@@ -88,10 +98,10 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     interface Response {
         snippets: { 
             path: string, 
-            lineRanges: string[],
+            ranges: string[],
             score: number // 0-100 how relevant is this file?
         }[] 
-        // `lineRanges` is an array of ranges in format "START-END", like 0-100
+        // `ranges` is an array of line ranges in format "START-END", like 0-100
     }
     ```
     """))

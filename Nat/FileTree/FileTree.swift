@@ -14,52 +14,68 @@ private struct Entry {
     }
 
     static func formatAsString(entries: [Entry]) -> String {
-        // Group entries by their first directory component (or empty for root)
-        var entriesByFirstComponent: [String?: [Entry]] = [:]
+//        // Group entries by their first directory component (or empty for root)
+//        var entriesByFirstComponent: [String?: [Entry]] = [:]
+//        for entry in entries {
+//            let key = entry.dirPath.first
+//            if var existing = entriesByFirstComponent[key] {
+//                existing.append(entry)
+//                entriesByFirstComponent[key] = existing
+//            } else {
+//                entriesByFirstComponent[key] = [entry]
+//            }
+//        }
+//        
+//        func formatLevel(entries: [Entry], indent: String, fullPath: [String] = []) -> [String] {
+//            var lines: [String] = []
+//            
+//            // First, handle files at this level
+//            let filesAtLevel = entries.filter { $0.dirPath.isEmpty }
+//            let allFiles = filesAtLevel.flatMap { $0.leafChildNames }.sorted()
+//            
+//            // Then handle subdirectories
+//            let entriesWithPath = entries.filter { !$0.dirPath.isEmpty }
+//            let groupedByFirst = Dictionary(grouping: entriesWithPath) { $0.dirPath[0] }
+//            
+//            // Otherwise show normal tree structure
+//            if !allFiles.isEmpty {
+//                lines.append("\(indent)\(allFiles.joined(separator: ", "))")
+//            }
+//            
+//            for (dirname, subentries) in groupedByFirst.sorted(by: { $0.key < $1.key }) {
+//                lines.append("\(indent)\(dirname.quotedIfHasSpace)/")
+//
+//                // Remove first component of dirPath for recursive call
+//                let subentriesStripped = subentries.map { entry in
+//                    Entry(dirPath: Array(entry.dirPath.dropFirst()), 
+//                         leafChildNames: entry.leafChildNames)
+//                }
+//                
+//                lines.append(contentsOf: formatLevel(entries: subentriesStripped, 
+//                                                   indent: indent + "    ",
+//                                                   fullPath: fullPath + [dirname]))
+//            }
+//            
+//            return lines
+//        }
+        var filesByDirPath = [String: [String]]()
         for entry in entries {
-            let key = entry.dirPath.first
-            if var existing = entriesByFirstComponent[key] {
-                existing.append(entry)
-                entriesByFirstComponent[key] = existing
-            } else {
-                entriesByFirstComponent[key] = [entry]
+            filesByDirPath[entry.dirPath.joined(separator: "/"), default: []] += entry.leafChildNames
+        }
+        var lines = [String]()
+        for dirPath in filesByDirPath.keys.sorted() {
+            let files = filesByDirPath[dirPath] ?? []
+            if files.count == 0 {
+                // no op
+            } else if files.count == 1 {
+                lines.append(dirPath + "/" + files[0])
+            } else { // >1 child
+                lines.append("\(dirPath)/")
+                lines.append(" \(files.joined(separator: "\n "))")
             }
         }
-        
-        func formatLevel(entries: [Entry], indent: String, fullPath: [String] = []) -> [String] {
-            var lines: [String] = []
-            
-            // First, handle files at this level
-            let filesAtLevel = entries.filter { $0.dirPath.isEmpty }
-            let allFiles = filesAtLevel.flatMap { $0.leafChildNames }.sorted()
-            
-            // Then handle subdirectories
-            let entriesWithPath = entries.filter { !$0.dirPath.isEmpty }
-            let groupedByFirst = Dictionary(grouping: entriesWithPath) { $0.dirPath[0] }
-            
-            // Otherwise show normal tree structure
-            if !allFiles.isEmpty {
-                lines.append("\(indent)\(allFiles.joined(separator: ", "))")
-            }
-            
-            for (dirname, subentries) in groupedByFirst.sorted(by: { $0.key < $1.key }) {
-                lines.append("\(indent)\(dirname.quotedIfHasSpace)/")
-
-                // Remove first component of dirPath for recursive call
-                let subentriesStripped = subentries.map { entry in
-                    Entry(dirPath: Array(entry.dirPath.dropFirst()), 
-                         leafChildNames: entry.leafChildNames)
-                }
-                
-                lines.append(contentsOf: formatLevel(entries: subentriesStripped, 
-                                                   indent: indent + "    ",
-                                                   fullPath: fullPath + [dirname]))
-            }
-            
-            return lines
-        }
-        
-        return formatLevel(entries: entries, indent: "").joined(separator: "\n")
+        return lines.joined(separator: "\n")
+//        return formatLevel(entries: entries, indent: "").joined(separator: "\n")
     }
 
     enum FileTreeError: Error {

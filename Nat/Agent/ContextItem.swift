@@ -28,8 +28,9 @@ struct FileSnippet: Equatable, Codable {
 //        }
 
         let end = min(allLines.count, lineStart + linesCount)
+        let start = min(lineStart, max(0, linesCount - 1))
 
-        let selectedLines = allLines[lineStart..<end]
+        let selectedLines = allLines[start..<end]
         self.linesCount = min(linesCount, selectedLines.count)
         self.content = selectedLines.joined(separator: "\n")
         self.fileTotalLen = allLines.count
