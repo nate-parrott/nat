@@ -37,6 +37,7 @@ enum UserVisibleLog: Equatable, Codable {
     case editedFile(String)
     case rejectedEdit(String)
     case requestedChanges(String)
+    case webSearch(String)
 
     case createdFile(String)
     case deletedFile(String)  // Added this case

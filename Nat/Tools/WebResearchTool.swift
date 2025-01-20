@@ -21,6 +21,8 @@ struct WebResearchTool: Tool {
     func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse? {
         if let args = fn.checkMatch(call: call) {
             do {
+                context.log(.webSearch(args.prompt))
+                
                 let llm = try ChatGPT(
                     credentials: .init(apiKey: LLMs.openrouterKey()),
                     options: .init(
