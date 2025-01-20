@@ -12,32 +12,14 @@ struct MessageCell: View {
             AssistantMessageView(text: string)
 //            TextMessageBubble(Text(string), isFromUser: false)
         case .toolLog(let log):
-            switch log {
-            case .readFile(let string):
-                LogView(markdown: "Read **\(string)**", symbol: "eyeglasses")
-            case .editedFile(let string):
-                LogView(markdown: "Edited **\(string)**", symbol: "pencil")
-            case .rejectedEdit(let string):
-                LogView(markdown: "Rejected edit of **\(string)**", symbol: "xmark")
-            case .requestedChanges(let string):
-                LogView(markdown: "Requested change to edit of **\(string)**", symbol: "shuffle")
-            case .createdFile(let string):
-                LogView(markdown: "Created **\(string)**", symbol: "plus")
-            case .grepped(let str):
-                LogView(markdown: "Searched for `\(str)`", symbol: "magnifyingglass")
-            case .deletedFile(let string):
-                LogView(markdown: "Deleted **\(string)**", symbol: "trash")
-            case .codeSearch(let string):
-                LogView(markdown: "Code search for _\(string)_", symbol: "magnifyingglass")
-            case .listedFiles:
-                LogView(markdown: "Listed files", symbol: "list.bullet")
-            case .toolError(let error):
-                LogView(markdown: error, symbol: "exclamationmark.triangle.fill")
-            case .terminal(command: let command):
-                Label(command, systemImage: "apple.terminal")
+            let (markdown, symbol) = log.asMarkdownAndSymbol
+            if case .terminal = log {
+                Label(markdown, systemImage: symbol)
                     .font(Font.body.monospaced())
                     .foregroundStyle(.purple)
                     .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                LogView(markdown: markdown, symbol: symbol)
             }
 //            Text("\(string)")
 //                .font(.caption)
@@ -91,5 +73,36 @@ private struct AssistantMessageView: View {
         .textSelection(.enabled)
         .multilineTextAlignment(.leading)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+extension UserVisibleLog {
+    var asMarkdownAndSymbol: (String, String) {
+        switch self {
+        case .readFile(let path):
+            return ("Read file: `\(path)`", "doc")
+        case .grepped(let query):
+            return ("Searched for: `\(query)`", "magnifyingglass")
+        case .editedFile(let path):
+            return ("Edited file: `\(path)`", "pencil")
+        case .rejectedEdit(let path):
+            return ("Rejected edit to: `\(path)`", "xmark")
+        case .requestedChanges(let path):
+            return ("Requested changes to: `\(path)`", "exclamationmark.triangle")
+        case .createdFile(let path):
+            return ("Created file: `\(path)`", "plus.circle")
+        case .deletedFile(let path):
+            return ("Deleted file: `\(path)`", "trash")
+        case .codeSearch(let query):
+            return ("Searched code for: `\(query)`", "magnifyingglass")
+        case .listedFiles:
+            return ("Listed files", "folder")
+        case .toolError(let error):
+            return ("Error: \(error)", "exclamationmark.triangle")
+        case .terminal(let command):
+            return ("Running: `\(command)`", "terminal")
+        case .tokenUsage(let prompt, let completion, let model):
+            return ("Token usage: \(prompt) prompt + \(completion) completion (\(model))", "dollarsign.circle")
+        }
     }
 }

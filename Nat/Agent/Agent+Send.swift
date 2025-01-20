@@ -61,6 +61,7 @@ extension AgentThreadStore {
             var llm = try LLMs.smartAgentModel()
             llm.reportUsage = { usage in
                 print("[💰 Usage]: \(usage.prompt_tokens) prompt, \(usage.completion_tokens) completion for model \(llm.options.model.name)")
+                collectedLogs.append(.tokenUsage(prompt: usage.prompt_tokens, completion: usage.completion_tokens, model: llm.options.model.name))
             }
             var i = 0
             while true {
