@@ -18,7 +18,7 @@ struct WebResearchTool: Tool {
         }
     }
     
-    func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> LLMMessage.FunctionResponse? {
+    func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse? {
         if let args = fn.checkMatch(call: call) {
             do {
                 let llm = try ChatGPT(

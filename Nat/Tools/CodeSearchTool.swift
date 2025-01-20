@@ -26,7 +26,7 @@ struct CodeSearchTool: Tool {
         }
     }
 
-    func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> LLMMessage.FunctionResponse? {
+    func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse? {
         if let args = fn.checkMatch(call: call) {
             let effort = args.parsedEffort
             // Append search terms in ui:

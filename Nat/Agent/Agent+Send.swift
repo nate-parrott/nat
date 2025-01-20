@@ -81,7 +81,7 @@ extension AgentThreadStore {
                 // If message has function calls, handle. In this case, we will have appended a new function loop step:
                 if step.pendingFunctionCallsToExecute.count > 0 {
                     // Handle edge case where we get function calls AND psuedo-functions in the same response:
-                    var prependToFirstFnResponse: String? = nil
+                    var prependToFirstFnResponse: [ContextItem]? = nil
                     if let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: step.toolUseLoop.last?.initialResponse.asPlainText ?? "", agentName: agentName, tools: tools, toolCtx: toolCtx) {
                         prependToFirstFnResponse = psuedoFnResponse
                     }
@@ -105,7 +105,8 @@ extension AgentThreadStore {
                     )
                     // attach psuedo-fn response to ONE of the real fn responses, since we can't pass the result any other way.
                     if let prependToFirstFnResponse {
-                        fnResponses[0].text += "\n\n\(prependToFirstFnResponse)"
+                        fnResponses[0].content += prependToFirstFnResponse
+//                        fnResponses[0].text += "\n\n\(prependToFirstFnResponse)"
                     }
                     step.toolUseLoop[step.toolUseLoop.count - 1].computerResponse = fnResponses
 //                    step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs += collectedLogs
@@ -119,7 +120,7 @@ extension AgentThreadStore {
                     step.toolUseLoop.append(ThreadModel.Step.ToolUseStep(
                         initialResponse: TaggedLLMMessage(message: assistantMsg),
                         computerResponse: [],
-                        psuedoFunctionResponse: LLMMessage(role: .user, content: psuedoFnResponse),
+                        psuedoFunctionResponse: TaggedLLMMessage(role: .user, content: psuedoFnResponse), // LLMMessage(role: .user, content: psuedoFnResponse),
                         userVisibleLogs: collectedLogs
                     ))
                     collectedLogs.removeAll() // since we just added them
@@ -155,7 +156,7 @@ extension AgentThreadStore {
         return finishResult
     }
 
-    private func handlePsuedoFunction(plaintextResponse: String?, agentName: String, tools: [Tool], toolCtx: ToolContext) async throws -> String? {
+    private func handlePsuedoFunction(plaintextResponse: String?, agentName: String, tools: [Tool], toolCtx: ToolContext) async throws -> [ContextItem]? {
         guard let plaintextResponse else { return nil }
         for tool in tools {
             if let resp = try await tool.handlePsuedoFunction(fromPlaintext: plaintextResponse, context: toolCtx) {
@@ -165,18 +166,18 @@ extension AgentThreadStore {
         return nil
     }
 
-    private func handleFunctionCalls(_ calls: [LLMMessage.FunctionCall], tools: [Tool], agentName: String, toolCtx: ToolContext) async throws -> [LLMMessage.FunctionResponse] {
-        var responses = [LLMMessage.FunctionResponse]()
+    private func handleFunctionCalls(_ calls: [LLMMessage.FunctionCall], tools: [Tool], agentName: String, toolCtx: ToolContext) async throws -> [TaggedLLMMessage.FunctionResponse] {
+        var responses = [TaggedLLMMessage.FunctionResponse]()
         for call in calls {
             print("[\(agentName)] Handling function call \(call.name)\((call.argumentsJson ?? ""))")
             let resp = try await handleFunctionCall(call, tools: tools, toolCtx: toolCtx)
-            print("[Begin Response]\n\(resp.text.truncateTail(maxLen: 1000))\n[End Response]")
+            print("[Begin Response]\n\(resp.asLLMResponse.text.truncateTail(maxLen: 1000))\n[End Response]")
             responses.append(resp)
         }
         return responses
     }
 
-    private func handleFunctionCall(_ call: LLMMessage.FunctionCall, tools: [Tool], toolCtx: ToolContext) async throws -> LLMMessage.FunctionResponse {
+    private func handleFunctionCall(_ call: LLMMessage.FunctionCall, tools: [Tool], toolCtx: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse {
         for tool in tools {
             if let resp = try await tool.handleCallIfApplicable(call, context: toolCtx) {
                 return resp

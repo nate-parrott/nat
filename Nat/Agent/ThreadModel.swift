@@ -17,8 +17,8 @@ struct ThreadModel: Equatable, Codable {
             var initialResponse: TaggedLLMMessage // Will include >= 1 fn call, unless psuedo-function
 
             // These two are mutually exclusive
-            var computerResponse: [LLMMessage.FunctionResponse]
-            var psuedoFunctionResponse: LLMMessage?
+            var computerResponse: [TaggedLLMMessage.FunctionResponse]
+            var psuedoFunctionResponse: TaggedLLMMessage?
 
             var userVisibleLogs = [UserVisibleLog]()
 
@@ -61,9 +61,9 @@ extension ThreadModel.Step {
         var messages: [LLMMessage] = [initialRequest.asLLMMessage()]
         for step in toolUseLoop {
             messages.append(step.initialResponse.asLLMMessage())
-            messages.append(LLMMessage(functionResponses: step.computerResponse))
+            messages.append(LLMMessage(functionResponses: step.computerResponse.map(\.asLLMResponse)))
             if let psuedoFunctionResponse = step.psuedoFunctionResponse {
-                messages.append(psuedoFunctionResponse)
+                messages.append(psuedoFunctionResponse.asLLMMessage())
             }
         }
         if let assistantMessageForUser {

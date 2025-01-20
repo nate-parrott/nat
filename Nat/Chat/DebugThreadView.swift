@@ -45,8 +45,8 @@ private struct StepView: View {
                         Text("\(call.name)(\(call.arguments))").font(Font.body.monospaced())
                             .foregroundStyle(Color.purple)
 
-                        if let resp = loopStep.computerResponse.first(where: { $0.id == call.id }) {
-                            Text(resp.text)
+                        if let resp = loopStep.computerResponse.first(where: { $0.functionId == call.id }) {
+                            Text(resp.asLLMResponse.text)
                                 .italic()
                                 .foregroundStyle(Color.blue)
                         } else {
@@ -57,7 +57,7 @@ private struct StepView: View {
                         Text("Message above was parsed as a psuedo-function. Response:")
                             .italic()
                             .foregroundStyle(.red)
-                        Text(pfr.content)
+                        Text(pfr.asLLMMessage().content)
                             .italic()
                             .foregroundStyle(Color.blue)
                     }

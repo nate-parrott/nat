@@ -40,6 +40,13 @@ struct TaggedLLMMessage: Equatable, Codable {
         })
     }
 
+    init(role: LLMMessage.Role, content: [ContextItem]) {
+        self.role = role
+        self.content = content
+        self.functionCalls = []
+        self.functionResponses = []
+    }
+
     func asLLMMessage() -> LLMMessage {
         var msg = LLMMessage(role: role, content: "")
         msg.functionCalls = self.functionCalls

@@ -19,7 +19,7 @@ struct GrepTool: Tool {
         }
     }
     
-    func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> LLMMessage.FunctionResponse? {
+    func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse? {
         guard let args = fn.checkMatch(call: call) else { return nil }
         
         guard let folderURL = context.activeDirectory else {

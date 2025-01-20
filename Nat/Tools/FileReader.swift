@@ -20,7 +20,7 @@ struct FileReaderTool: Tool {
         }
     }
 
-    func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> LLMMessage.FunctionResponse? {
+    func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse? {
         if let args = fn.checkMatch(call: call) {
             let path = args.path
             let offset = args.line_offset ?? 0
@@ -49,8 +49,9 @@ enum FileReaderError: Error {
 }
 
 extension LLMMessage.FunctionCall {
-    func response(text: String) -> LLMMessage.FunctionResponse {
-        .init(id: id, functionName: name, text: text)
+    func response(text: String) -> TaggedLLMMessage.FunctionResponse {
+        TaggedLLMMessage.FunctionResponse(functionId: id, functionName: name, content: [.text(text)])
+//        .init(id: id, functionName: name, text: text)
     }
 }
 

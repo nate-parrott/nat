@@ -1,7 +1,7 @@
 import Foundation
 import ChatToys
 
-struct DeleteFileTool: Tool {
+struct DeleteFileTool: Tool {    
     var functions: [LLMFunction] {
         [fn.asLLMFunction]
     }
@@ -18,7 +18,7 @@ struct DeleteFileTool: Tool {
         }
     }
     
-    func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> LLMMessage.FunctionResponse? {
+    func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse? {
         guard let args = fn.checkMatch(call: call) else { return nil }
         
         let resolvedPath = try context.resolvePath(args.path)

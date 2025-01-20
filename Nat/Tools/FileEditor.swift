@@ -76,7 +76,7 @@ struct FileEditorTool: Tool {
         """
     }
 
-    func handlePsuedoFunction(fromPlaintext response: String, context: ToolContext) async throws -> String? {
+    func handlePsuedoFunction(fromPlaintext response: String, context: ToolContext) async throws -> [ContextItem]? {
         let codeEdits = try CodeEdit.edits(fromString: response, toolContext: context)
         if codeEdits.isEmpty {
             return nil
@@ -130,7 +130,8 @@ struct FileEditorTool: Tool {
 //            }
 //            break
         }
-        return responseStrings.joined(separator: "\n\n")
+        // TODO: return proper context items
+        return [ContextItem.text(responseStrings.joined(separator: "\n\n"))]
     }
 
     private func apply(fileEdits: [FileEdit], context: ToolContext) async throws -> String {
