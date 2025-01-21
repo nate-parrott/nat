@@ -51,6 +51,11 @@ struct FileEditorTool: Tool {
         # Another new line
         \(Self.codeFence)
         
+        To deleet a series of lines:
+        \(Self.codeFence)
+        > Replace /file3.swift:1-3
+        \(Self.codeFence)
+        
         To replace the entire content of a 100-line file:
         \(Self.codeFence)
         > Replace /path/file4.swift:0-99
@@ -97,29 +102,16 @@ struct FileEditorTool: Tool {
             case .reject:
                 context.log(.rejectedEdit(editsDesc)) // TODO
                 responseStrings.append("User rejected your latest message's edits. They were rolled back Take a beat and let the user tell you more about what they wanted.")
-//                let remaining = edits[i+1..<edits.count]
-//                if remaining.count > 0 {
-//                    responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply them after the user has approved the edits.")
-//                }
                 break
             case .requestChanged(let message):
 //                context.log(.requestedChanges((edit.url as NSURL).lastPathComponent ?? ""))
                 context.log(.requestedChanges(editsDesc))
                 responseStrings.append("User requested changes to the edits in your last message. They were rolled back. Here is what they said:\n[BEGIN USER FEEDBACK]\n\(message)\n[END USER FEEDBACK]")
-//                let remaining = edits[i+1..<edits.count]
-//                if remaining.count > 0 {
-//                    responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply based on the user's feedback.")
-//                }
                 break
             }
         } catch {
             print("FAILED TO APPLY EDITS: \(editsDesc)")
             responseStrings.append("Edits '\(editsDesc)' failed to apply due to error: \(error).")
-//            let remaining = edits[i+1..<edits.count]
-//            if remaining.count > 0 {
-//                responseStrings.append("There were \(remaining.count) edits remaining, which will be cancelled. You may want to re-apply when fixed.")
-//            }
-//            break
         }
         // TODO: return proper context items
         return [ContextItem.text(responseStrings.joined(separator: "\n\n"))]
@@ -135,11 +127,11 @@ struct FileEditorTool: Tool {
                 switch codeEdit {
                 case .create(path: let path, content: let newContent):
                     content = newContent
-                case .replace(path: let path, lineRangeStart: let rangeStart, lineRangeLen: let rangeLen, content: let newContent):
+                case .replace(path: let path, lineRangeStart: let rangeStart, lineRangeLen: let rangeLen, lines: let newLines):
                     if content == nil {
                         content = try String(contentsOf: path, encoding: .utf8)
                     }
-                    content = try applyReplacement(existing: content!, lineRangeStart: rangeStart, len: rangeLen, new: newContent)
+                    content = try applyReplacement(existing: content!, lineRangeStart: rangeStart, len: rangeLen, lines: newLines)
                 }
             }
             if let content {
@@ -158,18 +150,18 @@ struct FileEditorTool: Tool {
 }
 
 private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> CodeEdit {
-    guard case .replace(path: let url, lineRangeStart: var start, lineRangeLen: let len, content: let content) = edit else {
+    guard case .replace(path: let url, lineRangeStart: var start, lineRangeLen: let len, lines: let newLines) = edit else {
         return edit
     }
     // Adjust indices based on previous edits to the same file
     for previousEdit in previousEdits {
         // Only consider edits to the same file
         guard previousEdit.url == url,
-              case .replace(_, let prevEditStart, let prevEditOrigRangeLen, let prevEditContent) = previousEdit else {
+              case .replace(_, let prevEditStart, let prevEditOrigRangeLen, let prevEditLines) = previousEdit else {
             continue
         }
         
-        let addedLineCount = prevEditContent.lines.count
+        let addedLineCount = prevEditLines.count
         let delta = addedLineCount - prevEditOrigRangeLen
 //        let prevEditOrigRangeEnd = prevEditStart + prevEditOrigRangeLen
 
@@ -181,10 +173,10 @@ private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> Cod
         // If this edit overlaps or comes before the previous edit, we don't adjust
         // as those edits should be handled separately or rejected
     }
-    return .replace(path: url, lineRangeStart: start, lineRangeLen: len, content: content)
+    return .replace(path: url, lineRangeStart: start, lineRangeLen: len, lines: newLines)
 }
 
-private func applyReplacement(existing: String, lineRangeStart: Int, len: Int, new: String) throws -> String {
+private func applyReplacement(existing: String, lineRangeStart: Int, len: Int, lines newLines: [String]) throws -> String {
     var lines = existing.lines
 
     // Ensure the range is valid
@@ -192,7 +184,7 @@ private func applyReplacement(existing: String, lineRangeStart: Int, len: Int, n
         throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid line range \(lineRangeStart) len \(len)for file with \(lines.count) lines"])
     }
 
-    lines.replaceSubrange(lineRangeStart..<(lineRangeStart + len), with: new.lines)
+    lines.replaceSubrange(lineRangeStart..<(lineRangeStart + len), with: newLines)
     return lines.joined(separator: "\n")
 }
 
@@ -215,7 +207,7 @@ struct FileEdit {
             for edit in sortedEdits {
                 adjustedEdits.append(adjustEditIndices(edit: edit, previousEdits: adjustedEdits))
             }
-            return .init(path: path, edits: sortedEdits)
+            return .init(path: path, edits: adjustedEdits)
         }
     }
 
@@ -230,7 +222,7 @@ struct FileEdit {
 
 enum CodeEdit {
     // line range end is INCLUSIVE and zero-indexed.
-    case replace(path: URL, lineRangeStart: Int, lineRangeLen: Int, content: String)
+    case replace(path: URL, lineRangeStart: Int, lineRangeLen: Int, lines: [String])
     case create(path: URL, content: String)
 
     var startIndex: Int {
@@ -278,8 +270,7 @@ enum CodeEdit {
             if line == FileEditorTool.codeFence {
                 if currentCommand != nil {
                     // End of code block - process the edit
-                    if currentContent.isEmpty { continue }
-                    
+
                     let content = currentContent.joined(separator: "\n")
                     let cmd = currentCommand!
                     
@@ -296,7 +287,7 @@ enum CodeEdit {
                         guard let start = Int(rangeParts[0]) else { continue }
                         
                         if cmd.type == "Insert" {
-                            edits.append(.replace(path: resolvedPath, lineRangeStart: start, lineRangeLen: 0, content: content))
+                            edits.append(.replace(path: resolvedPath, lineRangeStart: start, lineRangeLen: 0, lines: currentContent))
                         } else {
                             let end: Int
                             if rangeParts.count > 1 {
@@ -306,7 +297,7 @@ enum CodeEdit {
                                 end = start
                             }
                             let len = end - start + 1
-                            edits.append(.replace(path: resolvedPath, lineRangeStart: start, lineRangeLen: len, content: content))
+                            edits.append(.replace(path: resolvedPath, lineRangeStart: start, lineRangeLen: len, lines: currentContent))
                         }
                     }
                     

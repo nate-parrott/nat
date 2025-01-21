@@ -89,11 +89,11 @@ extension FileEdit {
             if let editNow = editsByStartLine[lines.count] {
                 switch editNow {
                 case .create: fatalError()
-                case .replace(path: _, lineRangeStart: _, lineRangeLen: let deletionLen, content: let content):
-                    lines += content.lines.map({ Diff.Line.insert($0) })
+                case .replace(path: _, lineRangeStart: _, lineRangeLen: let deletionLen, lines: let newLines):
                     for deletedLine in remainingSourceLines.prefix(deletionLen) {
                         lines.append(.delete(deletedLine))
                     }
+                    lines += newLines.map({ Diff.Line.insert($0) })
                     remainingSourceLines = remainingSourceLines.dropFirst(deletionLen).asArray
                 }
             } else {
@@ -108,10 +108,9 @@ extension FileEdit {
 extension CodeEdit {
     func asDiff(filePath: URL) throws -> Diff {
         switch self {
-        case .replace(_, let lineRangeStart, let len, let content):
+        case .replace(_, let lineRangeStart, let len, let newLines):
             let existingContent = try String(contentsOf: filePath, encoding: .utf8)
             let existingLines = existingContent.lines
-            let newLines = content.lines
 
             var diff = Diff(lines: [])
             for (i, existingLine) in existingLines.enumerated() {
