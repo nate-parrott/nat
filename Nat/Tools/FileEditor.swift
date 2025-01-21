@@ -18,6 +18,7 @@ struct FileEditorTool: Tool {
         
         Do not use functions concurrently with code edits in the same response.
         You can use multiple code fences in a single response.
+        Do not include comments explaining what you changed IN the code, since this code will be committed.
         Make sure to properly indent so that your new file has coherent indentation.
         When refactoring more than 60% of a file, replace the whole thing; otherwise try to make targeted edits or insertions.
         
