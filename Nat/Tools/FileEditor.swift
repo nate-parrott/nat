@@ -7,7 +7,7 @@ struct FileEditorTool: Tool {
     func contextToInsertAtBeginningOfThread(context: ToolContext) async throws -> String? {
         """
         # Editing files
-        Use code fences to edit files. 
+        Use code fences to edit files.
                 
         To edit a file, open a code fence with \(Self.codeFence), then provide an editing command on the next line. Valid commands are:
         > Replace [path]:[line range start](-[line range end]?) // lines are 0-indexed, inclusive
@@ -16,16 +16,16 @@ struct FileEditorTool: Tool {
         
         After the command, use subsequent lines to provide code to be added. Then close the code fence using another \(Self.codeFence).
         
-        Do not use functions concurrently with code edits in the same response.
         You can use multiple code fences in a single response.
-        Do not include comments explaining what you changed IN the code, since this code will be committed.
-        Make sure to properly indent so that your new file has coherent indentation.
-        When refactoring more than 60% of a file, replace the whole thing; otherwise try to make targeted edits or insertions.
+        After editing, pause to allow the system to respond; do not use other tools in the same response.
+        When refactoring more than 60% of a file, replace the whole thing; otherwise try to make targeted edits to specific lines.
         
-        Your edits will be applied directly to the file, and your code may be linted or syntax-checked, so never say things like "...existing unchanged..." etc.
+        Your edits will be applied directly to the file, and your code may be linted or syntax-checked, so never say things like "...existing unchanged..." etc. Do not include comments explaining what you changed IN the code, but do include helpful comments for future readers, as an expert engineer would.
                 
-        When editing existing files, you MUST read the file first using read_file. After editing a file, I'll echo back the new version on disk post-edit.
-        When editing, make sure your edits reference the MOST RECENT copy of the file in the thread.
+        Before editing existing files, you MUST read the file first using read_file. After editing a file, I'll echo back the new version on disk post-edit.
+        When editing, make sure your edits reference the MOST RECENT copy of the file in the thread. 
+        
+        When replacing, pay close attention to the lines you are replacing. Make sure your new lines match indentation, opening/closing tags and braces, etc.
         
         Line numbers are zero-indexed and inclusive. So replacing lines 0-2 would replace the first two lines of a file.
         
