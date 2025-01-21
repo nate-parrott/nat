@@ -18,27 +18,48 @@ struct FileEditorTool: Tool {
         
         You can use multiple code fences in a single response.
         After editing, pause to allow the system to respond; do not use other tools in the same response.
-        When refactoring more than 60% of a file, replace the whole thing; otherwise try to make targeted edits to specific lines.
-        
+                
         Your edits will be applied directly to the file, and your code may be linted or syntax-checked, so never say things like "...existing unchanged..." etc. Do not include comments explaining what you changed IN the code, but do include helpful comments for future readers, as an expert engineer would.
                 
         Before editing existing files, you MUST read the file first using read_file. After editing a file, I'll echo back the new version on disk post-edit.
-        When editing, make sure your edits reference the MOST RECENT copy of the file in the thread. 
+        When editing, make sure your edits reference the MOST RECENT copy of the file in the thread. Line numbers for replacement ranges must reference the numbers in the LATEST SNIPPET of the file you saw.
+                
+        Line numbers are zero-indexed and inclusive. So replacing lines 0-1 would replace the first two lines of a file!
         
-        When replacing, pay close attention to the lines you are replacing. Make sure your new lines match indentation, opening/closing tags and braces, etc.
-        
-        Line numbers are zero-indexed and inclusive. So replacing lines 0-2 would replace the first two lines of a file.
+        # Edit sizes
+        When refactoring more than 60% of a file, replace the whole thing; otherwise try to make targeted edits to specific lines.
+        Targeted edits should replace whole code units, like functions, properties, definitions, subtrees, etc. Do not try to do weird edits across logic boundaries.
+        Make sure to match the indent of the area you are replacing.
         
         # Editing examples
         
-        This replaces lines 5-20 inclusive of file.swift:
+        Original snippet:
+        %% BEGIN FILE SNIPPET [main.html] Lines 0-9 of 30 %%
+        0 <!DOCTYPE html>
+        1 <h1>
+        2  Hello,
+        3  <em>world</em>
+        4 </h1>
+        5 <ul>
+        6   <li>Apple</li>
+        7   <li>Bannana</li>
+        8   <li>Peach</li>
+        9 </ul>
+        %% END FILE SNIPPET **
+        
+        Edits to remove italicization from the header and fix the spelling error:
         \(Self.codeFence)
-        > Replace /path/file.swift:5-20
-            new_val = input * 2
-            return new_val
+        > Replace /main.html:1-4 // Notice how we provide the line numbers for the start and end of the block we want to replace (h1)
+        <h1>
+          Hello, world
+        </h1>
+        \(Self.codeFence)
+        \(Self.codeFence)
+        > Replace /main.html:7
+          <li>Banana</li>
         \(Self.codeFence)
         
-        To replace line 0:
+        To replace line 0 in a file:
         \(Self.codeFence)
         > Replace /file2.swift:0
         def main(arg):
@@ -51,9 +72,9 @@ struct FileEditorTool: Tool {
         # Another new line
         \(Self.codeFence)
         
-        To deleet a series of lines:
+        To delete 2 lines:
         \(Self.codeFence)
-        > Replace /file3.swift:1-3
+        > Replace /file3.swift:1-2
         \(Self.codeFence)
         
         To replace the entire content of a 100-line file:
@@ -78,7 +99,9 @@ struct FileEditorTool: Tool {
         if codeEdits.isEmpty {
             return nil
         }
+        print("[FileEditorTool] HANDLING PSUEDO FN:\n\(response)")
         let fileEdits = FileEdit.edits(fromCodeEdits: codeEdits)
+        print("[FileEditorTool] parsed into file edits: \(fileEdits)")
         let editsDesc = fileEdits.map(\.description).joined(separator: ", ")
 
         var responseStrings = [String]()
@@ -188,9 +211,12 @@ private func applyReplacement(existing: String, lineRangeStart: Int, len: Int, l
     return lines.joined(separator: "\n")
 }
 
-private func stringWithLineNumbers(_ string: String) -> String {
+func stringWithLineNumbers(_ string: String, lineCharLimit: Int = 1000, indexStart: Int = 0) -> String {
     var lines = string.lines
-    lines = lines.enumerated().map { "\($0.offset): \($0.element)" }
+    let fmt = NumberFormatter()
+    fmt.locale = .init(identifier: "en_US")
+    fmt.minimumIntegerDigits = lines.count > 900 ? 4 : (lines.count > 90 ? 3 : 2)
+    lines = lines.enumerated().map { "\($0.offset + indexStart) \($0.element.truncateTailWithEllipsis(chars: lineCharLimit))" }
     return lines.joined(separator: "\n")
 }
 

@@ -84,9 +84,10 @@ extension FileEdit {
         }
 
         var lines = [Diff.Line]()
+        var linesOfOutput = 0
         var remainingSourceLines = try String(contentsOf: path, encoding: .utf8).lines
         while remainingSourceLines.count > 0 {
-            if let editNow = editsByStartLine[lines.count] {
+            if let editNow = editsByStartLine[linesOfOutput] {
                 switch editNow {
                 case .create: fatalError()
                 case .replace(path: _, lineRangeStart: _, lineRangeLen: let deletionLen, lines: let newLines):
@@ -94,10 +95,12 @@ extension FileEdit {
                         lines.append(.delete(deletedLine))
                     }
                     lines += newLines.map({ Diff.Line.insert($0) })
+                    linesOfOutput += newLines.count
                     remainingSourceLines = remainingSourceLines.dropFirst(deletionLen).asArray
                 }
             } else {
                 lines.append(.same(remainingSourceLines.removeFirst()))
+                linesOfOutput += 1
             }
         }
 

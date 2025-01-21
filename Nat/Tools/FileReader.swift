@@ -26,7 +26,7 @@ struct FileReaderTool: Tool {
             let offset = args.line_offset ?? 0
             do {
                 let output = try generateReadFileString(path: path, context: context, offset: offset)
-                return call.response(text: output)
+                return call.response(items: [.fileSnippet(output)])
             }
             catch {
                 return call.response(text: "[File Reader] Unable to read '\(args.path)': \(error)")
@@ -51,11 +51,14 @@ enum FileReaderError: Error {
 extension LLMMessage.FunctionCall {
     func response(text: String) -> TaggedLLMMessage.FunctionResponse {
         TaggedLLMMessage.FunctionResponse(functionId: id, functionName: name, content: [.text(text)])
-//        .init(id: id, functionName: name, text: text)
+    }
+
+    func response(items: [ContextItem]) -> TaggedLLMMessage.FunctionResponse {
+        TaggedLLMMessage.FunctionResponse(functionId: id, functionName: name, content: items)
     }
 }
 
-func generateReadFileString(path: String, context: ToolContext, offset: Int = 0, nLines: Int = 1000) throws -> String {
+func generateReadFileString(path: String, context: ToolContext, offset: Int = 0, nLines: Int = 1000) throws -> FileSnippet {
     context.log(.readFile((path as NSString).lastPathComponent))
 
     let absoluteURL = try context.resolvePath(path)
@@ -68,22 +71,24 @@ func generateReadFileString(path: String, context: ToolContext, offset: Int = 0,
     let totalLines = lines.count
     let startLine = min(offset, totalLines)
     let endLine = min(startLine + nLines, totalLines)
+
+    return try FileSnippet(path: absoluteURL, projectRelativePath: path, lineStart: startLine, linesCount: endLine - startLine)
+
+//    var output = [String]()
     
-    var output = [String]()
+//    // Header
+//    output.append("%% BEGIN FILE SNIPPET [\(path)] Lines \(startLine)-\(endLine - 1) of \(totalLines) %%\n")
+//    
+//    // File contents with line numbers
+//    for (index, line) in lines[startLine..<endLine].enumerated() {
+//        let lineNumber = startLine + index
+//        output.append(String(format: "%5d %@", lineNumber, line))
+//    }
+//    
+//    // Footer
+//    let remainingLines = totalLines - endLine
+//    let lastPathComponent = absoluteURL.lastPathComponent
+//    output.append("\n%% END FILE SNIPPET [\(lastPathComponent)]; there are \(remainingLines) more lines available to read %%")
     
-    // Header
-    output.append("%% BEGIN FILE SNIPPET [\(path)] Lines \(startLine)-\(endLine - 1) of \(totalLines) %%\n")
-    
-    // File contents with line numbers
-    for (index, line) in lines[startLine..<endLine].enumerated() {
-        let lineNumber = startLine + index
-        output.append(String(format: "%5d %@", lineNumber, line))
-    }
-    
-    // Footer
-    let remainingLines = totalLines - endLine
-    let lastPathComponent = absoluteURL.lastPathComponent
-    output.append("\n%% END FILE SNIPPET [\(lastPathComponent)]; there are \(remainingLines) more lines available to read %%")
-    
-    return output.joined(separator: "\n")
+//    return output.joined(separator: "\n")
 }
