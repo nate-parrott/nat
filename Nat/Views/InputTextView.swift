@@ -22,7 +22,7 @@ struct InputTextFieldOptions: Equatable {
     var placeholderColor: NSColor? = nil
 
     var effectivePlaceholderColor: NSColor {
-        return placeholderColor ?? color.withAlphaComponent(0.5)
+        return placeholderColor ?? color.withAlphaComponentSafe(0.5)
     }
 
     var attributedPlaceholder: NSAttributedString {
