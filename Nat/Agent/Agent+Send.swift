@@ -112,6 +112,7 @@ extension AgentThreadStore {
 //                    step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs += collectedLogs
                     collectedLogs.removeAll()
                     await saveStep()
+                    try Task.checkCancellation()
                 }
                 // If message has psuedo-functions only, handle those. In this case, we will have a final `assistantMessageForUser` set, but we want to remove it and make it into a step in the loop:
                 else if let assistantMsg = step.assistantMessageForUser, let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: assistantMsg.asPlainText, agentName: agentName, tools: tools, toolCtx: toolCtx) {
@@ -126,6 +127,7 @@ extension AgentThreadStore {
                     collectedLogs.removeAll() // since we just added them
                     step.assistantMessageForUser = nil // Remove final assistant msg, since we handled this as a fn call.
                     await saveStep()
+                    try Task.checkCancellation()
                 }
                 // Handle response with no tools:
                 else {
@@ -141,6 +143,7 @@ extension AgentThreadStore {
                     }
                 }
                 await saveStep()
+                try Task.checkCancellation()
             }
             await saveStep()
         } catch {

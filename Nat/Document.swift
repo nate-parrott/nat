@@ -59,6 +59,9 @@ class Document: NSDocument {
         try store.loadFromData(data)
     }
 
+    // Current agent task that can be cancelled
+    var currentAgentTask: Task<Void, Error>?
+    
     var terminal: ScriptableTerminalView?
 
     @MainActor

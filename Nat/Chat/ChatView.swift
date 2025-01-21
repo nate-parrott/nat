@@ -31,7 +31,7 @@ struct ChatView: View {
                 }
             }
             Divider()
-            ChatInput(send: sendMessage(text:))
+            ChatInput(send: sendMessage(text:), onStop: stopAgent)
 //            ChatInputView_Multimodal(
 //                placeholder: "Message",
 //                text: $text,
@@ -67,7 +67,9 @@ struct ChatView: View {
         }
         let folderURL = document.store.model.folder
 
-        Task {
+        document.currentAgentTask?.cancel() // Cancel any existing task
+        
+        document.currentAgentTask = Task {
             do {
                 let tools: [Tool] = [
                     FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(),
@@ -75,8 +77,20 @@ struct ChatView: View {
                 ]
                 try await document.send(message: msg, llm: LLMs.smartAgentModel(), document: document, tools: tools, folderURL: folderURL)
             } catch {
+                if Task.isCancelled { return }
                 // Do nothing (We already handle it)
             }
+            document.currentAgentTask = nil
+        }
+    }
+    private func stopAgent() {
+        // Cancel the current agent task
+        document.currentAgentTask?.cancel()
+        document.currentAgentTask = nil
+        
+        // Reset typing state
+        document.store.modify { state in
+            state.thread.isTyping = false
         }
     }
 }
