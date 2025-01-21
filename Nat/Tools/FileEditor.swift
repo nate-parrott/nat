@@ -106,11 +106,12 @@ struct FileEditorTool: Tool {
 
         var responseStrings = [String]()
         do {
-            let confirmation = try await context.presentUI(title: "Accept Edits?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
+            let confirmation: FileEditorReviewPanelResult = !context.confirmFileEdits ? .accept :  try await context.presentUI(title: "Accept Edits?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
                 FileEditorReviewPanel(edits: fileEdits, finish: { result in
                     dismiss(result)
                 }).asAny
             }
+            
             switch confirmation {
             case .accept:
                 for edit in codeEdits { // TODO: use `fileEdits` instead
