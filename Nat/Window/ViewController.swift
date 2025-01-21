@@ -7,22 +7,13 @@ struct ContentViewWrapper: View {
 
     var body: some View {
         if let document = document {
-//            TabView {
-//                ChatView()
-//                    .tabItem {
-//                        Text("Chat")
-//                    }
-//
-//                SearchView()
-//                    .tabItem {
-//                        Text("Search")
-//                    }
-//            }
-
             WithSnapshotMain(store: document.store, snapshot: { $0.mode }) { mode in
                 switch mode {
                 case .agent:
                     ChatView()
+                        .overlay {
+                            ChatEmptyState()
+                        }
                 case .codeSearch:
                     SearchView()
                 case .fast:
@@ -112,7 +103,12 @@ class ViewController: NSViewController {
     }
 
     @objc private func folderButtonPressed(_ sender: AnyObject?) {
-        // Written by Phil
+        document?.pickFolder()
+    }
+}
+
+extension Document {
+    func pickFolder() {
         let openPanel = NSOpenPanel()
         openPanel.canChooseFiles = false
         openPanel.canChooseDirectories = true
@@ -121,7 +117,7 @@ class ViewController: NSViewController {
         openPanel.begin { [weak self] result in
             if result == .OK, let url = openPanel.url {
                 // Update the document's folder with the selected URL
-                self?.document?.store.model.folder = url
+                self?.store.model.folder = url
             }
         }
     }
