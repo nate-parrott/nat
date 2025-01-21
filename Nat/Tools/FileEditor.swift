@@ -3,23 +3,23 @@ import Foundation
 import ChatToys
 
 struct FileEditorTool: Tool {
+    static let codeFence = "%%%"
     func contextToInsertAtBeginningOfThread(context: ToolContext) async throws -> String? {
         """
         # Editing files
         Use code fences to edit files. 
                 
-        To edit a file, open a code fence, then provide an editing command on the next line. Valid commands are:
+        To edit a file, open a code fence with \(Self.codeFence), then provide an editing command on the next line. Valid commands are:
         > Replace [path]:[line range start](-[line range end]?) // lines are 0-indexed, inclusive
         > Insert [path]:[line index] // Content will be inserted BEFORE line at this index!
         > Create [path]
         
-        After the command, use subsequent lines to provide code to be added. Then close the code fence.
+        After the command, use subsequent lines to provide code to be added. Then close the code fence using another \(Self.codeFence).
         
         Do not use functions concurrently with code edits in the same response.
         You can use multiple code fences in a single response.
         Make sure to properly indent so that your new file has coherent indentation.
         When refactoring more than 60% of a file, replace the whole thing; otherwise try to make targeted edits or insertions.
-        If you want to write code that includes lines that equal ```, you need to escape it by writing \\```. Make sure to escape!
         
         Your edits will be applied directly to the file, and your code may be linted or syntax-checked, so never say things like "...existing unchanged..." etc.
                 
@@ -31,48 +31,39 @@ struct FileEditorTool: Tool {
         # Editing examples
         
         This replaces lines 5-20 inclusive of file.swift:
-        ```
+        \(Self.codeFence)
         > Replace /path/file.swift:5-20
             new_val = input * 2
             return new_val
-        ```
+        \(Self.codeFence)
         
         To replace line 0:
-        ```
+        \(Self.codeFence)
         > Replace /file2.swift:0
         def main(arg):
-        ```
+        \(Self.codeFence)
         
         To insert at the top of a file:
-        ```
+        \(Self.codeFence)
         > Insert /file3.swift:0
         # New line
         # Another new line
-        ```
+        \(Self.codeFence)
         
         To replace the entire content of a 100-line file:
-        ```
+        \(Self.codeFence)
         > Replace /path/file4.swift:0-99
         ...new content...
-        ```
-        
-        Escaping example:
-        ```
-        > Insert /readme.md 10
-        Here is how to run the code:
-        \\```
-        npm install
-        \\```
-        ```
+        \(Self.codeFence)
         
         # Creating a new file
         
         Create a new file using similar syntax:
-        ```
+        \(Self.codeFence)
         > Create /file/hi_world.swift
         def main():
             print("hi")
-        ```
+        \(Self.codeFence)
         """
     }
 
@@ -164,25 +155,6 @@ struct FileEditorTool: Tool {
         }
         return summaries.joined(separator: "\n\n")
     }
-
-//    private func apply(edit: CodeEdit, context: ToolContext) async throws -> String {
-//        switch edit {
-//        case .create(path: let path, content: let content):
-//            if !FileManager.default.fileExists(atPath: edit.url.deletingLastPathComponent().path(percentEncoded: false)) {
-//                try FileManager.default.createDirectory(at: edit.url.deletingLastPathComponent(), withIntermediateDirectories: true)
-//            }
-//            try content.write(to: edit.url, atomically: true, encoding: .utf8)
-//            return "Successfully created file at \(path)"
-//        case .replace(path: let path, lineRangeStart: let start, lineRangeLen: let len, content: let content):
-//            let existingContent = try String(contentsOf: path, encoding: .utf8)
-//            let newContent = try applyReplacement(existing: existingContent, lineRangeStart: start, len: len, new: content)
-//
-//            // Write back to file
-//            try newContent.write(to: path, atomically: true, encoding: .utf8)
-//
-//            return "Successfully modified file at \(path). New content:\n\n\(stringWithLineNumbers(newContent))"
-//        }
-//    }
 }
 
 private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> CodeEdit {
@@ -292,7 +264,7 @@ enum CodeEdit {
         let insertPattern = try NSRegularExpression(pattern: #"^>\s*Insert\s+([^:]+):(\d+)\s*$"#)
         
         for line in lines {
-            if line.hasPrefix("```") {
+            if line == FileEditorTool.codeFence {
                 if currentCommand != nil {
                     // End of code block - process the edit
                     if currentContent.isEmpty { continue }
