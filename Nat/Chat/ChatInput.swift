@@ -8,7 +8,9 @@ struct ChatInput: View {
     @State private var text = ""
     @State private var focusDate: Date?
     @State private var textFieldSize: CGSize = .zero
-    
+    @State private var currentFileOpenInXcode: String?
+    @State private var folderName: String?
+
     private var isTyping: Bool {
         document.store.model.thread.isTyping
     }
@@ -50,16 +52,29 @@ struct ChatInput: View {
         .onAppear {
             focusDate = Date()
         }
+        .onReceive(document.store.publisher.map(\.selectedFileInEditorRelativeToFolder).removeDuplicates(), perform: { self.currentFileOpenInXcode = $0 })
+        .onReceive(document.store.publisher.map(\.folder?.lastPathComponent).removeDuplicates(), perform: { self.folderName = $0 })
     }
     
     private var textFieldOptions: InputTextFieldOptions {
-        .init(
-            placeholder: "Add a settings screen...", 
+        return .init(
+            placeholder: placeholderText,
             font: .systemFont(ofSize: 14),
             insets: .init(width: 12, height: 21)
         )
     }
-    
+
+    private var placeholderText: String {
+        if let folderName {
+            if let currentFileOpenInXcode {
+                let filename = (currentFileOpenInXcode as NSString).lastPathComponent
+                return "What can I edit in \(filename) or \(folderName)?"
+            }
+            return "What can I edit in \(folderName)?"
+        }
+        return "What can I edit for you?"
+    }
+
     private func textFieldEvent(_ event: TextFieldEvent) -> Void {
         if case .key(.enter) = event, text != "" {
             submit()

@@ -98,6 +98,19 @@ class ViewController: NSViewController {
         folderButton!.action = #selector(folderButtonPressed(_:))
     }
 
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        document?.populateBasedOnXcode()
+        // Written by Phil
+        if let window = self.view.window {
+            NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification, object: window)
+                .sink { [weak self] _ in
+                    self?.document?.populateBasedOnXcode()
+                }
+                .store(in: &subscriptions)
+        }
+    }
+
     @objc private func modeChanged(_ sender: AnyObject?) {
         document!.store.model.mode = DocumentMode.allCases[modeSegmentedControl!.indexOfSelectedItem]
     }
@@ -118,6 +131,28 @@ extension Document {
             if result == .OK, let url = openPanel.url {
                 // Update the document's folder with the selected URL
                 self?.store.model.folder = url
+            }
+        }
+    }
+
+    func populateBasedOnXcode() {
+//        if store.model.thread.steps.count > 0 || store.model.folder != nil {
+//            return
+//        }
+        Task {
+            do {
+                let (project, file) = try await Scripting.xcodeState()
+                let projDir = project?.deletingLastPathComponent().ancestorGitDir() ?? project?.deletingLastPathComponent()
+                await store.modifyAsync { state in
+                    if state.folder == nil {
+                        state.folder = projDir
+                    }
+                    if let file, let projDir, file.asPathRelativeTo(base: projDir) != nil {
+                        state.selectedFileInEditor = file
+                    }
+                }
+            } catch {
+                Swift.print("[populateBasedOnXcodeIfEmpty] Error: \(error)")
             }
         }
     }

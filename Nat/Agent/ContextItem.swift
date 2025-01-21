@@ -66,8 +66,11 @@ struct TaggedLLMMessage: Equatable, Codable {
     }
 
     var asPlainText: String {
+        asPlainText(includeSystemMessages: true)
+    }
+
+    func asPlainText(includeSystemMessages includeSys: Bool) -> String {
         var lines = [String]()
-        // complete
         for item in content {
             switch item {
             case .text(let string):
@@ -76,6 +79,10 @@ struct TaggedLLMMessage: Equatable, Codable {
                 lines.append(fileSnippet.asString)
             case .image(let image):
                 lines.append("[Image]")
+            case .systemInstruction(let str):
+                if includeSys {
+                    lines.append("<system>" + str + "</system>")
+                }
             }
         }
         return lines.joined(separator: "\n\n")
@@ -87,6 +94,7 @@ enum ContextItem: Equatable, Codable {
     case text(String)
     case fileSnippet(FileSnippet)
     case image(LLMMessage.Image)
+    case systemInstruction(String)
 
     var asStringOrImage: (String?, LLMMessage.Image?) {
         switch self {
@@ -96,6 +104,8 @@ enum ContextItem: Equatable, Codable {
             return (fileSnippet.asString, nil)
         case .image(let image):
             return (nil, image)
+        case .systemInstruction(let str):
+            return ("<system>\(str)</system>", nil)
         }
     }
 }

@@ -187,6 +187,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Nat/Info.plist;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = Please;
 				INFOPLIST_KEY_NSDesktopFolderUsageDescription = Please;
 				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = Please;
 				INFOPLIST_KEY_NSDownloadsFolderUsageDescription = Please;
@@ -219,6 +220,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Nat/Info.plist;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = Please;
 				INFOPLIST_KEY_NSDesktopFolderUsageDescription = Please;
 				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = Please;
 				INFOPLIST_KEY_NSDownloadsFolderUsageDescription = Please;

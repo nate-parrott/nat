@@ -29,6 +29,16 @@ struct DocumentState: Equatable, Codable {
     var folder: URL?
     var terminalVisible = false
     var mode = DocumentMode.agent
+    var selectedFileInEditor: URL?
+}
+
+extension DocumentState {
+    var selectedFileInEditorRelativeToFolder: String? {
+        if let selectedFileInEditor, let folder {
+            return selectedFileInEditor.asPathRelativeTo(base: folder)
+        }
+        return nil
+    }
 }
 
 class Document: NSDocument {

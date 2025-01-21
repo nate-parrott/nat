@@ -98,6 +98,8 @@ private struct ContextItemView: View {
                 Text(text)
             case .image:
                 Text("[Image]")
+            case .systemInstruction(let sys):
+                Text("<system>\(sys)</system>")
             }
         }
     }

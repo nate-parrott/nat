@@ -60,12 +60,13 @@ struct ChatView: View {
     }
 
     private func sendMessage(text: String) {
-        var msg = LLMMessage(role: .user, content: text)
+        var msg = TaggedLLMMessage(role: .user, content: [.text(text)])
         if let imageAttachment {
-            try! msg.add(image: imageAttachment, detail: .low)
+            try! msg.content.append(.image(imageAttachment.asLLMImage(detail: .high)))
             self.imageAttachment = nil
         }
         let folderURL = document.store.model.folder
+        let curFile = document.store.model.selectedFileInEditorRelativeToFolder
 
         document.currentAgentTask?.cancel() // Cancel any existing task
         
@@ -74,6 +75,7 @@ struct ChatView: View {
                 let tools: [Tool] = [
                     FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(),
                     TerminalTool(), WebResearchTool(), DeleteFileTool(), GrepTool(),
+                    CurrentFilePathTool(currentFilenameFromXcode: curFile)
                 ]
                 try await document.send(message: msg, llm: LLMs.smartAgentModel(), document: document, tools: tools, folderURL: folderURL)
             } catch {

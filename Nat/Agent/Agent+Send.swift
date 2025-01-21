@@ -3,7 +3,7 @@ import ChatToys
 
 extension AgentThreadStore {
     @discardableResult func send(
-        message: LLMMessage,
+        message: TaggedLLMMessage,
         llm: any FunctionCallingLLM,
         document: Document?,
         tools: [Tool],
@@ -46,7 +46,7 @@ extension AgentThreadStore {
         var finishResult: LLMMessage.FunctionCall?
         do {
             // Create a new 'step' to handle this message send and all resulting agent loops:
-            var step = ThreadModel.Step(id: UUID().uuidString, initialRequest: TaggedLLMMessage(message: message), toolUseLoop: [])
+            var step = ThreadModel.Step(id: UUID().uuidString, initialRequest: message, toolUseLoop: [])
             await modifyThreadModel { state in
                 state.appendOrUpdate(step)
                 state.isTyping = true

@@ -17,7 +17,7 @@ extension ThreadModel {
     var cellModels: [MessageCellModel] {
         var cells = [MessageCellModel]()
         for step in steps {
-            cells.append(MessageCellModel(id: step.id + "/initial", content: .userMessage(step.initialRequest.asLLMMessage().contentDescription)))
+            cells.append(MessageCellModel(id: step.id + "/initial", content: .userMessage(step.initialRequest.asPlainText(includeSystemMessages: false))))
             for (i, loopItem) in step.toolUseLoop.enumerated() {
                 if let text = loopItem.initialResponse.asPlainText.nilIfEmpty {
                     cells.append(MessageCellModel(id: step.id + "/tools/\(i)/initial", content: .assistantMessage(text.trimmingCharacters(in: .whitespacesAndNewlines))))
