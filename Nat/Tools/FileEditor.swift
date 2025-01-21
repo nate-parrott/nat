@@ -77,7 +77,6 @@ struct FileEditorTool: Tool {
 
         var responseStrings = [String]()
         do {
-//            let edit = adjustEditIndices(edit: edit, previousEdits: prevEdits)
             let confirmation = try await context.presentUI(title: "Accept Edits?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
                 FileEditorReviewPanel(edits: fileEdits, finish: { result in
                     dismiss(result)
@@ -157,31 +156,32 @@ struct FileEditorTool: Tool {
     }
 }
 
-private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> CodeEdit {
-    guard case .replace(path: let url, lineRangeStart: var start, lineRangeLen: let len, content: let content) = edit else {
-        return edit
-    }
-    // Adjust indices based on previous edits to the same file
-    for previousEdit in previousEdits {
-        // Only consider edits to the same file
-        guard previousEdit.url == url,
-              case .replace(_, let prevStart, let prevRangeLen, let prevContent) = previousEdit else {
-            continue
-        }
-        
-        let addedLineCount = prevContent.lines.count
-        let delta = addedLineCount - prevRangeLen
-        let prevEnd = prevStart + prevRangeLen
-
-        // If this edit starts after the previous edit, adjust both start and end
-        if start >= prevEnd {
-            start += delta
-        }
-        // If this edit overlaps or comes before the previous edit, we don't adjust
-        // as those edits should be handled separately or rejected
-    }
-    return .replace(path: url, lineRangeStart: start, lineRangeLen: len, content: content)
-}
+//private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> CodeEdit {
+//    guard case .replace(path: let url, lineRangeStart: var start, lineRangeLen: let len, content: let content) = edit else {
+//        return edit
+//    }
+//    // Adjust indices based on previous edits to the same file
+//    for previousEdit in previousEdits {
+//        // Only consider edits to the same file
+//        guard previousEdit.url == url,
+//              case .replace(_, let prevStart, let prevRangeLen, let prevContent) = previousEdit else {
+//            continue
+//        }
+//        
+//        let addedLineCount = prevContent.lines.count
+//        let delta = addedLineCount - prevRangeLen
+//        let prevEnd = prevStart + prevRangeLen
+//
+////        // If this edit starts after the previous edit, adjust both start and end
+////        if start >= prevEnd {
+////            start += delta
+////        }
+//
+//        // If this edit overlaps or comes before the previous edit, we don't adjust
+//        // as those edits should be handled separately or rejected
+//    }
+//    return .replace(path: url, lineRangeStart: start, lineRangeLen: len, content: content)
+//}
 
 private func applyReplacement(existing: String, lineRangeStart: Int, len: Int, new: String) throws -> String {
     var lines = existing.lines
@@ -209,11 +209,13 @@ struct FileEdit {
         let byPath = codeEdits.grouped(\.url)
         return byPath.map { pair in
             let (path, edits) = pair
-            var adjustedEdits = [CodeEdit]()
-            for edit in edits {
-                adjustedEdits.append(adjustEditIndices(edit: edit, previousEdits: adjustedEdits))
-            }
-            return .init(path: path, edits: adjustedEdits)
+            // Earliest edits in the file applied last
+            let sortedEdits = edits.sorted(by: { $0.startIndex < $1.startIndex }).reversed().asArray
+//            var adjustedEdits = [CodeEdit]()
+//            for edit in edits {
+//                adjustedEdits.append(adjustEditIndices(edit: edit, previousEdits: adjustedEdits))
+//            }
+            return .init(path: path, edits: sortedEdits)
         }
     }
 
@@ -230,6 +232,15 @@ enum CodeEdit {
     // line range end is INCLUSIVE and zero-indexed.
     case replace(path: URL, lineRangeStart: Int, lineRangeLen: Int, content: String)
     case create(path: URL, content: String)
+
+    var startIndex: Int {
+        switch self {
+        case .replace(_, let lineRangeStart, _, _):
+            return lineRangeStart
+        case .create:
+            return 0
+        }
+    }
 
     var description: String {
         // include name and line range
