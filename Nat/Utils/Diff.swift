@@ -9,21 +9,6 @@ struct Diff: Equatable {
     }
 
     var lines: [Line]
-
-//    func asText(font: Font) -> Text {
-//        var text = Text("")
-//        for line in lines {
-//            switch line {
-//            case .same(let string):
-//                text = text + Text(" \(string)\n").foregroundStyle(.primary)
-//            case .insert(let string):
-//                text = text + Text("+\(string)\n").foregroundStyle(.green)
-//            case .delete(let string):
-//                text = text + Text("-\(string)\n").foregroundStyle(.red)
-//            }
-//        }
-//        return text
-//    }
 }
 
 struct DiffView: View {

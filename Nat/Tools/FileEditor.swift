@@ -157,32 +157,32 @@ struct FileEditorTool: Tool {
     }
 }
 
-//private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> CodeEdit {
-//    guard case .replace(path: let url, lineRangeStart: var start, lineRangeLen: let len, content: let content) = edit else {
-//        return edit
-//    }
-//    // Adjust indices based on previous edits to the same file
-//    for previousEdit in previousEdits {
-//        // Only consider edits to the same file
-//        guard previousEdit.url == url,
-//              case .replace(_, let prevStart, let prevRangeLen, let prevContent) = previousEdit else {
-//            continue
-//        }
-//        
-//        let addedLineCount = prevContent.lines.count
-//        let delta = addedLineCount - prevRangeLen
-//        let prevEnd = prevStart + prevRangeLen
-//
-////        // If this edit starts after the previous edit, adjust both start and end
-////        if start >= prevEnd {
-////            start += delta
-////        }
-//
-//        // If this edit overlaps or comes before the previous edit, we don't adjust
-//        // as those edits should be handled separately or rejected
-//    }
-//    return .replace(path: url, lineRangeStart: start, lineRangeLen: len, content: content)
-//}
+private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> CodeEdit {
+    guard case .replace(path: let url, lineRangeStart: var start, lineRangeLen: let len, content: let content) = edit else {
+        return edit
+    }
+    // Adjust indices based on previous edits to the same file
+    for previousEdit in previousEdits {
+        // Only consider edits to the same file
+        guard previousEdit.url == url,
+              case .replace(_, let prevEditStart, let prevEditOrigRangeLen, let prevEditContent) = previousEdit else {
+            continue
+        }
+        
+        let addedLineCount = prevEditContent.lines.count
+        let delta = addedLineCount - prevEditOrigRangeLen
+//        let prevEditOrigRangeEnd = prevEditStart + prevEditOrigRangeLen
+
+//        // If this edit starts after the previous edit, adjust both start and end
+        if start >= prevEditStart {
+            start += delta
+        }
+
+        // If this edit overlaps or comes before the previous edit, we don't adjust
+        // as those edits should be handled separately or rejected
+    }
+    return .replace(path: url, lineRangeStart: start, lineRangeLen: len, content: content)
+}
 
 private func applyReplacement(existing: String, lineRangeStart: Int, len: Int, new: String) throws -> String {
     var lines = existing.lines
@@ -204,18 +204,17 @@ private func stringWithLineNumbers(_ string: String) -> String {
 
 struct FileEdit {
     var path: URL
-    var edits: [CodeEdit] // Line numbers are already adjusted, so can be applied immediately
+    var edits: [CodeEdit] // Line numbers are already adjusted, so can be applied immediately. Must be in order to be applied successfully.
 
     static func edits(fromCodeEdits codeEdits: [CodeEdit]) -> [FileEdit] {
         let byPath = codeEdits.grouped(\.url)
         return byPath.map { pair in
             let (path, edits) = pair
-            // Earliest edits in the file applied last
-            let sortedEdits = edits.sorted(by: { $0.startIndex < $1.startIndex }).reversed().asArray
-//            var adjustedEdits = [CodeEdit]()
-//            for edit in edits {
-//                adjustedEdits.append(adjustEditIndices(edit: edit, previousEdits: adjustedEdits))
-//            }
+            let sortedEdits = edits.sorted(by: { $0.startIndex < $1.startIndex }).asArray
+            var adjustedEdits = [CodeEdit]()
+            for edit in sortedEdits {
+                adjustedEdits.append(adjustEditIndices(edit: edit, previousEdits: adjustedEdits))
+            }
             return .init(path: path, edits: sortedEdits)
         }
     }
