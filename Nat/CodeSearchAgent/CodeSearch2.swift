@@ -91,6 +91,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
     
     You will be given a prompt that they need you to answer, and a list of file snippets.
     Your job is to identify identify which snippets (if any) of these files seem most promising.
+    Make sure to read ALL questions and provide snippets that answer ALL of them, IF relevant snippets exist in your input.
     These will be provided to the engineer.
     
     [BEGIN FILE SNIPPETS]
