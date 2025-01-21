@@ -104,7 +104,7 @@ extension UserVisibleLog {
         case .tokenUsage(let prompt, let completion, let model):
             return ("Token usage: \(prompt) prompt + \(completion) completion (\(model))", "dollarsign.circle")
         case .effort(let effort):
-            return (effort, "fire")
+            return (effort, "flame")
         case .webSearch(let query):
             return ("Web research: _\(query)_", "globe")
         }
