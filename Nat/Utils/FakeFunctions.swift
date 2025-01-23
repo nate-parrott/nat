@@ -16,10 +16,13 @@ enum FakeFunctions {
         }.joined(separator: "\n\n")
         
         return """
-        In this environment you have access to a set of tools to help you complete tasks. To use these tools, write function calls using XML syntax like this:
+        In this environment you have access to a set of tools to help you complete tasks. 
+        You don't need to use a tool, but you can if you want.
+        
+        To use these tools, write function calls using XML syntax like this:
         <function>tool_name({"arg1": "value1", "arg2": 42})</function>
         
-        You can make multiple function calls in a single response. After making function calls, wait for the response before proceeding.
+        You can make multiple function calls in a single response, and you can mix function calls with text responses. After making function calls, wait for the user response before proceeding.
         
         Available tools:
         \(fnDescriptions)
