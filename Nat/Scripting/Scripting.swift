@@ -16,7 +16,7 @@ enum Scripting {
     }
 
     static func runAppleScript<T>(script: String, extract: @escaping (NSAppleEventDescriptor) -> T) async throws -> T {
-        print("[Applescript] \(script)")
+//        print("[Applescript] \(script)")
         return try await withCheckedThrowingContinuation { cont in
             self.scriptQueue.async {
                 var error: NSDictionary?
