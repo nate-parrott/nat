@@ -11,7 +11,18 @@
 		5F34CEF02D2B3F5900DFD051 /* ChatToys in Frameworks */ = {isa = PBXBuildFile; productRef = 5F34CEEF2D2B3F5900DFD051 /* ChatToys */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		5F1FCB172D41E74700C8C87C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5F34CED02D2B3F2500DFD051 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5F34CED72D2B3F2500DFD051;
+			remoteInfo = Nat;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		5F1FCB132D41E74700C8C87C /* NatTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NatTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5F34CED82D2B3F2500DFD051 /* Nat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -26,6 +37,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		5F1FCB142D41E74700C8C87C /* NatTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = NatTests;
+			sourceTree = "<group>";
+		};
 		5F34CEDA2D2B3F2500DFD051 /* Nat */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -37,6 +53,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		5F1FCB102D41E74700C8C87C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5F34CED52D2B3F2500DFD051 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -53,6 +76,7 @@
 			isa = PBXGroup;
 			children = (
 				5F34CEDA2D2B3F2500DFD051 /* Nat */,
+				5F1FCB142D41E74700C8C87C /* NatTests */,
 				5F34CED92D2B3F2500DFD051 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -61,6 +85,7 @@
 			isa = PBXGroup;
 			children = (
 				5F34CED82D2B3F2500DFD051 /* Nat.app */,
+				5F1FCB132D41E74700C8C87C /* NatTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -68,6 +93,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		5F1FCB122D41E74700C8C87C /* NatTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5F1FCB192D41E74700C8C87C /* Build configuration list for PBXNativeTarget "NatTests" */;
+			buildPhases = (
+				5F1FCB0F2D41E74700C8C87C /* Sources */,
+				5F1FCB102D41E74700C8C87C /* Frameworks */,
+				5F1FCB112D41E74700C8C87C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5F1FCB182D41E74700C8C87C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				5F1FCB142D41E74700C8C87C /* NatTests */,
+			);
+			name = NatTests;
+			packageProductDependencies = (
+			);
+			productName = NatTests;
+			productReference = 5F1FCB132D41E74700C8C87C /* NatTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		5F34CED72D2B3F2500DFD051 /* Nat */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5F34CEE92D2B3F2700DFD051 /* Build configuration list for PBXNativeTarget "Nat" */;
@@ -100,9 +148,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1600;
+				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
+					5F1FCB122D41E74700C8C87C = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 5F34CED72D2B3F2500DFD051;
+					};
 					5F34CED72D2B3F2500DFD051 = {
 						CreatedOnToolsVersion = 16.0;
 					};
@@ -127,11 +179,19 @@
 			projectRoot = "";
 			targets = (
 				5F34CED72D2B3F2500DFD051 /* Nat */,
+				5F1FCB122D41E74700C8C87C /* NatTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		5F1FCB112D41E74700C8C87C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5F34CED62D2B3F2500DFD051 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -163,6 +223,13 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		5F1FCB0F2D41E74700C8C87C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5F34CED42D2B3F2500DFD051 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -172,7 +239,51 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		5F1FCB182D41E74700C8C87C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5F34CED72D2B3F2500DFD051 /* Nat */;
+			targetProxy = 5F1FCB172D41E74700C8C87C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		5F1FCB1A2D41E74700C8C87C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VPN8ZW6EAC;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nateparrott.nat.NatTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nat.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nat";
+			};
+			name = Debug;
+		};
+		5F1FCB1B2D41E74700C8C87C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VPN8ZW6EAC;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nateparrott.nat.NatTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nat.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nat";
+			};
+			name = Release;
+		};
 		5F34CEEA2D2B3F2700DFD051 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -360,6 +471,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		5F1FCB192D41E74700C8C87C /* Build configuration list for PBXNativeTarget "NatTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5F1FCB1A2D41E74700C8C87C /* Debug */,
+				5F1FCB1B2D41E74700C8C87C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		5F34CED32D2B3F2500DFD051 /* Build configuration list for PBXProject "Nat" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

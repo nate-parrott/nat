@@ -1,29 +1,6 @@
 import Foundation
 import ChatToys
 
-/*
- public struct LLMFunction: Equatable, Encodable {
-     public var name: String
-     public var description: String
-     public var parameters: JsonSchema
-     public var strict: Bool?
-
-     public init(name: String, description: String, parameters: [String: JsonSchema], required: [String]? = nil, strict: Bool? = nil) {
-         self.name = name
-         self.description = description
-         self.parameters = .object(description: nil, properties: parameters, required: required ?? Array(parameters.keys))
-         self.strict = strict
-     }
-
-     public indirect enum JsonSchema: Equatable, Encodable {
-         case string(description: String?) // Encode as type=string, description=description
-         case number(description: String?) // Encode as type=number, description=description
-         case boolean(description: String?) // Encode as type=boolean, description=description
-         case enumerated(description: String?, options: [String]) // Encode as type=string, enum=options, description=description
-         case object(description: String?, properties: [String: JsonSchema], required: [String]) // Encode as type=object, properties=properties, required=required
-         case array(description: String?, itemType: JsonSchema) // Encode as type=array, items=itemType
- */
-
 // FakeFunctions let us use an XML syntax to approximate function calling.
 // When it's on, we create a system prompt that explains what function calling is -- how to use the xml syntax, and to finish your message and wait for a response.
 // Function call syntax looks like this:
@@ -79,7 +56,40 @@ enum FakeFunctions {
     }
 }
 
-//public struct LLMMessage.FunctionCall: Equatable, Codable, Hashable {
-//    public var id: String?
-//    public var name: String
-//    public var arguments: String // as json string
+extension LLMMessage {
+    var byConvertingFakeFunctionCallsToRealOnes: LLMMessage {
+        var converted = self
+        let (text, calls) = FakeFunctions.parseFakeFunctionsFromResponse(content)
+        if calls.count > 0 {
+            converted.content = text
+            converted.functionCalls = calls
+        }
+        return converted
+    }
+
+    var byConvertingFunctionsToFakeFunctions: LLMMessage {
+        var converted = self
+        for call in functionCalls {
+            converted.content += "\n\(call.asFakeFnStringXML)"
+        }
+        converted.functionCalls = []
+        if role == .function {
+            converted.role = .user
+            converted.functionResponses = []
+            var lines = [String]()
+            for resp in functionResponses {
+                lines.append("<function-response name='\(resp.functionName)'>")
+                lines.append(resp.text)
+                lines.append("</function-response>")
+            }
+            converted.content = lines.joined(separator: "\n")
+        }
+        return converted
+    }
+}
+
+extension LLMMessage.FunctionCall {
+    var asFakeFnStringXML: String {
+        return "<function>\(name)(\(arguments))</function>"
+    }
+}

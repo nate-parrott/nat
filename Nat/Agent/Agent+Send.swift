@@ -12,7 +12,7 @@ extension AgentThreadStore {
         folderURL: URL?,
         maxIterations: Int = 20,
         finishFunction: LLMFunction? = nil, // If provided, the model will return the finish-function's FunctionCall arg if the function is called
-        fakeFunctions: Bool = false // Use XML syntax for models that don't support function calling
+        fakeFunctions: Bool = LLMs.fakeFunctions // Use XML syntax for models that don't support function calling
     ) async throws -> LLMMessage.FunctionCall? {
         // Safely see if thread is idle, and set ourselves as in-progress:
         let alreadyRunning = await modifyThreadModel { state in
@@ -41,7 +41,11 @@ extension AgentThreadStore {
         let initialCtx = try await tools.asyncThrowingMap { tool in
             try await tool.contextToInsertAtBeginningOfThread(context: toolCtx)
         }.compactMap({ $0 }).joined(separator: "\n\n")
-        let sysMsg = LLMMessage(role: .system, content: systemPrompt.replacingOccurrences(of: "[[CONTEXT]]", with: initialCtx))
+        var systemPrompt = systemPrompt.replacingOccurrences(of: "[[CONTEXT]]", with: initialCtx)
+        if fakeFunctions, allFunctions.count > 0 {
+            systemPrompt = FakeFunctions.toolsToSystemPrompt(allFunctions) + "\n=======\n" + systemPrompt
+        }
+        let sysMsg = LLMMessage(role: .system, content: systemPrompt)
 
         // Generate completions:
         var finishResult: LLMMessage.FunctionCall?
@@ -68,13 +72,15 @@ extension AgentThreadStore {
             while true {
                 // Loop and handle function calls
                 var llmMessages = await readThreadModel().steps.flatMap(\.asLLMMessages)
+                if fakeFunctions { llmMessages = llmMessages.map(\.byConvertingFunctionsToFakeFunctions) }
                 if sysMsg.content.count > 0 {
                     llmMessages.insert(sysMsg, at: 0)
                 }
                 // If we're at the last step of the run, and there's a finish function, ONLY allow the finish function
+                // TODO: implement this logic when using fake functions, which are passed as part of system prompt constructed above
                 let allowedFns = i > 0 && i + 1 == maxIterations && finishFunction != nil ? [finishFunction!] : allFunctions
-                for try await partial in llm.completeStreaming(prompt: llmMessages, functions: allowedFns) {
-                    step.appendOrUpdatePartialResponse(partial)
+                for try await partial in llm.completeStreaming(prompt: llmMessages, functions: fakeFunctions ? [] : allowedFns) {
+                    step.appendOrUpdatePartialResponse(partial.byConvertingFakeFunctionCallsToRealOnes)
                     await saveStep()
                 }
                 print("[\(agentName)] Got response with \(step.pendingFunctionCallsToExecute.count) functions")

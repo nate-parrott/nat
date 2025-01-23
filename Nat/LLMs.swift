@@ -8,6 +8,10 @@ enum LLMs {
 //        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("openai/o1-mini-2024-09-12", 64_000), baseURL: .openRouterOpenAIChatEndpoint))
     }
 
+    static var fakeFunctions: Bool {
+        true // for use with deepseek
+    }
+
     static func quickModel() throws -> ChatGPT {
 //        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("google/gemini-flash-1.5", 1_000_000), baseURL: .openRouterOpenAIChatEndpoint))
         try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("openai/gpt-4o-mini", 1_000_000), baseURL: .openRouterOpenAIChatEndpoint))
