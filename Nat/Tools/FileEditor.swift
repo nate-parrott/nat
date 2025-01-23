@@ -113,22 +113,26 @@ struct FileEditorTool: Tool {
             }
             
             switch confirmation {
-            case .accept:
+            case .accept, .acceptWithComment:
                 for edit in codeEdits { // TODO: use `fileEdits` instead
                     switch edit {
                     case .create: context.log(.createdFile((edit.url as NSURL).lastPathComponent ?? ""))
                     case .replace: context.log(.editedFile((edit.url as NSURL).lastPathComponent ?? ""))
                     }
                 }
-
+                
+                if case .acceptWithComment(let comment) = confirmation {
+                    context.log(.info("Accepted with comment: \(comment)"))
+                }
                 responseStrings.append(try await apply(fileEdits: fileEdits, context: context))
-//                prevEdits.append(edit)
+                if case .acceptWithComment(let comment) = confirmation {
+                    responseStrings.append("User approved this change, but left this comment:\n\(comment)")
+                }
             case .reject:
-                context.log(.rejectedEdit(editsDesc)) // TODO
+                context.log(.rejectedEdit(editsDesc)) 
                 responseStrings.append("User rejected your latest message's edits. They were rolled back Take a beat and let the user tell you more about what they wanted.")
                 break
             case .requestChanged(let message):
-//                context.log(.requestedChanges((edit.url as NSURL).lastPathComponent ?? ""))
                 context.log(.requestedChanges(editsDesc))
                 responseStrings.append("User requested changes to the edits in your last message. They were rolled back. Here is what they said:\n[BEGIN USER FEEDBACK]\n\(message)\n[END USER FEEDBACK]")
                 break

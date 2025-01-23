@@ -27,6 +27,10 @@ enum Prompts {
     When building, use xcodebuild. List schemes first, then build the relevant scheme.
     Use the -quiet option.
     
+    When searching for definitions, keep in mind that symbols are typically defined as enums, structs or classes, and that you can search for all at once using a regex.
+    
+    When writing SwiftUI, use small self-contained views. When this is difficult, consider using @ViewBuilder functions within the same struct to avoid `view.body` from becoming too complex.
+    
     # Examples of how to research
     User task: can you increase the threshold for swiping to dismiss or advance the swipey carousel?
     Research: code_search for "How is swipe to dismiss and advance implemented in the swipey carousel?"

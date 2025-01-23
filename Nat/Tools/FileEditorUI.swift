@@ -3,6 +3,7 @@ import SwiftUI
 
 enum FileEditorReviewPanelResult: Equatable {
     case accept
+    case acceptWithComment(String)
     case reject
     case requestChanged(String)
 }
@@ -52,7 +53,25 @@ struct FileEditorReviewPanel: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { finish(.reject) }
                 }
-                ToolbarItem(placement: .confirmationAction) {
+                
+                ToolbarItemGroup(placement: .confirmationAction) {
+                    // Accept with comment button
+                    Button(action: {
+                        let comment = NSTextField(string: "")
+                        let alert = NSAlert()
+                        alert.messageText = "Add Comment"
+                        alert.informativeText = "Enter a comment to include with the acceptance:"
+                        alert.addButton(withTitle: "Accept")
+                        alert.addButton(withTitle: "Cancel")
+                        alert.accessoryView = comment
+                        
+                        if alert.runModal() == .alertFirstButtonReturn {
+                            finish(.acceptWithComment(comment.stringValue))
+                        }
+                    }) {
+                        Text("Accept w/Comment")
+                    }
+                    
                     Button("Accept") { finish(.accept) }
                 }
             }

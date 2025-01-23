@@ -107,6 +107,8 @@ extension UserVisibleLog {
             return (effort, "flame")
         case .webSearch(let query):
             return ("Web research: _\(query)_", "globe")
+        case .info(let text):
+            return (text, "info")
         }
     }
 }
