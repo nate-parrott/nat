@@ -9,17 +9,17 @@ import Cocoa
 
 enum DocumentMode: String, Equatable, Codable, CaseIterable {
     case agent
-    case fast
     case codeSearch
-
+    case docs
+    
     var displayName: String {
         switch self {
         case .agent:
             return "Agent"
-        case .fast:
-            return "Simple"
         case .codeSearch:
             return "Search"
+        case .docs:
+            return "Docs"
         }
     }
 }

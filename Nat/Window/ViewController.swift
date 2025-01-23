@@ -16,9 +16,8 @@ struct ContentViewWrapper: View {
                         }
                 case .codeSearch:
                     SearchView()
-                case .fast:
-                    Text("Fast")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                case .docs:
+                    DocsView()
                 }
             }
             .environment(\.document, document)
