@@ -2,42 +2,34 @@ import ChatToys
 import SwiftUI
 
 struct ChatView: View {
-//    @State private var messages: [LLMMessage] = []
     @State private var text = ""
     @State private var imageAttachment: ChatUINSImage? = nil
-
+    
     @Environment(\.document) private var document
     @State private var typing = false
     @State private var messageCellModels = [MessageCellModel]()
     @State private var debug = false
-
+    
     var body: some View {
         VStack(spacing: 0) {
             if debug {
                 DebugThreadView()
             } else {
-                ChatThreadView(
-                    messages: messageCellModels,
-                    id: { cell, idx in cell.id },
-                    messageView: { message in
-                        MessageCell(model: message)
-                            .frame(maxWidth: 800, alignment: .leading)
-    //                    TextMessageBubble(Text(message.displayText), isFromUser: message.role == .user)
-                    },
-                    typingIndicator: typing
-                )
+                ScrollToBottomThreadView(data: messageCellModels) { message in
+                    MessageCell(model: message)
+                        .frame(maxWidth: 800, alignment: .leading)
+                }
                 .overlay(alignment: .bottomTrailing) {
                     TerminalThumbnail()
                 }
             }
             Divider()
             ChatInput(send: sendMessage(text:), onStop: stopAgent)
-//            ChatInputView_Multimodal(
-//                placeholder: "Message",
-//                text: $text,
-//                imageAttachment: $imageAttachment,
-//                sendAction: sendMessage
-//            )
+        }
+        .overlay(alignment: .bottom) {
+            if typing {
+                Shimmer()
+            }
         }
         .onReceive(document.store.publisher.map(\.thread.isTyping).removeDuplicates(), perform: { self.typing = $0 })
         .onReceive(document.store.publisher.map(\.thread.cellModels).removeDuplicates(), perform: { self.messageCellModels = $0 })
@@ -50,15 +42,14 @@ struct ChatView: View {
             }
         }
     }
-
+    
     private func clear() {
-//        messages = []
         document.store.modify { state in
             state.thread = .init()
         }
         imageAttachment = nil
     }
-
+    
     private func sendMessage(text: String) {
         var msg = TaggedLLMMessage(role: .user, content: [.text(text)])
         if let imageAttachment {
@@ -67,7 +58,7 @@ struct ChatView: View {
         }
         let folderURL = document.store.model.folder
         let curFile = document.store.model.selectedFileInEditorRelativeToFolder
-
+        
         document.currentAgentTask?.cancel() // Cancel any existing task
         
         document.currentAgentTask = Task {
@@ -85,6 +76,7 @@ struct ChatView: View {
             document.currentAgentTask = nil
         }
     }
+    
     private func stopAgent() {
         // Cancel the current agent task
         document.currentAgentTask?.cancel()
@@ -97,60 +89,36 @@ struct ChatView: View {
     }
 }
 
-struct ChatInputView_Multimodal: View {
-    public let placeholder: String
-    @Binding public var text: String
-    @Binding var imageAttachment: ChatUINSImage?
-    public let sendAction: () -> Void
+// A generic thread view that automatically scrolls to bottom when content changes
+private struct ScrollToBottomThreadView<Data: RandomAccessCollection, Content: View>: View where Data.Element: Identifiable {
+    var data: Data
+    var content: (Data.Element) -> Content
+    var spacing: CGFloat = 12
 
-    @State private var filePickerOpen = false
-
-    public var body: some View {
-        HStack(spacing: 10) {
-            TextField(placeholder, text: $text)
-                .textFieldStyle(.plain)
-
-            Button(action: toggleImage) {
-                HStack {
-                    if imageAttachment != nil {
-                        Text("Image attached")
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: spacing) {
+                    ForEach(data) { item in
+                        content(item)
                     }
-
-                    Image(systemName: imageAttachment != nil ? "photo.fill" : "photo")
-                        .foregroundColor(.accentColor)
-                        .font(.system(size: 20))
+                }
+                .padding()
+                .padding(.bottom, 400)
+                .frame(maxWidth: 700)
+                .frame(maxWidth: .infinity)
+            }
+            .onChange(of: data.count) { _ in
+                withAnimation {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        if let last = data.last {
+                            withAnimation {
+                                proxy.scrollTo(last.id, anchor: .center)
+                            }
+                        }
+                    }
                 }
             }
-            .buttonStyle(PlainButtonStyle())
-
-            Button(action: sendAction) {
-                Image(systemName: "arrow.up.circle.fill")
-                    .foregroundColor(.accentColor)
-                    .font(.system(size: 30))
-            }
-            .buttonStyle(PlainButtonStyle())
-            .disabled(text.isEmpty)
         }
-        .fileImporter(isPresented: $filePickerOpen,
-                        allowedContentTypes: [.image]) { result in
-            guard case let .success(url) = result else { return }
-            guard let image = ChatUINSImage(contentsOf: url) else { return }
-            imageAttachment = image
-          }
-        .onSubmit {
-            if !text.isEmpty {
-                sendAction()
-            }
-        }
-        .padding(10)
-    }
-
-    private func toggleImage() {
-        if imageAttachment != nil {
-            imageAttachment = nil
-            return
-        }
-        filePickerOpen = true
     }
 }
-

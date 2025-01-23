@@ -39,8 +39,8 @@ private struct DiffEditView: View {
 private struct ReviewActionBar: View {
     @Binding var commentText: String
     var onApprove: (String) -> Void
-    var onReject: () -> Void
-    
+    var onReject: (String) -> Void
+
     var body: some View {
         HStack(alignment: .bottom) {
             InputTextField(
@@ -66,7 +66,7 @@ private struct ReviewActionBar: View {
             }
             .buttonStyle(PlainButtonStyle())
             
-            Button(action: onReject) {
+            Button(action: { onReject(commentText) }) {
                 Text("Reject")
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
@@ -111,7 +111,13 @@ struct FileEditorReviewPanel: View {
                             finish(.acceptWithComment(comment))
                         }
                     },
-                    onReject: { finish(.reject) }
+                    onReject: { comment in
+                        if comment.isEmpty {
+                            finish(.reject)
+                        } else {
+                            finish(.requestChanged(comment))
+                        }
+                    }
                 )
             }
             .onAppear {

@@ -144,7 +144,7 @@ struct FileSnippet: Equatable, Codable {
 
     var asString: String {
         var output = [String]()
-        output.append("%% BEGIN FILE SNIPPET [\(projectRelativePath)] Lines \(lineStart)-\(lineStart + linesCount) of \(fileTotalLen) %%\n")
+        output.append("%% BEGIN FILE SNIPPET [\(projectRelativePath)] Lines \(lineStart)-\(lineStart + linesCount - 1) of \(fileTotalLen) %%\n")
 
 //        let lines = content.lines
 
