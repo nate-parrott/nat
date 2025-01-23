@@ -9,6 +9,37 @@ struct Diff: Equatable {
     }
 
     var lines: [Line]
+
+    static func collapseRunsOfSames(_ lines: [Line]) -> [Line] {
+        var result: [Line] = []
+        var currentRun: [Line] = []
+
+        func flushRun() {
+            if currentRun.count >= 20 {
+                // Keep first 5 and last 5 lines, collapse the rest
+                let collapsedLines = Array(currentRun.dropFirst(5).dropLast(5))
+                result.append(contentsOf: currentRun.prefix(5))
+                result.append(.collapsed(collapsedLines))
+                result.append(contentsOf: currentRun.suffix(5))
+            } else {
+                result.append(contentsOf: currentRun)
+            }
+            currentRun = []
+        }
+
+        for line in lines {
+            if case .same = line {
+                currentRun.append(line)
+            } else {
+                flushRun()
+                result.append(line)
+            }
+        }
+
+        flushRun() // Handle any remaining run at the end
+
+        return result
+    }
 }
 
 struct DiffView: View {

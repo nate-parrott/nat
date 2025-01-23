@@ -174,7 +174,7 @@ extension FileEdit {
             }
         }
 
-        return Diff(lines: lines)
+        return Diff(lines: Diff.collapseRunsOfSames(lines))
     }
 }
 
