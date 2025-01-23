@@ -11,7 +11,8 @@ extension AgentThreadStore {
         agentName: String = "Agent",
         folderURL: URL?,
         maxIterations: Int = 20,
-        finishFunction: LLMFunction? = nil // If provided, the model will return the finish-function's FunctionCall arg if the function is called
+        finishFunction: LLMFunction? = nil, // If provided, the model will return the finish-function's FunctionCall arg if the function is called
+        fakeFunctions: Bool = false // Use XML syntax for models that don't support function calling
     ) async throws -> LLMMessage.FunctionCall? {
         // Safely see if thread is idle, and set ourselves as in-progress:
         let alreadyRunning = await modifyThreadModel { state in

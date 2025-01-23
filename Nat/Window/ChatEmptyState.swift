@@ -7,6 +7,7 @@ struct ChatEmptyState: View {
         WithSnapshotMain(store: document.store, snapshot: { $0.thread.steps.isEmpty }) { empty in
             if empty {
                 AgentSettings()
+                    .frame(maxWidth: 500)
                 .padding()
                 .padding(.bottom, 60) // to center visually
             }
