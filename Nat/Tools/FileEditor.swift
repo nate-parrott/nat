@@ -171,7 +171,7 @@ struct FileEditorTool: Tool {
                 try FileManager.default.createDirectory(at: path.deletingLastPathComponent(), withIntermediateDirectories: true)
             }
             try content.write(to: path, atomically: true, encoding: .utf8)
-            summaries.append("Updated \(path.path). New content:\n\(stringWithLineNumbers(content))\n")
+            summaries.append("Updated \(path.relativePath). New content:\n\(stringWithLineNumbers(content))\n")
         }
         return summaries.joined(separator: "\n\n")
     }
