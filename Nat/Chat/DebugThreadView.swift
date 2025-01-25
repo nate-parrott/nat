@@ -100,6 +100,12 @@ private struct ContextItemView: View {
                 Text("[Image]")
             case .systemInstruction(let sys):
                 Text("<system>\(sys)</system>")
+            case .textFile(filename: let filename, content: let content):
+                Text("File:\n\(content)")
+            case .url(let url):
+                Text("URL:\n\(url.absoluteString)")
+            case .largePaste(let text):
+                Text("Large paste:\n\(text)")
             }
         }
     }

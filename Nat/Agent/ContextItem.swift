@@ -72,17 +72,12 @@ struct TaggedLLMMessage: Equatable, Codable {
     func asPlainText(includeSystemMessages includeSys: Bool) -> String {
         var lines = [String]()
         for item in content {
-            switch item {
-            case .text(let string):
-                lines.append(string)
-            case .fileSnippet(let fileSnippet):
-                lines.append(fileSnippet.asString)
-            case .image(let image):
+            let (text, img) = item.asStringOrImage
+            if let text {
+                lines.append(text)
+            }
+            if img != nil {
                 lines.append("[Image]")
-            case .systemInstruction(let str):
-                if includeSys {
-                    lines.append("<system>" + str + "</system>")
-                }
             }
         }
         return lines.joined(separator: "\n\n")
@@ -95,6 +90,9 @@ enum ContextItem: Equatable, Codable {
     case fileSnippet(FileSnippet)
     case image(LLMMessage.Image)
     case systemInstruction(String)
+    case textFile(filename: String, content: String)
+    case url(URL)
+    case largePaste(String)
 
     var asStringOrImage: (String?, LLMMessage.Image?) {
         switch self {
@@ -105,7 +103,13 @@ enum ContextItem: Equatable, Codable {
         case .image(let image):
             return (nil, image)
         case .systemInstruction(let str):
-            return ("<system>\(str)</system>", nil)
+            return ("<s>\(str)</s>", nil)
+        case .textFile(let filename, let content):
+            return ("Attached file '\(filename)':\n\(content)", nil)
+        case .url(let url):
+            return ("URL: \(url.absoluteString)", nil)
+        case .largePaste(let content):
+            return ("Pasted content:\n\(content)", nil)
         }
     }
 }
