@@ -39,6 +39,61 @@ final class FileEditorTests: XCTestCase {
         }
     }
     
+    func testFindReplaceEmptyOutput() throws {
+        let input = """
+        %%%
+        > FindReplace /test/file.swift:0
+        // TODO
+        ===WITH===
+        %%%
+        """
+
+        let edits = try CodeEdit.edits(fromString: input, toolContext: .stub())
+        XCTAssertEqual(edits.count, 1)
+        switch edits[0] {
+        case .findReplace(path: _, find: let find, replace: let replace):
+            XCTAssertEqual(find, ["// TODO"])
+            XCTAssertEqual(replace, [])
+        default: XCTFail()
+        }
+    }
+
+    func testApplyFindReplace() throws {
+        let original = """
+        let x = 1
+        let y = 2
+        let z = 3
+        """
+        let result = try applyFindReplace(existing: original, find: ["let y = 2"], replace: ["let z = 3"])
+        XCTAssertEqual(result, """
+        let x = 1
+        let z = 3
+        let z = 3
+        """)
+    }
+
+    func testApplyFindReplaceEmptyOutput() throws {
+        let original = """
+        let x = 1
+        let y = 2
+        let z = 3
+        """
+        let result = try applyFindReplace(existing: original, find: ["let y = 2"], replace: [])
+        XCTAssertEqual(result, """
+        let x = 1
+        let z = 3
+        """)
+    }
+
+    func testApplyFindReplaceMultipleMatchesFails() throws {
+        let original = """
+        let x = 1
+        let y = 2
+        let x = 1
+        """
+        XCTAssertThrowsError(try applyFindReplace(existing: original, find: ["let x = 1"], replace: ["let z = 3"]))
+    }
+    
     func testParseBasicCreate() throws {
         let input = """
         %%%

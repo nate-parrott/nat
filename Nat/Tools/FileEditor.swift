@@ -222,9 +222,15 @@ func applyReplacement(existing: String, lineRangeStart: Int, len: Int, lines new
     return lines.joined(separator: "\n")
 }
 
-// Fail if Find is not UNIQUE
 func applyFindReplace(existing: String, find: [String], replace: [String]) throws -> String {
-    fatalError()
+    var lines = existing.lines
+    let matchingRanges = lines.ranges(of: find)
+    if matchingRanges.count != 1 {
+        throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Expected exactly 1 match for find, got \(matchingRanges.count)"])
+    }
+    let range = matchingRanges[0]
+    lines.replaceSubrange(range, with: replace)
+    return lines.joined(separator: "\n")
 }
 
 func stringWithLineNumbers(_ string: String, lineCharLimit: Int = 1000, indexStart: Int = 0) -> String {
@@ -394,7 +400,7 @@ enum CodeEdit: Equatable {
 }
 
 private func parseFindAndReplace(_ content: [String]) -> (find: [String], replace: [String])? {
-    let split = content.split(separator: FileEditorTool.findReplaceDivider)
+    let split = content.split(separator: FileEditorTool.findReplaceDivider, omittingEmptySubsequences: false)
     if split.count == 2 {
         return (split[0].asArray, split[1].asArray)
     }

@@ -26,5 +26,19 @@ extension Array {
         }
         return groups
     }
-}
 
+    func ranges(subArray: [Element]) -> [NSRange] where Element: Equatable {
+        // Written by Phil
+        var result = [NSRange]()
+        let subArrayCount = subArray.count
+        guard subArrayCount > 0 else { return result }
+        
+        for index in 0...(self.count - subArrayCount) {
+            let range = self[index..<(index + subArrayCount)]
+            if Array(range) == subArray {
+                result.append(NSRange(location: index, length: subArrayCount))
+            }
+        }
+        return result
+    }
+}
