@@ -204,7 +204,7 @@ private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> Cod
     return .replace(path: url, lineRangeStart: start, lineRangeLen: len, lines: newLines)
 }
 
-private func applyReplacement(existing: String, lineRangeStart: Int, len: Int, lines newLines: [String]) throws -> String {
+func applyReplacement(existing: String, lineRangeStart: Int, len: Int, lines newLines: [String]) throws -> String {
     var lines = existing.lines
 
     // Ensure the range is valid

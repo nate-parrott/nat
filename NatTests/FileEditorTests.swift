@@ -105,4 +105,55 @@ final class FileEditorTests: XCTestCase {
             return false
         }.count, 1)
     }
+
+    // MARK: - Index Adjustment Tests
+    
+    func testAdjustEditIndices() throws {
+        let edits = [
+            CodeEdit.replace(path: URL(fileURLWithPath: "/test/file.swift"), lineRangeStart: 0, lineRangeLen: 1, lines: ["line1", "line2"]), // +1 line
+            CodeEdit.replace(path: URL(fileURLWithPath: "/test/file.swift"), lineRangeStart: 2, lineRangeLen: 2, lines: ["line3"]) // Should be adjusted to start at 3
+        ]
+        
+        let fileEdits = FileEdit.edits(fromCodeEdits: edits)
+        XCTAssertEqual(fileEdits.count, 1)
+        XCTAssertEqual(fileEdits[0].edits.count, 2)
+        
+        if case .replace(_, let start, let len, _) = fileEdits[0].edits[1] {
+            XCTAssertEqual(start, 3) // Original start (2) + delta from previous edit (1)
+            XCTAssertEqual(len, 2)
+        } else {
+            XCTFail("Expected replace edit")
+        }
+    }
+    
+    func testApplyReplacement() throws {
+        let original = """
+        line1
+        line2
+        line3
+        line4
+        """
+        
+        // Test basic replacement
+        var result = try applyReplacement(existing: original, lineRangeStart: 1, len: 2, lines: ["new2", "new3"])
+        XCTAssertEqual(result, """
+        line1
+        new2
+        new3
+        line4
+        """)
+        
+        // Test insert (len=0)
+        result = try applyReplacement(existing: original, lineRangeStart: 1, len: 0, lines: ["inserted"])
+        XCTAssertEqual(result, """
+        line1
+        inserted
+        line2
+        line3
+        line4
+        """)
+        
+        // Test invalid range throws
+        XCTAssertThrowsError(try applyReplacement(existing: original, lineRangeStart: 10, len: 1, lines: ["invalid"]))
+    }
 }
