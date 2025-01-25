@@ -22,7 +22,21 @@ struct DeleteFileTool: Tool {
         guard let args = fn.checkMatch(call: call) else { return nil }
         
         let resolvedPath = try context.resolvePath(args.path)
-        context.log(.deletedFile((resolvedPath as NSURL).lastPathComponent ?? ""))
+        let filename = (resolvedPath as NSURL).lastPathComponent ?? args.path
+        
+        // Show confirmation dialog
+        let confirmed = await Alerts.showAppConfirmationDialog(
+            title: "Confirm Delete",
+            message: "Are you sure you want to delete '\(filename)'?",
+            yesTitle: "Delete",
+            noTitle: "Cancel"
+        )
+        
+        guard confirmed else {
+            return call.response(text: "File deletion cancelled")
+        }
+        
+        context.log(.deletedFile(filename))
         
         do {
             try FileManager.default.removeItem(at: resolvedPath)
