@@ -5,7 +5,9 @@ struct GrepTool: Tool {
     var functions: [LLMFunction] {
         [fn.asLLMFunction]
     }
-    
+
+    var useLineNumbers = Constants.useLineNumbers
+
     let fn = TypedFunction<Args>(name: "grep", description: "Search for patterns in files using regex", type: Args.self)
     
     struct Args: FunctionArgs {
@@ -31,7 +33,7 @@ struct GrepTool: Tool {
         do {
             let hits = try await grepToSnippets(pattern: args.pattern, folder: folderURL, linesAroundMatchToInclude: 2, limit: 20)
             let str: String = "\(hits.count) hits:\n" + hits.map { hit in
-                return hit.asString
+                return hit.asString(withLineNumbers: useLineNumbers)
             }.joined(separator: "\n\n")
             return call.response(text: str)
         } catch {

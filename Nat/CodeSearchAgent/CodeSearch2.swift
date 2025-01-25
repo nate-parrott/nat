@@ -73,10 +73,6 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
         snippetRanges.append(.init(path: resolvedPath, lineRangeStart: 0, lineRangeEnd: effort.linesToRead))
         context.log(.readFile(resolvedPath.lastPathComponent))
     }
-//    for grep in relevantItems.greps.prefix(3) {
-//        snippetRanges += try await grepToSnippetRanges(pattern: grep, folder: folder, linesAroundMatchToInclude: 2, limit: 10)
-//        context.log(.grepped(grep))
-//    }
     if snippetRanges.count == 0 {
         return []
     }
@@ -109,7 +105,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
                 return nil
             }
         })
-        .map(\.asString)
+        .map { $0.asString(withLineNumbers: true) }
         .joined(separator: "\n\n")
     messages.append(.init(role: .user, content: snippets))
     messages.append(.init(role: .user, content: """

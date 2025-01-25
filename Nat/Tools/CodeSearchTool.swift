@@ -45,7 +45,7 @@ struct CodeSearchTool: Tool {
             }
 
             async let answers_: [String] = try await codeSearch2(queries: args.questions ?? [], folder: folderURL, context: context, effort: effort)
-                .map({ $0.asString })
+                .map({ $0.asString(withLineNumbers: Constants.useLineNumbers) })
 
             async let grepSnippets_: [[FileSnippet]] = try await args.regexes?.concurrentMapThrowing({ pattern in
                 try await grepToSnippets(pattern: pattern, folder: folderURL, linesAroundMatchToInclude: 3, limit: effort.grepLimit)
@@ -56,7 +56,7 @@ struct CodeSearchTool: Tool {
             for (regex, snippets) in try await zip(args.regexes ?? [], grepSnippets_) {
                 outputLines.append("# \(snippets.count) search results for \(regex) (limit \(effort.grepLimit)):")
                 for snippet in snippets {
-                    outputLines.append(snippet.asString)
+                    outputLines.append(snippet.asString(withLineNumbers: Constants.useLineNumbers))
                 }
             }
 

@@ -91,7 +91,7 @@ private struct ContextItemView: View {
         ForEachUnidentifiable(items: items) { item in
             switch item {
             case .fileSnippet(let snippet):
-                Text(snippet.asString)
+                Text(snippet.asString(withLineNumbers: Constants.useLineNumbers))
                     .padding(4)
                     .background(RoundedRectangle(cornerRadius: 5).opacity(0.2))
             case .text(let text):

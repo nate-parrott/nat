@@ -23,7 +23,7 @@ struct SearchView: View {
                         Task {
                             do {
                                 let ctx = ToolContext(activeDirectory: folderURL, log: {_ in () })
-                                let results = try await codeSearch2(queries: [query], folder: folderURL, context: ctx).map(\.asString).joined(separator: "\n\n")
+                                let results = try await codeSearch2(queries: [query], folder: folderURL, context: ctx).map { $0.asString(withLineNumbers: true) }.joined(separator: "\n\n")
 //                                let results = FileTree.fullTree(url: folderURL)
 //                                let results = try await grepToSnippets(pattern: query, folder: folderURL, linesAroundMatchToInclude: 4, limit: 50).map({ $0.asString }).joined(separator: "\n\n")
                                 status = .done(results)

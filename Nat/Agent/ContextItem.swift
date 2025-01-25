@@ -99,7 +99,7 @@ enum ContextItem: Equatable, Codable {
         case .text(let string):
             return (string, nil)
         case .fileSnippet(let fileSnippet):
-            return (fileSnippet.asString, nil)
+            return (fileSnippet.asString(withLineNumbers: Constants.useLineNumbers), nil)
         case .image(let image):
             return (nil, image)
         case .systemInstruction(let str):
@@ -146,18 +146,15 @@ struct FileSnippet: Equatable, Codable {
         self.fileTotalLen = allLines.count
     }
 
-    var asString: String {
+    func asString(withLineNumbers: Bool) -> String {
         var output = [String]()
         output.append("%% BEGIN FILE SNIPPET [\(projectRelativePath)] Lines \(lineStart)-\(lineStart + linesCount - 1) of \(fileTotalLen) %%\n")
 
-//        let lines = content.lines
-
-//        for (index, line) in lines[0..<linesCount].enumerated() {
-//            let lineNumber = lineStart + index
-//            output.append(String(format: "%5d %@", lineNumber, line.truncateTailWithEllipsis(chars: 400)))
-//        }
-
-        output.append(stringWithLineNumbers(content, lineCharLimit: 400, indexStart: lineStart))
+        if withLineNumbers {
+            output.append(stringWithLineNumbers(content, lineCharLimit: 400, indexStart: lineStart))
+        } else {
+            output += content.lines.map({ $0.truncateTailWithEllipsis(chars: 400) })
+        }
 
         // Footer
         let remainingLines = fileTotalLen - (lineStart + linesCount)
