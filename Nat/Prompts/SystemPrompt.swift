@@ -32,7 +32,7 @@ enum Prompts {
     
     When writing SwiftUI, use small self-contained views. When this is difficult, consider using @ViewBuilder functions within the same struct to avoid `view.body` from becoming too complex.
     
-    When creating files, check the folder structure first to find the appropriate place to add them.
+    When creating files, check the folder structure first to find the appropriate place to add them using file_tree.
     
     # Examples of how to research
     User task: can you increase the threshold for swiping to dismiss or advance the swipey carousel?
