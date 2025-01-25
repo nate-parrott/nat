@@ -17,6 +17,27 @@ extension ToolContext {
 
 final class FileEditorTests: XCTestCase {
     // MARK: - Parsing Tests
+
+    func testFindReplace() throws {
+        let input = """
+        %%%
+        > FindReplace /test/file.swift:0
+        // TODO
+        ===WITH===
+        let x = 1
+        let z = 3
+        %%%
+        """
+
+        let edits = try CodeEdit.edits(fromString: input, toolContext: .stub())
+        XCTAssertEqual(edits.count, 1)
+        switch edits[0] {
+        case .findReplace(path: _, find: let find, replace: let replace):
+            XCTAssertEqual(find, ["// TODO"])
+            XCTAssertEqual(replace, ["let x = 1", "let z = 3"])
+        default: XCTFail()
+        }
+    }
     
     func testParseBasicCreate() throws {
         let input = """

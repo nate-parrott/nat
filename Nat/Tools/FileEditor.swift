@@ -4,6 +4,7 @@ import ChatToys
 
 struct FileEditorTool: Tool {
     static let codeFence = "%%%"
+    static let findReplaceDivider = "===WITH==="
     func contextToInsertAtBeginningOfThread(context: ToolContext) async throws -> String? {
         """
         # Editing files
@@ -117,7 +118,7 @@ struct FileEditorTool: Tool {
                 for edit in codeEdits { // TODO: use `fileEdits` instead
                     switch edit {
                     case .create: context.log(.createdFile((edit.url as NSURL).lastPathComponent ?? ""))
-                    case .replace: context.log(.editedFile((edit.url as NSURL).lastPathComponent ?? ""))
+                    case .replace, .findReplace: context.log(.editedFile((edit.url as NSURL).lastPathComponent ?? ""))
                     }
                 }
                 
@@ -153,6 +154,11 @@ struct FileEditorTool: Tool {
             var content: String?
             for codeEdit in fileEdit.edits {
                 switch codeEdit {
+                case .findReplace(path: let path, find: let find, replace: let replace):
+                    if content == nil {
+                        content = try String(contentsOf: path, encoding: .utf8)
+                    }
+                    content = try applyFindReplace(existing: content!, find: find, replace: replace)
                 case .create(path: let path, content: let newContent):
                     content = newContent
                 case .replace(path: let path, lineRangeStart: let rangeStart, lineRangeLen: let rangeLen, lines: let newLines):
@@ -216,6 +222,11 @@ func applyReplacement(existing: String, lineRangeStart: Int, len: Int, lines new
     return lines.joined(separator: "\n")
 }
 
+// Fail if Find is not UNIQUE
+func applyFindReplace(existing: String, find: [String], replace: [String]) throws -> String {
+    fatalError()
+}
+
 func stringWithLineNumbers(_ string: String, lineCharLimit: Int = 1000, indexStart: Int = 0) -> String {
     var lines = string.lines
     let fmt = NumberFormatter()
@@ -233,7 +244,7 @@ struct FileEdit {
         let byPath = codeEdits.grouped(\.url)
         return byPath.map { pair in
             let (path, edits) = pair
-            let sortedEdits = edits.sorted(by: { $0.startIndex < $1.startIndex }).asArray
+            let sortedEdits = edits.sorted(by: { ($0.startIndex ?? -1) < ($1.startIndex ?? -1) }).asArray
             var adjustedEdits = [CodeEdit]()
             for edit in sortedEdits {
                 adjustedEdits.append(adjustEditIndices(edit: edit, previousEdits: adjustedEdits))
@@ -251,17 +262,19 @@ struct FileEdit {
     }
 }
 
-enum CodeEdit {
+enum CodeEdit: Equatable {
     // line range end is INCLUSIVE and zero-indexed.
     case replace(path: URL, lineRangeStart: Int, lineRangeLen: Int, lines: [String])
     case create(path: URL, content: String)
+    case findReplace(path: URL, find: [String], replace: [String])
 
-    var startIndex: Int {
+    var startIndex: Int? {
         switch self {
         case .replace(_, let lineRangeStart, _, _):
             return lineRangeStart
         case .create:
             return 0
+        case .findReplace: return nil
         }
     }
 
@@ -276,6 +289,8 @@ enum CodeEdit {
             }
         case .create(path: let path, _):
             return "Create \(path.absoluteString)"
+        case .findReplace(path: let path, find: let find, replace: let replace):
+            return "Find/Replace in \(path)"
         }
     }
 
@@ -283,6 +298,7 @@ enum CodeEdit {
         switch self {
         case .replace(path: let url, _, _, _): return url
         case .create(path: let url, _): return url
+        case .findReplace(path: let url, find: _, replace: _): return url
         }
     }
 
@@ -296,19 +312,25 @@ enum CodeEdit {
         let createPattern = try NSRegularExpression(pattern: #"^>\s*Create\s+([^\s:]+)\s*$"#)
         let replacePattern = try NSRegularExpression(pattern: #"^>\s*Replace\s+([^:]+):(\d+(?:-\d+)?)\s*$"#)
         let insertPattern = try NSRegularExpression(pattern: #"^>\s*Insert\s+([^:]+):(\d+)\s*$"#)
-        
+        let findReplacePattern = try NSRegularExpression(pattern: #"^>\s*FindReplace\s+([^:]+):(\d+)\s*$"#)
+
         for line in lines {
             if line == FileEditorTool.codeFence {
-                if currentCommand != nil {
+                if let cmd = currentCommand {
                     // End of code block - process the edit
 
                     let content = currentContent.joined(separator: "\n")
-                    let cmd = currentCommand!
-                    
+
                     // Resolve the path relative to workspace
                     let resolvedPath = try toolContext.resolvePath(cmd.path)
 
-                    if cmd.type == "Create" {
+                    if cmd.type == "FindReplace" {
+                        if let (find, replace) = parseFindAndReplace(currentContent) {
+                            edits.append(.findReplace(path: resolvedPath, find: find, replace: replace))
+                        } else {
+                            // Skip
+                        }
+                    } else if cmd.type == "Create" {
                         edits.append(.create(path: resolvedPath, content: content))
                     } else if cmd.type == "Replace" || cmd.type == "Insert" {
                         // Parse the range
@@ -348,8 +370,11 @@ enum CodeEdit {
             } else if line.hasPrefix(">") {
                 // Try each pattern in turn
                 let range = NSRange(line.startIndex..<line.endIndex, in: line)
-                
-                if let match = createPattern.firstMatch(in: line, range: range) {
+
+                if let match = findReplacePattern.firstMatch(in: line, range: range) {
+                    let path = String(line[Range(match.range(at: 1), in: line)!])
+                    currentCommand = (type: "FindReplace", path: path, range: "")
+                } else if let match = createPattern.firstMatch(in: line, range: range) {
                     let path = String(line[Range(match.range(at: 1), in: line)!])
                     currentCommand = (type: "Create", path: path, range: "")
                 } else if let match = replacePattern.firstMatch(in: line, range: range) {
@@ -366,4 +391,12 @@ enum CodeEdit {
         
         return edits
     }
+}
+
+private func parseFindAndReplace(_ content: [String]) -> (find: [String], replace: [String])? {
+    let split = content.split(separator: FileEditorTool.findReplaceDivider)
+    if split.count == 2 {
+        return (split[0].asArray, split[1].asArray)
+    }
+    return nil
 }
