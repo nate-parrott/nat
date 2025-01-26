@@ -58,7 +58,7 @@ extension LLMMessage.FunctionCall {
     }
 }
 
-func generateReadFileString(path: String, context: ToolContext, offset: Int = 0, nLines: Int = 1000) throws -> FileSnippet {
+private func generateReadFileString(path: String, context: ToolContext, offset: Int = 0, nLines: Int = 2000) throws -> FileSnippet {
     context.log(.readFile((path as NSString).lastPathComponent))
 
     let absoluteURL = try context.resolvePath(path)
@@ -73,22 +73,4 @@ func generateReadFileString(path: String, context: ToolContext, offset: Int = 0,
     let endLine = min(startLine + nLines, totalLines)
 
     return try FileSnippet(path: absoluteURL, projectRelativePath: path, lineStart: startLine, linesCount: endLine - startLine)
-
-//    var output = [String]()
-    
-//    // Header
-//    output.append("%% BEGIN FILE SNIPPET [\(path)] Lines \(startLine)-\(endLine - 1) of \(totalLines) %%\n")
-//    
-//    // File contents with line numbers
-//    for (index, line) in lines[startLine..<endLine].enumerated() {
-//        let lineNumber = startLine + index
-//        output.append(String(format: "%5d %@", lineNumber, line))
-//    }
-//    
-//    // Footer
-//    let remainingLines = totalLines - endLine
-//    let lastPathComponent = absoluteURL.lastPathComponent
-//    output.append("\n%% END FILE SNIPPET [\(lastPathComponent)]; there are \(remainingLines) more lines available to read %%")
-    
-//    return output.joined(separator: "\n")
 }
