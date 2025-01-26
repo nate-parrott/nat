@@ -1,7 +1,7 @@
 import Foundation
 import ChatToys
 
-struct CurrentFilePathTool: Tool {
+struct BasicContextTool: Tool {
     var currentFilenameFromXcode: String?
 
     var dateAndHourAsString: String {
