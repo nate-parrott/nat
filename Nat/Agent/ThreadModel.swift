@@ -51,6 +51,13 @@ enum UserVisibleLog: Equatable, Codable {
     case terminal(command: String)
 }
 
+extension ThreadModel {
+    func truncatedSteps() -> [Step] {
+        // TODO: truncate middle, try not to break prompt cache
+        steps
+    }
+}
+
 extension ThreadModel.Step {
     // incomplete thread steps reflect actions that failed partway thru. We can't send these in a new thread because they miss part of the necessary message responses
     var isComplete: Bool {

@@ -199,11 +199,6 @@ extension Array where Element == TaggedLLMMessage {
 
         return result
     }
-
-    func byTrimmingOldMessages() -> [TaggedLLMMessage] {
-        // TODO: delete in the MIDDLE in a context-preserving way
-        self
-    }
 }
 
 private extension ContextItem {
