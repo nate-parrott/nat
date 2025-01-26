@@ -38,10 +38,13 @@ extension AgentThreadStore {
         let toolCtx = ToolContext(activeDirectory: folderURL, log: { collectedLogs.append($0) }, document: document)
 
         assert(systemPrompt.contains("[[CONTEXT]]"), "[\(agentName)] system prompt must have a [[CONTEXT]] token.")
-        let initialCtx = try await tools.asyncThrowingMap { tool in
+        var initialCtx = try await tools.asyncThrowingMap { tool in
             try await tool.contextToInsertAtBeginningOfThread(context: toolCtx)
-        }.compactMap({ $0 }).joined(separator: "\n\n")
-        var systemPrompt = systemPrompt.replacingOccurrences(of: "[[CONTEXT]]", with: initialCtx)
+        }.compactMap({ $0 })
+        if let folderURL {
+            initialCtx.append("The your tools' base directory is \(folderURL.absoluteString). When using tools to edit or read files, use paths RELATIVE to this. You cannot operate outside of this directory.")
+        }
+        var systemPrompt = systemPrompt.replacingOccurrences(of: "[[CONTEXT]]", with: initialCtx.joined(separator: "\n\n"))
         if fakeFunctions, allFunctions.count > 0 {
             systemPrompt = FakeFunctions.toolsToSystemPrompt(allFunctions) + "\n=======\n" + systemPrompt
         }

@@ -118,7 +118,7 @@ struct FileEditorTool: Tool {
                 for edit in codeEdits { // TODO: use `fileEdits` instead
                     switch edit {
                     case .create: context.log(.createdFile((edit.url as NSURL).lastPathComponent ?? ""))
-                    case .replace, .findReplace: context.log(.editedFile((edit.url as NSURL).lastPathComponent ?? ""))
+                    case .replace, .findReplace, .append: context.log(.editedFile((edit.url as NSURL).lastPathComponent ?? ""))
                     }
                 }
                 
@@ -159,7 +159,12 @@ struct FileEditorTool: Tool {
                         content = try String(contentsOf: path, encoding: .utf8)
                     }
                     content = try applyFindReplace(existing: content!, find: find, replace: replace)
-                case .create(path: let path, content: let newContent):
+                case .append(path: let path, content: let contentToAppend):
+                    if content == nil {
+                        content = try String(contentsOf: path, encoding: .utf8)
+                    }
+                    content! += "\n" + contentToAppend
+                case .create(path: _, content: let newContent):
                     content = newContent
                 case .replace(path: let path, lineRangeStart: let rangeStart, lineRangeLen: let rangeLen, lines: let newLines):
                     if content == nil {
@@ -272,6 +277,7 @@ enum CodeEdit: Equatable {
     // line range end is INCLUSIVE and zero-indexed.
     case replace(path: URL, lineRangeStart: Int, lineRangeLen: Int, lines: [String])
     case create(path: URL, content: String)
+    case append(path: URL, content: String)
     case findReplace(path: URL, find: [String], replace: [String])
 
     var startIndex: Int? {
@@ -281,9 +287,11 @@ enum CodeEdit: Equatable {
         case .create:
             return 0
         case .findReplace: return nil
+        case .append: return nil
         }
     }
 
+    // TODO: Not great to show this method's output to the model bc it includes full paths
     var description: String {
         // include name and line range
         switch self {
@@ -296,7 +304,9 @@ enum CodeEdit: Equatable {
         case .create(path: let path, _):
             return "Create \(path.absoluteString)"
         case .findReplace(path: let path, find: let find, replace: let replace):
-            return "Find/Replace in \(path)"
+            return "Find/Replace in \(path.absoluteString)"
+        case .append(path: let path, content: let content):
+            return "Append \(content.lines.count) lines to \(path.absoluteString)"
         }
     }
 
@@ -305,6 +315,7 @@ enum CodeEdit: Equatable {
         case .replace(path: let url, _, _, _): return url
         case .create(path: let url, _): return url
         case .findReplace(path: let url, find: _, replace: _): return url
+        case .append(path: let url, content: _): return url
         }
     }
 
@@ -319,6 +330,7 @@ enum CodeEdit: Equatable {
         let replacePattern = try NSRegularExpression(pattern: #"^>\s*Replace\s+([^:]+):(\d+(?:-\d+)?)\s*$"#)
         let insertPattern = try NSRegularExpression(pattern: #"^>\s*Insert\s+([^:]+):(\d+)\s*$"#)
         let findReplacePattern = try NSRegularExpression(pattern: #"^>\s*FindReplace\s+([^:]+):(\d+)\s*$"#)
+        let appendPattern = try NSRegularExpression(pattern: #"^>\s*Append\s+([^:]+):(\d+)\s*$"#)
 
         for line in lines {
             if line == FileEditorTool.codeFence {
@@ -336,6 +348,8 @@ enum CodeEdit: Equatable {
                         } else {
                             // Skip
                         }
+                    } else if cmd.type == "Append" {
+                        edits.append(.append(path: resolvedPath, content: content))
                     } else if cmd.type == "Create" {
                         edits.append(.create(path: resolvedPath, content: content))
                     } else if cmd.type == "Replace" || cmd.type == "Insert" {
@@ -391,6 +405,9 @@ enum CodeEdit: Equatable {
                     let path = String(line[Range(match.range(at: 1), in: line)!])
                     let range = String(line[Range(match.range(at: 2), in: line)!])
                     currentCommand = (type: "Insert", path: path, range: range)
+                } else if let match = appendPattern.firstMatch(in: line, range: range) {
+                    let path = String(line[Range(match.range(at: 1), in: line)!])
+                    currentCommand = (type: "Append", path: path, range: "")
                 }
             }
         }
