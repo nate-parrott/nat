@@ -74,7 +74,8 @@ extension AgentThreadStore {
             var i = 0
             while true {
                 // Loop and handle function calls
-                var llmMessages = await readThreadModel().steps.flatMap(\.asLLMMessages)
+                let taggedLLMMessages: [TaggedLLMMessage] = await readThreadModel().steps.flatMap(\.asTaggedLLMMessages).asArray.byDroppingRedundantContext()
+                var llmMessages = taggedLLMMessages.map { $0.asLLMMessage() }
                 if fakeFunctions { llmMessages = llmMessages.map(\.byConvertingFunctionsToFakeFunctions) }
                 if sysMsg.content.count > 0 {
                     llmMessages.insert(sysMsg, at: 0)

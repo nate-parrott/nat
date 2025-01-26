@@ -44,35 +44,25 @@ struct CodeSearchTool: Tool {
                 return call.response(text: "Tell the user they need to choose a folder before you can search the codebase.")
             }
 
-            async let answers_: [String] = try await codeSearch2(queries: args.questions ?? [], folder: folderURL, context: context, effort: effort)
-                .map({ $0.asString(withLineNumbers: Constants.useLineNumbers) })
+            async let answers_: [ContextItem] = try await codeSearch2(queries: args.questions ?? [], folder: folderURL, context: context, effort: effort)
+                .map({ ContextItem.fileSnippet($0) })
 
             async let grepSnippets_: [[FileSnippet]] = try await args.regexes?.concurrentMapThrowing({ pattern in
                 try await grepToSnippets(pattern: pattern, folder: folderURL, linesAroundMatchToInclude: 3, limit: effort.grepLimit)
             }) ?? []
 
-            var outputLines = [String]()
-            outputLines += try await answers_
+            var output = [ContextItem]()
+            output += try await answers_
             for (regex, snippets) in try await zip(args.regexes ?? [], grepSnippets_) {
-                outputLines.append("# \(snippets.count) search results for \(regex) (limit \(effort.grepLimit)):")
+                output.append(.text("# \(snippets.count) search results for \(regex) (limit \(effort.grepLimit)):"))
                 for snippet in snippets {
-                    outputLines.append(snippet.asString(withLineNumbers: Constants.useLineNumbers))
+                    output.append(.fileSnippet(snippet))
+//                    outputLines.append(snippet.asString(withLineNumbers: Constants.useLineNumbers))
                 }
             }
 
-            outputLines.append("^ Code search results above. Use additional code_search calls, read_file or other tools to get more information if you need it.")
-            return call.response(text: outputLines.joined(separator: "\n\n"))
-
-//            let answers = try await args.questions.concurrentMapThrowing { prompt in
-//                do {
-//                    let text = try await codeSearch(prompt: prompt, folderURL: folderURL, emitLog: context.log)
-//                    return "# Results for '\(prompt)'\n\(text)"
-//                } catch {
-//                    context.log(.toolError("Error on code_search('\(prompt)'): \(error)"))
-//                    return "code_search query '\(prompt)' failed with error: \(error)"
-//                }
-//            }
-//            return call.response(text: answers.joined(separator: "\n\n"))
+            output.append(.text("^ Code search results above. Use additional code_search calls, read_file or other tools to get more information if you need it."))
+            return call.response(items: output)
         }
         return nil
     }

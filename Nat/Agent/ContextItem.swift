@@ -14,20 +14,15 @@ struct TaggedLLMMessage: Equatable, Codable {
         var content: [ContextItem]
 
         var asLLMResponse: LLMMessage.FunctionResponse {
-            var resp = LLMMessage.FunctionResponse(id: functionId, functionName: functionName, text: "")
-            var textItems = [String]()
-            for item in content {
-                let (str, img) = item.asStringOrImage
-                if let str {
-                    textItems.append(str)
-                }
-                if let img {
-                    // TODO: support adding images
-                    fatalError("Cannot add images as function response")
-                }
-            }
-            resp.text = textItems.joined(separator: "\n\n")
-            return resp
+            LLMMessage.FunctionResponse(
+                id: functionId,
+                functionName: functionName,
+                text: content.map { $0.asPlainText() }.joined(separator: "\n\n")
+            )
+       }
+
+        var asTaggedLLMResponse: TaggedLLMMessage.FunctionResponse {
+            return .init(functionId: functionId, functionName: functionName, content: content)
         }
     }
 
@@ -45,6 +40,14 @@ struct TaggedLLMMessage: Equatable, Codable {
         self.content = content
         self.functionCalls = []
         self.functionResponses = []
+    }
+
+    // Written by Phil
+    init(functionResponses: [FunctionResponse]) {
+        self.role = .function
+        self.content = [] // functionResponses.flatMap { $0.content }
+        self.functionCalls = []
+        self.functionResponses = functionResponses
     }
 
     func asLLMMessage() -> LLMMessage {
@@ -69,18 +72,9 @@ struct TaggedLLMMessage: Equatable, Codable {
         asPlainText(includeSystemMessages: true)
     }
 
+    // TODO: Remove `includeSystemMessages`??
     func asPlainText(includeSystemMessages includeSys: Bool) -> String {
-        var lines = [String]()
-        for item in content {
-            let (text, img) = item.asStringOrImage
-            if let text {
-                lines.append(text)
-            }
-            if img != nil {
-                lines.append("[Image]")
-            }
-        }
-        return lines.joined(separator: "\n\n")
+        content.map({ $0.asPlainText() }).joined(separator: "\n\n")
     }
 }
 
@@ -93,6 +87,7 @@ enum ContextItem: Equatable, Codable {
     case textFile(filename: String, content: String)
     case url(URL)
     case largePaste(String)
+    case omission(String)
 
     var asStringOrImage: (String?, LLMMessage.Image?) {
         switch self {
@@ -110,7 +105,20 @@ enum ContextItem: Equatable, Codable {
             return ("URL: \(url.absoluteString)", nil)
         case .largePaste(let content):
             return ("Pasted content:\n\(content)", nil)
+        case .omission(let msg): return ("[\(msg)]", nil)
         }
+    }
+
+    func asPlainText() -> String {
+        var lines = [String]()
+        let (text, img) = asStringOrImage
+        if let text {
+            lines.append(text)
+        }
+        if img != nil {
+            lines.append("[Image]")
+        }
+        return lines.joined(separator: "\n\n")
     }
 }
 
@@ -161,5 +169,60 @@ struct FileSnippet: Equatable, Codable {
         let lastPathComponent = path.lastPathComponent
         output.append("\n%% END FILE SNIPPET [\(lastPathComponent)]; there are \(remainingLines) more lines available to read %%")
         return output.joined(separator: "\n")
+    }
+}
+
+extension Array where Element == TaggedLLMMessage {
+    func byDroppingRedundantContext() -> [TaggedLLMMessage] {
+        var result = self
+
+        var pathsToOmit = Set<URL>()
+
+        // Run this method over all context items in reverse order, so we keep the LAST full copy of each file snippet
+        func processContextItem(_ item: ContextItem) -> ContextItem {
+            if item.isSnippetWithAnyOfThesePaths(pathsToOmit), case .fileSnippet(let snippet) = item {
+                return .omission("[Old copy of \(snippet.projectRelativePath) omitted here]")
+            }
+            if let path = item.isFullFileSnippet_returningPath() {
+                pathsToOmit.insert(path)
+            }
+            return item
+
+        }
+
+        for i in result.indices.reversed() {
+            result[i].content = result[i].content.map(processContextItem(_:))
+            for j in result[i].functionResponses.indices {
+                result[i].functionResponses[j].content = result[i].functionResponses[j].content.map(processContextItem(_:))
+            }
+        }
+
+        return result
+    }
+}
+
+private extension ContextItem {
+    // HACK: Handle files who we've read
+    func isSnippetWithPath(_ url: URL) -> Bool {
+        if case .fileSnippet(let fileSnippet) = self {
+            return fileSnippet.path == url
+        }
+        return false
+    }
+
+    func isSnippetWithAnyOfThesePaths(_ paths: Set<URL>) -> Bool {
+        if case .fileSnippet(let fileSnippet) = self {
+            return paths.contains(fileSnippet.path)
+        }
+        return false
+    }
+
+    func isFullFileSnippet_returningPath() -> URL? {
+        if case .fileSnippet(let fileSnippet) = self {
+            if fileSnippet.fileTotalLen == fileSnippet.linesCount {
+                return fileSnippet.path
+            }
+        }
+        return nil
     }
 }

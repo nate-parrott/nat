@@ -59,18 +59,34 @@ extension ThreadModel.Step {
 }
 
 extension ThreadModel.Step {
-    var asLLMMessages: [LLMMessage] {
-        var messages: [LLMMessage] = [initialRequest.asLLMMessage()]
+    var asTaggedLLMMessages: [TaggedLLMMessage] {
+        var messages: [TaggedLLMMessage] = [initialRequest]
         for step in toolUseLoop {
-            messages.append(step.initialResponse.asLLMMessage())
-            messages.append(LLMMessage(functionResponses: step.computerResponse.map(\.asLLMResponse)))
+            messages.append(step.initialResponse)
+            messages.append(TaggedLLMMessage(functionResponses: step.computerResponse.map(\.asTaggedLLMResponse)))
             if let psuedoFunctionResponse = step.psuedoFunctionResponse {
-                messages.append(psuedoFunctionResponse.asLLMMessage())
+                messages.append(psuedoFunctionResponse)
             }
         }
         if let assistantMessageForUser {
-            messages.append(assistantMessageForUser.asLLMMessage())
+            messages.append(assistantMessageForUser)
         }
         return messages
+
+    }
+    var asLLMMessages: [LLMMessage] {
+        asTaggedLLMMessages.map { $0.asLLMMessage() }
+//        var messages: [LLMMessage] = [initialRequest.asLLMMessage()]
+//        for step in toolUseLoop {
+//            messages.append(step.initialResponse.asLLMMessage())
+//            messages.append(LLMMessage(functionResponses: step.computerResponse.map(\.asLLMResponse)))
+//            if let psuedoFunctionResponse = step.psuedoFunctionResponse {
+//                messages.append(psuedoFunctionResponse.asLLMMessage())
+//            }
+//        }
+//        if let assistantMessageForUser {
+//            messages.append(assistantMessageForUser.asLLMMessage())
+//        }
+//        return messages
     }
 }
