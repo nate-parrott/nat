@@ -85,6 +85,24 @@ final class FileEditorTests: XCTestCase {
         """)
     }
 
+    func testAppendParsing() throws {
+        let input = """
+        %%%
+        > Append /test/file.swift
+        let x = 1
+        %%%
+        """
+
+        let edits = try CodeEdit.edits(fromString: input, toolContext: .stub())
+        XCTAssertEqual(edits.count, 1)
+        switch edits[0] {
+        case .append(let path, let lines):
+            XCTAssertEqual(path.lastPathComponent, "file.swift")
+            XCTAssertEqual(lines.lines, ["let x = 1"])
+        default: XCTFail()
+        }
+    }
+
     func testApplyFindReplaceMultipleMatchesFails() throws {
         let original = """
         let x = 1
