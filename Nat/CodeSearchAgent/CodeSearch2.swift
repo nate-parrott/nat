@@ -1,19 +1,40 @@
 import ChatToys
 import Foundation
 
-func codeSearch2(queries: [String], folder: URL, context: ToolContext, effort: CodeSearchEffort = .one) async throws -> [FileSnippet] {
+struct CodeSearchResult {
+    var snippets: [FileSnippet]
+    var stats: SearchStats
+}
+
+func codeSearch2(queries: [String], folder: URL, context: ToolContext, effort: CodeSearchEffort = .one) async throws -> CodeSearchResult {
     if queries.isEmpty {
-        return []
+        return CodeSearchResult(snippets: [], stats: SearchStats(timeElapsed: 0, filesRead: 0, agentsSpawned: 0))
     }
+    
+    let startTime = Date()
+    var filesRead = 0
+    var agentsSpawned = 0
+    
     let chunks: [String] = FileTree.chunksOfEntriesFromDir(url: folder, entriesInChunk: 200)
     let results: [(Int, FileSnippet)] = try await chunks.concurrentMapThrowing {
-        try await _codeSearch2(queries: queries, folder: folder, context: context, chunkOfFileTree: $0, effort: effort)
+        agentsSpawned += 1
+        let (items, readCount) = try await _codeSearch2(queries: queries, folder: folder, context: context, chunkOfFileTree: $0, effort: effort)
+        filesRead += readCount
+        return items
     }.flatMap({ $0 })
+    
     let topResults: [FileSnippet] = results
         .sorted(by: { $0.0 > $1.0 })
         .prefix(effort.maxSnippetsToReturn).map({ $0.1 })
         .asArray
-    return topResults
+        
+    let stats = SearchStats(
+        timeElapsed: Date().timeIntervalSince(startTime),
+        filesRead: filesRead,
+        agentsSpawned: agentsSpawned
+    )
+    
+    return CodeSearchResult(snippets: topResults, stats: stats)
 }
 
 enum CodeSearchError: Error {
@@ -21,7 +42,7 @@ enum CodeSearchError: Error {
 }
 
 // Returns scored snippets
-private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, chunkOfFileTree: String, effort: CodeSearchEffort) async throws -> [(Int, FileSnippet)] {
+private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, chunkOfFileTree: String, effort: CodeSearchEffort) async throws -> ([(Int, FileSnippet)], Int) {
     print(chunkOfFileTree)
     let queriesList = queries.joined(separator: "\n- ")
     let prompt = """
@@ -74,7 +95,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
         context.log(.readFile(resolvedPath.lastPathComponent))
     }
     if snippetRanges.count == 0 {
-        return []
+        return ([], 0)
     }
     // STEP 2:
     messages.removeAll()
@@ -158,7 +179,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
             }
         }
     }
-    return items
+    return (items, snippetRanges.count)
 }
 
 private func parseRange(_ str: String) -> (Int, Int)? {

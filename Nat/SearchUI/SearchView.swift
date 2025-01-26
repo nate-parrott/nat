@@ -1,5 +1,11 @@
 import SwiftUI
 
+struct SearchStats: Equatable {
+    var timeElapsed: TimeInterval
+    var filesRead: Int
+    var agentsSpawned: Int
+}
+
 struct SearchView: View {
     @Environment(\.document) private var document: Document
 
@@ -9,7 +15,7 @@ struct SearchView: View {
     enum Status: Equatable {
         case none
         case loading
-        case done(String)
+        case done(String, SearchStats)
         case error(String)
     }
 
@@ -23,10 +29,9 @@ struct SearchView: View {
                         Task {
                             do {
                                 let ctx = ToolContext(activeDirectory: folderURL, log: {_ in () })
-                                let results = try await codeSearch2(queries: [query], folder: folderURL, context: ctx).map { $0.asString(withLineNumbers: true) }.joined(separator: "\n\n")
-//                                let results = FileTree.fullTree(url: folderURL)
-//                                let results = try await grepToSnippets(pattern: query, folder: folderURL, linesAroundMatchToInclude: 4, limit: 50).map({ $0.asString }).joined(separator: "\n\n")
-                                status = .done(results)
+                                let searchResult = try await codeSearch2(queries: [query], folder: folderURL, context: ctx)
+                                let results = searchResult.snippets.map { $0.asString(withLineNumbers: true) }.joined(separator: "\n\n")
+                                status = .done(results, searchResult.stats)
                             } catch {
                                 status = .error("\(error)")
                             }
@@ -40,10 +45,22 @@ struct SearchView: View {
                     Section {
                         Text("Loading...")
                     }
-                case .done(let results):
+                case .done(let results, let stats):
                     Section {
-                        Text(results)
-                            .textSelection(.enabled)
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("Time: \(String(format: "%.2f", stats.timeElapsed))s")
+                                Text("•")
+                                Text("\(stats.filesRead) files read")
+                                Text("•")
+                                Text("\(stats.agentsSpawned) agents spawned")
+                            }
+                            .foregroundStyle(.secondary)
+                            .font(.footnote)
+                            
+                            Text(results)
+                                .textSelection(.enabled)
+                        }
                     }
                 case .error(let error):
                     Section {
