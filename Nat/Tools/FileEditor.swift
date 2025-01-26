@@ -31,7 +31,7 @@ struct FileEditorTool: Tool {
             case .accept, .acceptWithComment:
                 for edit in codeEdits { // TODO: use `fileEdits` instead
                     switch edit {
-                    case .create: context.log(.createdFile((edit.url as NSURL).lastPathComponent ?? ""))
+                    case .write: context.log(.wroteFile((edit.url as NSURL).lastPathComponent ?? ""))
                     case .replace, .findReplace, .append: context.log(.editedFile((edit.url as NSURL).lastPathComponent ?? ""))
                     }
                 }
@@ -96,7 +96,7 @@ extension FileEdit {
         for edit in edits {
             switch edit {
             case .replace: return true
-            case .create: return false
+            case .write: return false
             case .append: return true
             case .findReplace: return true
             }
@@ -121,7 +121,7 @@ extension FileEdit {
                 content = try applyFindReplace(existing: content, find: find, replace: replace)
             case .append(path: _, content: let contentToAppend):
                 content += "\n" + contentToAppend
-            case .create(path: _, content: let newContent):
+            case .write(path: _, content: let newContent):
                 content = newContent
             case .replace(path: _, lineRangeStart: let rangeStart, lineRangeLen: let rangeLen, lines: let newLines):
                 content = try applyReplacement(existing: content, lineRangeStart: rangeStart, len: rangeLen, lines: newLines)
@@ -169,7 +169,7 @@ struct FileEdit {
 enum CodeEdit: Equatable {
     // line range end is INCLUSIVE and zero-indexed.
     case replace(path: URL, lineRangeStart: Int, lineRangeLen: Int, lines: [String])
-    case create(path: URL, content: String)
+    case write(path: URL, content: String)
     case append(path: URL, content: String)
     case findReplace(path: URL, find: [String], replace: [String])
 
@@ -177,7 +177,7 @@ enum CodeEdit: Equatable {
         switch self {
         case .replace(_, let lineRangeStart, _, _):
             return lineRangeStart
-        case .create:
+        case .write:
             return 0
         case .findReplace: return nil
         case .append: return nil
@@ -194,8 +194,8 @@ enum CodeEdit: Equatable {
             } else {
                 return "Replace \(path.absoluteString):\(start)-\(start+len-1)" // subtract b/c a string range like 1:1 is equal to a len of zero
             }
-        case .create(path: let path, _):
-            return "Create \(path.absoluteString)"
+        case .write(path: let path, _):
+            return "Write \(path.absoluteString)"
         case .findReplace(path: let path, find: let find, replace: let replace):
             return "Find/Replace in \(path.absoluteString)"
         case .append(path: let path, content: let content):
@@ -206,7 +206,7 @@ enum CodeEdit: Equatable {
     var url: URL {
         switch self {
         case .replace(path: let url, _, _, _): return url
-        case .create(path: let url, _): return url
+        case .write(path: let url, _): return url
         case .findReplace(path: let url, find: _, replace: _): return url
         case .append(path: let url, content: _): return url
         }
@@ -219,7 +219,7 @@ enum CodeEdit: Equatable {
         var currentCommand: (type: String, path: String, range: String)?
         
         // Command patterns
-        let createPattern = try NSRegularExpression(pattern: #"^>\s*Create\s+([^\s:]+)\s*$"#)
+        let writePattern = try NSRegularExpression(pattern: #"^>\s*Write\s+([^\s:]+)\s*$"#)
         let replacePattern = try NSRegularExpression(pattern: #"^>\s*Replace\s+([^:]+):(\d+(?:-\d+)?)\s*$"#)
         let insertPattern = try NSRegularExpression(pattern: #"^>\s*Insert\s+([^:]+):(\d+)\s*$"#)
         let findReplacePattern = try NSRegularExpression(pattern: #"^>\s*FindReplace\s+([^\s:]+)\s*$"#)
@@ -243,8 +243,8 @@ enum CodeEdit: Equatable {
                         }
                     } else if cmd.type == "Append" {
                         edits.append(.append(path: resolvedPath, content: content))
-                    } else if cmd.type == "Create" {
-                        edits.append(.create(path: resolvedPath, content: content))
+                    } else if cmd.type == "Write" {
+                        edits.append(.write(path: resolvedPath, content: content))
                     } else if cmd.type == "Replace" || cmd.type == "Insert" {
                         // Parse the range
                         let rangeParts = cmd.range.split(separator: "-")
@@ -287,9 +287,9 @@ enum CodeEdit: Equatable {
                 if let match = findReplacePattern.firstMatch(in: line, range: range) {
                     let path = String(line[Range(match.range(at: 1), in: line)!])
                     currentCommand = (type: "FindReplace", path: path, range: "")
-                } else if let match = createPattern.firstMatch(in: line, range: range) {
+                } else if let match = writePattern.firstMatch(in: line, range: range) {
                     let path = String(line[Range(match.range(at: 1), in: line)!])
-                    currentCommand = (type: "Create", path: path, range: "")
+                    currentCommand = (type: "Write", path: path, range: "")
                 } else if let match = replacePattern.firstMatch(in: line, range: range) {
                     let path = String(line[Range(match.range(at: 1), in: line)!])
                     let range = String(line[Range(match.range(at: 2), in: line)!])

@@ -40,7 +40,7 @@ enum UserVisibleLog: Equatable, Codable {
     case webSearch(String)
     case info(String)
 
-    case createdFile(String)
+    case wroteFile(String)
     case deletedFile(String)  // Added this case
     case codeSearch(String)
     case listedFiles

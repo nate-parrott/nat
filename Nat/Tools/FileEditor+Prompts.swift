@@ -10,10 +10,10 @@ extension FileEditorTool {
     
     # Edit commands
     
-    `Create` creates a file with text you provide, or overwrites an entire file.
+    `Write` creates a file with text you provide, or overwrites an entire file.
     The form is:
     \(Self.codeFence)
-    > Create /path/file.swift
+    > Write /path/file.swift
     New Line 1
     New Line 2...
     \(Self.codeFence)
@@ -93,9 +93,9 @@ extension FileEditorTool {
     ===WITH===
     \(Self.codeFence)
     
-    To replace the entire content of a 100-line file, use `Create` to overwrite:
+    To replace the entire content of a 100-line file, use `Write` to overwrite:
     \(Self.codeFence)
-    > Create /path/file4.swift
+    > Write /path/file4.swift
     ...new content...
     \(Self.codeFence)
     """
@@ -109,7 +109,7 @@ extension FileEditorTool {
     To edit a file, open a code fence with \(Self.codeFence), then provide an editing command on the next line. Valid commands are:
     > Replace [path]:[line range start](-[line range end]?) // lines are 0-indexed, inclusive
     > Insert [path]:[line index] // Content will be inserted BEFORE line at this index!
-    > Create [path]
+    > Write [path]
     
     After the command, use subsequent lines to provide code to be added. Then close the code fence using another \(Self.codeFence).
     
@@ -180,11 +180,11 @@ extension FileEditorTool {
     ...new content...
     \(Self.codeFence)
     
-    # Creating a new file
+    # Writing/Creating a new file
     
-    Create a new file using similar syntax:
+    Write a new file using similar syntax:
     \(Self.codeFence)
-    > Create /file/hi_world.swift
+    > Write /file/hi_world.swift
     def main():
         print("hi")
     \(Self.codeFence)

@@ -89,8 +89,8 @@ extension UserVisibleLog {
             return ("Rejected edit to: `\(path)`", "xmark")
         case .requestedChanges(let path):
             return ("Requested changes to: `\(path)`", "exclamationmark.triangle")
-        case .createdFile(let path):
-            return ("Created file: `\(path)`", "plus.circle")
+        case .wroteFile(let path):
+            return ("Wrote file: `\(path)`", "plus.circle")
         case .deletedFile(let path):
             return ("Deleted file: `\(path)`", "trash")
         case .codeSearch(let query):

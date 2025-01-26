@@ -139,7 +139,7 @@ final class FileEditorTests: XCTestCase {
     func testParseBasicCreate() throws {
         let input = """
         %%%
-        > Create /test/new.swift
+        > Write /test/new.swift
         let x = 1
         %%%
         """
@@ -147,7 +147,7 @@ final class FileEditorTests: XCTestCase {
         let edits = try CodeEdit.edits(fromString: input, toolContext: .stub())
         XCTAssertEqual(edits.count, 1)
         
-        if case .create(let path, let content) = edits[0] {
+        if case .write(let path, let content) = edits[0] {
             XCTAssertEqual(path.lastPathComponent, "new.swift")
             XCTAssertEqual(content, "let x = 1")
         } else {
@@ -201,7 +201,7 @@ final class FileEditorTests: XCTestCase {
     func testMultipleEdits() throws {
         let input = """
         %%%
-        > Create /test/file1.swift
+        > Write /test/file1.swift
         let a = 1
         %%%
         %%%
@@ -214,7 +214,7 @@ final class FileEditorTests: XCTestCase {
         XCTAssertEqual(edits.count, 2)
         
         XCTAssertEqual(edits.filter { 
-            if case .create = $0 { return true }
+            if case .write = $0 { return true }
             return false
         }.count, 1)
         
