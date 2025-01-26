@@ -18,10 +18,34 @@ extension ToolContext {
 final class FileEditorTests: XCTestCase {
     // MARK: - Parsing Tests
 
+    func testMessageParser() throws {
+        let input = """
+        I'll add a new row to the table with another fruit.
+
+        %%%
+        > FindReplace banana.html
+                    <tr>
+                        <td>Orange!</td>
+                    </tr>
+                </table>
+        ===WITH===
+                    <tr>
+                        <td>Orange!</td>
+                    </tr>
+                    <tr>
+                        <td>Apple</td>
+                    </tr>
+                </table>
+        %%%
+        """
+        let resp =  try CodeEdit.edits(fromString: input, toolContext: .stub())
+        XCTAssertEqual(resp.count, 1)
+    }
+
     func testFindReplace() throws {
         let input = """
         %%%
-        > FindReplace /test/file.swift:0
+        > FindReplace /test/file.swift
         // TODO
         ===WITH===
         let x = 1
@@ -42,7 +66,7 @@ final class FileEditorTests: XCTestCase {
     func testFindReplaceEmptyOutput() throws {
         let input = """
         %%%
-        > FindReplace /test/file.swift:0
+        > FindReplace /test/file.swift
         // TODO
         ===WITH===
         %%%

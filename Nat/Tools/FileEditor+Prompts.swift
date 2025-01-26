@@ -26,14 +26,15 @@ extension FileEditorTool {
     New Line 2...
     \(Self.codeFence)
     
-    `FindReplace` lets you edit a portion of a file by specifying original text to find and new text to replace it with, separated by a ==WITH== line.
+    `FindReplace` lets you edit a portion of a file by specifying original text to find and new text to replace it with, separated by a ===WITH=== line.
     Your original text must be unique, and exist EXACTLY AS-IS in the current version of file ONCE. Your replacement should slot perfectly in, including indentation.
+    Each code fence can contain a single find/replace pair, but you can use multiple sets of code fences per response.
     Form:
     \(Self.codeFence)
     > FindReplace /path/file.swift
     Existing Code Line 1
     Existing Code Line 2
-    ==WITH==
+    ===WITH===
     Replacement Code Line 1
     Replacement Code Line 2
     \(Self.codeFence)
@@ -41,7 +42,7 @@ extension FileEditorTool {
     
     # Rules
     
-    You can use multiple code fences in a single response.
+    You can use multiple separate code fences in a single response.
     After editing, pause to allow the system to respond; do not use other tools in the same response.
             
     Your edits will be applied directly to the file, and your code may be linted or syntax-checked, so never say things like "...existing unchanged..." etc. Do not include comments explaining what you changed IN the code, but do include helpful comments for future readers, as an expert engineer would.
@@ -75,20 +76,21 @@ extension FileEditorTool {
     > FindReplace /main.html
       Hello,
       <em>world</em>
-    ==WITH==
+    ===WITH===
       Hello, world
     \(Self.codeFence)
-    > FindReplace /main.html:7
+    \(Self.codeFence)
+    > FindReplace /main.html
       <li>Bannana</li>
-    ==WITH==
+    ===WITH===
       <li>Banana</li>
     \(Self.codeFence)
     
-    To delete lines, specify empty code after `==WITH==`:
+    To delete lines, specify empty code after `===WITH===`:
     \(Self.codeFence)
     > FindReplace /main.html
       <li>Peach</li>
-    ==WITH==
+    ===WITH===
     \(Self.codeFence)
     
     To replace the entire content of a 100-line file, use `Create` to overwrite:

@@ -53,11 +53,13 @@ extension ToolContext {
         }
         var path = path
         if path.starts(with: "/") {
-            path = String(path.dropFirst())
+            path = String(path.dropFirst()) // remove leading slash
         }
-        guard let resolved = URL(string: path, relativeTo: activeDirectory) else {
+        guard let resolved = URL(string: path, relativeTo: URL(fileURLWithPath: activeDirectory.path(), isDirectory: true)) else {
             throw PathError.invalidPath
         }
+
+        // Ensure resolved path is within active directory:
         var directoryStr = activeDirectory.absoluteString
         if !directoryStr.hasSuffix("/") {
             directoryStr += "/"

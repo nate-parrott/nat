@@ -19,7 +19,7 @@ struct FileEditorTool: Tool {
         print("[FileEditorTool] parsed into file edits: \(fileEdits)")
         let editsDesc = fileEdits.map(\.description).joined(separator: ", ")
 
-        var responseStrings = [String]()
+        var output = [ContextItem]()
         do {
             let confirmation: FileEditorReviewPanelResult = !context.confirmFileEdits ? .accept :  try await context.presentUI(title: "Accept Edits?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
                 FileEditorReviewPanel(edits: fileEdits, finish: { result in
@@ -39,30 +39,31 @@ struct FileEditorTool: Tool {
                 if case .acceptWithComment(let comment) = confirmation {
                     context.log(.info("Accepted with comment: \(comment)"))
                 }
-                responseStrings.append(try await apply(fileEdits: fileEdits, context: context))
+                output += try await apply(fileEdits: fileEdits, context: context)
                 if case .acceptWithComment(let comment) = confirmation {
-                    responseStrings.append("User approved this change, but left this comment:\n\(comment)")
+                    output.append(.text("[User approved the change above, but left this comment:]\n\(comment)"))
                 }
             case .reject:
                 context.log(.rejectedEdit(editsDesc)) 
-                responseStrings.append("User rejected your latest message's edits. They were rolled back Take a beat and let the user tell you more about what they wanted.")
+                output.append(.text("User rejected your latest message's edits. They were rolled back Take a beat and let the user tell you more about what they wanted."))
                 break
             case .requestChanged(let message):
                 context.log(.requestedChanges(editsDesc))
-                responseStrings.append("User requested changes to the edits in your last message. They were rolled back. Here is what they said:\n[BEGIN USER FEEDBACK]\n\(message)\n[END USER FEEDBACK]")
+                output.append(.text("[User requested changes to the edits in your last message. They were rolled back. Here is what they said:\n\n\(message)"))
                 break
             }
+            // TODO: Append latest version whe there's a rejection
         } catch {
             print("FAILED TO APPLY EDITS: \(editsDesc)")
-            responseStrings.append("Edits '\(editsDesc)' failed to apply due to error: \(error).")
+            output.append(.text("Edits '\(editsDesc)' failed to apply due to error: \(error)."))
         }
         // TODO: return proper context items
-        return [ContextItem.text(responseStrings.joined(separator: "\n\n"))]
+        return output
     }
 
-    private func apply(fileEdits: [FileEdit], context: ToolContext) async throws -> String {
+    private func apply(fileEdits: [FileEdit], context: ToolContext) async throws -> [ContextItem] {
         var allWrites = [(URL, String)]()
-        var summaries = [String]()
+        var output = [ContextItem]()
 
         for fileEdit in fileEdits {
             let content = try fileEdit.getBeforeAfter().1
@@ -72,10 +73,21 @@ struct FileEditorTool: Tool {
             if !FileManager.default.fileExists(atPath: path.deletingLastPathComponent().path(percentEncoded: false)) {
                 try FileManager.default.createDirectory(at: path.deletingLastPathComponent(), withIntermediateDirectories: true)
             }
+
+            let projectRelativePath: String = {
+                if let dir = context.activeDirectory, let relative = path.asPathRelativeTo(base: dir) {
+                    return relative
+                }
+                return path.path()
+            }()
+
             try content.write(to: path, atomically: true, encoding: .utf8)
-            summaries.append("Updated \(path.relativePath). New content:\n\(stringWithLineNumbers(content))\n")
+            output.append(.text("Updated \(projectRelativePath):"))
+            try output.append(.fileSnippet(FileSnippet(path: path, projectRelativePath: projectRelativePath, lineStart: 0, linesCount: content.lines.count)))
+//            summaries.append("Updated \(path.relativePath). New content:")
+//            summaries.append("Updated \(path.relativePath). New content:\n\(stringWithLineNumbers(content))\n")
         }
-        return summaries.joined(separator: "\n\n")
+        return output
     }
 }
 
@@ -117,56 +129,6 @@ extension FileEdit {
         }
         return content
     }
-}
-
-private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> CodeEdit {
-    guard case .replace(path: let url, lineRangeStart: var start, lineRangeLen: let len, lines: let newLines) = edit else {
-        return edit
-    }
-    // Adjust indices based on previous edits to the same file
-    for previousEdit in previousEdits {
-        // Only consider edits to the same file
-        guard previousEdit.url == url,
-              case .replace(_, let prevEditStart, let prevEditOrigRangeLen, let prevEditLines) = previousEdit else {
-            continue
-        }
-        
-        let addedLineCount = prevEditLines.count
-        let delta = addedLineCount - prevEditOrigRangeLen
-//        let prevEditOrigRangeEnd = prevEditStart + prevEditOrigRangeLen
-
-//        // If this edit starts after the previous edit, adjust both start and end
-        if start >= prevEditStart {
-            start += delta
-        }
-
-        // If this edit overlaps or comes before the previous edit, we don't adjust
-        // as those edits should be handled separately or rejected
-    }
-    return .replace(path: url, lineRangeStart: start, lineRangeLen: len, lines: newLines)
-}
-
-func applyReplacement(existing: String, lineRangeStart: Int, len: Int, lines newLines: [String]) throws -> String {
-    var lines = existing.lines
-
-    // Ensure the range is valid
-    guard lineRangeStart >= 0, lineRangeStart + len <= lines.count else {
-        throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid line range \(lineRangeStart) len \(len)for file with \(lines.count) lines"])
-    }
-
-    lines.replaceSubrange(lineRangeStart..<(lineRangeStart + len), with: newLines)
-    return lines.joined(separator: "\n")
-}
-
-func applyFindReplace(existing: String, find: [String], replace: [String]) throws -> String {
-    var lines = existing.lines
-    let matchingRanges = lines.ranges(of: find)
-    if matchingRanges.count != 1 {
-        throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Expected exactly 1 match for find, got \(matchingRanges.count)"])
-    }
-    let range = matchingRanges[0]
-    lines.replaceSubrange(range, with: replace)
-    return lines.joined(separator: "\n")
 }
 
 func stringWithLineNumbers(_ string: String, lineCharLimit: Int = 1000, indexStart: Int = 0) -> String {
@@ -260,7 +222,7 @@ enum CodeEdit: Equatable {
         let createPattern = try NSRegularExpression(pattern: #"^>\s*Create\s+([^\s:]+)\s*$"#)
         let replacePattern = try NSRegularExpression(pattern: #"^>\s*Replace\s+([^:]+):(\d+(?:-\d+)?)\s*$"#)
         let insertPattern = try NSRegularExpression(pattern: #"^>\s*Insert\s+([^:]+):(\d+)\s*$"#)
-        let findReplacePattern = try NSRegularExpression(pattern: #"^>\s*FindReplace\s+([^:]+):(\d+)\s*$"#)
+        let findReplacePattern = try NSRegularExpression(pattern: #"^>\s*FindReplace\s+([^\s:]+)\s*$"#)
         let appendPattern = try NSRegularExpression(pattern: #"^>\s*Append\s+([^\s:]+)\s*$"#)
 
         for line in lines {
@@ -311,7 +273,7 @@ enum CodeEdit: Equatable {
                     // Start of code block - look for command
                     currentContent = []
                 }
-            } else if let cmd = currentCommand {
+            } else if currentCommand != nil {
                 // Inside a code block - accumulate content
                 if line == "\\```" {
                     currentContent.append("```")
@@ -353,4 +315,54 @@ private func parseFindAndReplace(_ content: [String]) -> (find: [String], replac
         return (split[0].asArray, split[1].asArray)
     }
     return nil
+}
+
+private func adjustEditIndices(edit: CodeEdit, previousEdits: [CodeEdit]) -> CodeEdit {
+    guard case .replace(path: let url, lineRangeStart: var start, lineRangeLen: let len, lines: let newLines) = edit else {
+        return edit
+    }
+    // Adjust indices based on previous edits to the same file
+    for previousEdit in previousEdits {
+        // Only consider edits to the same file
+        guard previousEdit.url == url,
+              case .replace(_, let prevEditStart, let prevEditOrigRangeLen, let prevEditLines) = previousEdit else {
+            continue
+        }
+
+        let addedLineCount = prevEditLines.count
+        let delta = addedLineCount - prevEditOrigRangeLen
+//        let prevEditOrigRangeEnd = prevEditStart + prevEditOrigRangeLen
+
+//        // If this edit starts after the previous edit, adjust both start and end
+        if start >= prevEditStart {
+            start += delta
+        }
+
+        // If this edit overlaps or comes before the previous edit, we don't adjust
+        // as those edits should be handled separately or rejected
+    }
+    return .replace(path: url, lineRangeStart: start, lineRangeLen: len, lines: newLines)
+}
+
+func applyReplacement(existing: String, lineRangeStart: Int, len: Int, lines newLines: [String]) throws -> String {
+    var lines = existing.lines
+
+    // Ensure the range is valid
+    guard lineRangeStart >= 0, lineRangeStart + len <= lines.count else {
+        throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid line range \(lineRangeStart) len \(len)for file with \(lines.count) lines"])
+    }
+
+    lines.replaceSubrange(lineRangeStart..<(lineRangeStart + len), with: newLines)
+    return lines.joined(separator: "\n")
+}
+
+func applyFindReplace(existing: String, find: [String], replace: [String]) throws -> String {
+    var lines = existing.lines
+    let matchingRanges = lines.ranges(of: find)
+    if matchingRanges.count != 1 {
+        throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Expected exactly 1 match for find, got \(matchingRanges.count)"])
+    }
+    let range = matchingRanges[0]
+    lines.replaceSubrange(range, with: replace)
+    return lines.joined(separator: "\n")
 }
