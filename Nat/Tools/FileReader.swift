@@ -34,14 +34,6 @@ struct FileReaderTool: Tool {
         }
         return nil
     }
-
-    func contextToInsertAtBeginningOfThread(context: ToolContext) async throws -> String? {
-        nil
-    }
-
-    func inlineContextUpdates(previous: String, context: ToolContext) async throws -> String? {
-        nil
-    }
 }
 
 enum FileReaderError: Error {
