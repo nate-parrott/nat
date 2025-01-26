@@ -201,7 +201,7 @@ extension Array where Element == TaggedLLMMessage {
     }
 
     func byTrimmingOldMessages() -> [TaggedLLMMessage] {
-        // TODO
+        // TODO: delete in the MIDDLE in a context-preserving way
         self
     }
 }
