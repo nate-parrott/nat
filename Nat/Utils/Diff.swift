@@ -42,32 +42,78 @@ struct Diff: Equatable {
     }
 }
 
-struct DiffView: View {
-    var diff: Diff
-    @State private var expansionIndices = Set<Int>()
+extension Diff {
+    static func from(before: [String], after: [String], collapseSames: Bool) -> Diff {
+        let diff = after.difference(from: before).asArray
 
-    var body: some View {
-        // TODO: collapse multiline text fields
-        ForEach(Array(diff.lines.enumerated()), id: \.offset) { pair in
-            switch pair.element {
-            case .delete(let str):
-                Text(str).foregroundStyle(.red)
-            case .same(let str):
-                Text(str)
-            case .insert(let str):
-                Text(str).foregroundStyle(.green)
-            case .collapsed(let lines):
-                if expansionIndices.contains(pair.offset) {
-                    DiffView(diff: Diff(lines: lines))
+        // An important aspect of this is that the iteration will happen in a specific order: First, all the removals from highest to lowest offset, followed by insertions from lowest to highest
+
+        func isSame(_ line: Diff.Line) -> Bool {
+            switch line {
+            case .same: return true
+            default: return false
+            }
+        }
+
+        // Our diff has more lines than the `after` collection b/c it includes deletions.
+        // So we use an array of arrays, where lines[x] is equal to output_array[x],
+        // but we can store multiple items per line
+        var groups: [[Diff.Line]] = before.map({ [Diff.Line.same($0)] })
+        var endGroup = [Diff.Line]()
+        for edit in diff {
+            switch edit {
+            case .insert(offset: let idx, element: let element, associatedWith: _):
+                groups.insert([.insert(element)], at: idx)
+            case .remove(offset: let idx, element: let element, associatedWith: _):
+                let remainingItems = groups[idx].filter({ !isSame($0) }) + [.delete(element)]
+                groups.remove(at: idx)
+                if idx + 1 < groups.count {
+                    groups[idx + 1] += remainingItems
                 } else {
-                    Label("Show \(lines.count) lines", systemImage: "plus.circle")
-                        .foregroundStyle(.blue)
-                        .onTapGesture {
-                            expansionIndices.insert(pair.offset)
-                        }
+                    endGroup.insert(contentsOf: remainingItems, at: 0)
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        var items = (groups + [endGroup]).flatMap({ $0 })
+
+//        var editsByStartLine = [Int: [CollectionDifference<String>.Change]]()
+//        for edit in diff {
+//            switch edit {
+//            case .insert(offset: let idx, element: _, associatedWith: _):
+//                editsByStartLine[idx, default: []].append(edit)
+//            case .remove(offset: let idx, element: _, associatedWith: _):
+//                editsByStartLine[idx, default: []].append(edit)
+//            }
+//        }
+//
+//        var indexIntoOutput = 0
+//        var diffItems = [Diff.Line]()
+//        var remainingInputLines = before
+//        while true {
+//            // First, is there an edit to apply?
+//            if let edit = editsByStartLine[indexIntoOutput]?.first {
+//                editsByStartLine[indexIntoOutput]?.removeFirst()
+//                switch edit {
+//                case .insert(offset: _, element: let element, associatedWith: _):
+//                    diffItems.append(.insert(element))
+//                    indexIntoOutput += 1
+//                case .remove(offset: _, element: let element, associatedWith: _):
+//                    diffItems.append(.delete(element))
+//                    if remainingInputLines.count > 0 {
+//                        remainingInputLines.removeFirst()
+//                    }
+//                }
+//            } else if let line = remainingInputLines.first {
+//                remainingInputLines.removeFirst()
+//                diffItems.append(.same(line))
+//                indexIntoOutput += 1
+//            } else {
+//                break // done
+//            }
+//        }
+        if collapseSames {
+            items = Diff.collapseRunsOfSames(items)
+        }
+        return .init(lines: items)
     }
 }

@@ -65,31 +65,8 @@ struct FileEditorTool: Tool {
         var summaries = [String]()
 
         for fileEdit in fileEdits {
-            var content: String?
-            for codeEdit in fileEdit.edits {
-                switch codeEdit {
-                case .findReplace(path: let path, find: let find, replace: let replace):
-                    if content == nil {
-                        content = try String(contentsOf: path, encoding: .utf8)
-                    }
-                    content = try applyFindReplace(existing: content!, find: find, replace: replace)
-                case .append(path: let path, content: let contentToAppend):
-                    if content == nil {
-                        content = try String(contentsOf: path, encoding: .utf8)
-                    }
-                    content! += "\n" + contentToAppend
-                case .create(path: _, content: let newContent):
-                    content = newContent
-                case .replace(path: let path, lineRangeStart: let rangeStart, lineRangeLen: let rangeLen, lines: let newLines):
-                    if content == nil {
-                        content = try String(contentsOf: path, encoding: .utf8)
-                    }
-                    content = try applyReplacement(existing: content!, lineRangeStart: rangeStart, len: rangeLen, lines: newLines)
-                }
-            }
-            if let content {
-                allWrites.append((fileEdit.path, content))
-            }
+            let content = try fileEdit.getBeforeAfter().1
+            allWrites.append((fileEdit.path, content))
         }
         for (path, content) in allWrites {
             if !FileManager.default.fileExists(atPath: path.deletingLastPathComponent().path(percentEncoded: false)) {
@@ -99,6 +76,46 @@ struct FileEditorTool: Tool {
             summaries.append("Updated \(path.relativePath). New content:\n\(stringWithLineNumbers(content))\n")
         }
         return summaries.joined(separator: "\n\n")
+    }
+}
+
+extension FileEdit {
+    var requiresReadFromDisk: Bool {
+        for edit in edits {
+            switch edit {
+            case .replace: return true
+            case .create: return false
+            case .append: return true
+            case .findReplace: return true
+            }
+        }
+        return false
+    }
+
+    func getBeforeAfter() throws -> (String, String) {
+        var before = ""
+        if requiresReadFromDisk {
+            before = (try? String(contentsOf: path, encoding: .utf8)) ?? ""
+        }
+        let after = try applyToExisting(content: before)
+        return (before, after)
+    }
+
+    func applyToExisting(content: String?) throws -> String {
+        var content = content ?? ""
+        for codeEdit in edits {
+            switch codeEdit {
+            case .findReplace(path: _, find: let find, replace: let replace):
+                content = try applyFindReplace(existing: content, find: find, replace: replace)
+            case .append(path: _, content: let contentToAppend):
+                content += "\n" + contentToAppend
+            case .create(path: _, content: let newContent):
+                content = newContent
+            case .replace(path: _, lineRangeStart: let rangeStart, lineRangeLen: let rangeLen, lines: let newLines):
+                content = try applyReplacement(existing: content, lineRangeStart: rangeStart, len: rangeLen, lines: newLines)
+            }
+        }
+        return content
     }
 }
 
