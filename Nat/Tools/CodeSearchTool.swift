@@ -44,8 +44,7 @@ struct CodeSearchTool: Tool {
                 return call.response(text: "Tell the user they need to choose a folder before you can search the codebase.")
             }
 
-            async let answers_: [ContextItem] = try await codeSearch2(queries: args.questions ?? [], folder: folderURL, context: context, effort: effort)
-                .snippets
+            async let answers_: [ContextItem] = try await codeSearch2(queries: args.questions ?? [], folder: folderURL, context: context, effort: effort).snippets
                 .map({ ContextItem.fileSnippet($0) })
 
             async let grepSnippets_: [[FileSnippet]] = try await args.regexes?.concurrentMapThrowing({ pattern in

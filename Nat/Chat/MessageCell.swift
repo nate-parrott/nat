@@ -109,6 +109,8 @@ extension UserVisibleLog {
             return ("Web research: _\(query)_", "globe")
         case .info(let text):
             return (text, "info")
+        case .toolWarning(let text):
+            return (text, "exclamationmark.triangle.fill")
         }
     }
 }

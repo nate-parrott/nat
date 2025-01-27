@@ -47,6 +47,7 @@ enum UserVisibleLog: Equatable, Codable {
     case tokenUsage(prompt: Int, completion: Int, model: String)
     case effort(String)
 
+    case toolWarning(String)
     case toolError(String)
     case terminal(command: String)
 }
