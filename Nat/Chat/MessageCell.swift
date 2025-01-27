@@ -65,7 +65,7 @@ private struct CodeEditInlineView: View {
 //                .frame(height: 100)
 //        }
 //        .background(Color.black)
-//        .clipShape(outline)
+        .clipShape(outline)
         .background(outline.fill(Color.white).shadow(radius: 4).opacity(0.15))
     }
 

@@ -12,6 +12,7 @@ enum TextFieldEvent {
     case key(Key)
     case focus
     case blur
+    case paste(String)
 }
 
 struct InputTextFieldOptions: Equatable {
@@ -171,6 +172,18 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
 
     // MARK: - NSTextViewDelegate
 
+    func textView(_ textView: NSTextView, shouldChangeTextIn range: NSRange, replacementString text: String?) -> Bool {
+        // Intercept long pastes from clipboard
+        if let text = text, text.count > 500 {
+            // Only check pasteboard for large text to avoid unnecessary slowdown
+            if let pb = NSPasteboard.general.string(forType: .string), text == pb {
+                onEvent?(.paste(text))
+                return false
+            }
+        }
+        return true
+    }
+    
     func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         switch commandSelector {
         case #selector(NSResponder.insertNewline(_:)):

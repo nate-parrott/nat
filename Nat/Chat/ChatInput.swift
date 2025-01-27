@@ -101,8 +101,13 @@ struct ChatInput: View {
     }
 
     private func textFieldEvent(_ event: TextFieldEvent) -> Void {
-        if case .key(.enter) = event, text != "" {
-            submit()
+        switch event {
+        case .key(.enter):
+            if text != "" { submit() }
+        case .paste(let text):
+            attachments.append(.largePaste(text))
+        default:
+            break
         }
     }
     
