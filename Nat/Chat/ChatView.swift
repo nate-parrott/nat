@@ -2,8 +2,7 @@ import ChatToys
 import SwiftUI
 
 struct ChatView: View {
-    @State private var text = ""
-    @State private var imageAttachment: ChatUINSImage? = nil
+//    @State private var imageAttachment: ChatUINSImage? = nil
     
     @Environment(\.document) private var document
     @State private var typing = false
@@ -27,7 +26,7 @@ struct ChatView: View {
                 }
             }
             Divider()
-            ChatInput(send: sendMessage(text:), onStop: stopAgent)
+            ChatInput(send: sendMessage(text:attachments:), onStop: stopAgent)
         }
         .overlay(alignment: .bottom) {
             if typing {
@@ -50,15 +49,22 @@ struct ChatView: View {
         document.store.modify { state in
             state.thread = .init()
         }
-        imageAttachment = nil
+//        imageAttachment = nil
     }
     
-    private func sendMessage(text: String) {
-        var msg = TaggedLLMMessage(role: .user, content: [.text(text)])
-        if let imageAttachment {
-            try! msg.content.append(.image(imageAttachment.asLLMImage(detail: .high)))
-            self.imageAttachment = nil
-        }
+    private func sendMessage(text: String, attachments: [ContextItem]) {
+        let msg = TaggedLLMMessage(role: .user, content: [.text(text)] + attachments)
+//        if let imageAttachment {
+//            try! msg.content.append(.image(imageAttachment.asLLMImage(detail: .high)))
+//            self.imageAttachment = nil
+//        }
+        
+        // Add file attachments
+//        for url in attachments {
+//            if let content = try? String(contentsOf: url, encoding: .utf8) {
+//                msg.content.append(.textFile(filename: url.lastPathComponent, content: content))
+//            }
+//        }
         let folderURL = document.store.model.folder
         let curFile = document.store.model.selectedFileInEditorRelativeToFolder
         
@@ -137,7 +143,7 @@ private struct ScrollToBottomThreadView<Data: RandomAccessCollection, Content: V
                 .frame(maxWidth: 700)
                 .frame(maxWidth: .infinity)
             }
-            .onChange(of: data.count) { _ in
+            .onChange(of: data.count) { oldCount, newCount in
                 withAnimation {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         if let last = data.last {

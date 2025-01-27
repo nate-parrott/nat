@@ -120,6 +120,27 @@ enum ContextItem: Equatable, Codable {
         }
         return lines.joined(separator: "\n\n")
     }
+
+    var summary: (icon: String, name: String) {
+        switch self {
+        case .text:
+            return ("text.bubble", "Text")
+        case .fileSnippet(let snip):
+            return ("doc.text", snip.path.lastPathComponent)
+        case .image:
+            return ("photo", "Image")
+        case .systemInstruction:
+            return ("gearshape", "System Instruction")
+        case .textFile(filename: let name, content: _):
+            return ("doc", name)
+        case .url(let url):
+            return ("link", url.host() ?? "")
+        case .largePaste:
+            return ("doc.on.clipboard", "Paste")
+        case .omission:
+            return ("ellipsis", "Omission")
+        }
+    }
 }
 
 // Type representing a snippet of a file in the context
