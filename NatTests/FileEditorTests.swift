@@ -42,6 +42,26 @@ final class FileEditorTests: XCTestCase {
         XCTAssertEqual(resp.count, 1)
     }
 
+    func testPartialParse() throws {
+        let input = """
+        I'll add a new row to the table with another fruit.
+        %%%
+        > FindReplace banana.html
+                    <tr>
+                        <td>Orange!</td>
+                    </tr>
+        """
+        let parts = try EditParser.parsePartial(string: input)
+        XCTAssertEqual(parts.count, 2)
+        XCTAssertEqual(parts[0], .textLines(["I'll add a new row to the table with another fruit."]))
+        if case .codeEdit(let edit) = parts[1],
+           case .findReplace(path: _, find: let find, replace: _) = edit {
+            XCTAssertEqual(find.count, 3)
+        } else {
+            XCTFail()
+        }
+    }
+
     func testFindReplace() throws {
         let input = """
         %%%

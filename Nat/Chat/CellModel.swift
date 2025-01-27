@@ -49,7 +49,7 @@ private extension ThreadModel.Step.ToolUseStep {
 
 private extension TaggedLLMMessage {
     func cellModels(idPrefix: String) -> [MessageCellModel] {
-        if content.count == 1, let item = content.first, case .text(let string) = item, let parsed = try? EditParser.parse(string: string, toolContext: nil) {
+        if content.count == 1, let item = content.first, case .text(let string) = item, let parsed = try? EditParser.parsePartial(string: string) {
             return parsed.enumerated().map { (i, item) in
                 switch item {
                 case .codeEdit(let edit):

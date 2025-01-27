@@ -6,8 +6,16 @@ enum EditParser {
         case codeEdit(CodeEdit)
     }
 
+    static func parse(string: String, toolContext: ToolContext) throws -> [Part] {
+        try _parse(string: string, toolContext: toolContext, partial: false)
+    }
+
+    static func parsePartial(string: String) throws -> [Part] {
+        try _parse(string: string, toolContext: nil, partial: true)
+    }
+
     // `toolContext` can be nil for pure parsing, but needs to be set when generating code edits for application
-    static func parse(string: String, toolContext: ToolContext?) throws -> [Part] {
+    private static func _parse(string: String, toolContext: ToolContext?, partial: Bool) throws -> [Part] {
         var parts = [Part]()
 
         func appendLine(_ str: String) {
@@ -21,7 +29,8 @@ enum EditParser {
 //        var edits = [CodeEdit]()
         let lines = string.lines
         var currentContent = [String]()
-        var currentCommand: (type: String, path: String, range: String)?
+        typealias Command = (type: String, path: String, range: String)
+        var currentCommand: Command?
 
         // Command patterns
         let writePattern = try NSRegularExpression(pattern: #"^>\s*Write\s+([^\s:]+)\s*$"#)
@@ -30,50 +39,56 @@ enum EditParser {
         let findReplacePattern = try NSRegularExpression(pattern: #"^>\s*FindReplace\s+([^\s:]+)\s*$"#)
         let appendPattern = try NSRegularExpression(pattern: #"^>\s*Append\s+([^\s:]+)\s*$"#)
 
+        func appendEdit(cmd: Command) throws {
+            let content = currentContent.joined(separator: "\n")
+
+            // Resolve the path relative to workspace
+            let resolvedPath = try toolContext?.resolvePath(cmd.path) ?? URL(fileURLWithPath: cmd.path)
+
+            if cmd.type == "FindReplace" {
+                if let (find, replace) = parseFindAndReplace(currentContent) {
+                    parts.append(.codeEdit(.findReplace(path: resolvedPath, find: find, replace: replace)))
+                } else if partial {
+                    parts.append(.codeEdit(.findReplace(path: resolvedPath, find: currentContent, replace: [])))
+                } else {
+                    // Skip
+                    // TODO: throw error?
+                }
+            } else if cmd.type == "Append" {
+                parts.append(.codeEdit(.append(path: resolvedPath, content: content)))
+            } else if cmd.type == "Write" {
+                parts.append(.codeEdit(.write(path: resolvedPath, content: content)))
+            } else if cmd.type == "Replace" || cmd.type == "Insert" {
+                // Parse the range
+                let rangeParts = cmd.range.split(separator: "-")
+                if rangeParts.isEmpty { return }
+
+                guard let start = Int(rangeParts[0]) else { return }
+
+                if cmd.type == "Insert" {
+                    parts.append(.codeEdit(.replace(path: resolvedPath, lineRangeStart: start, lineRangeLen: 0, lines: currentContent)))
+                } else {
+                    let end: Int
+                    if rangeParts.count > 1 {
+                        guard let parsedEnd = Int(rangeParts[1]) else { return }
+                        end = parsedEnd
+                    } else {
+                        end = start
+                    }
+                    let len = end - start + 1
+                    parts.append(.codeEdit(.replace(path: resolvedPath, lineRangeStart: start, lineRangeLen: len, lines: currentContent)))
+                }
+            }
+
+            currentCommand = nil
+            currentContent = []
+        }
+
         for line in lines {
             if line == FileEditorTool.codeFence {
                 if let cmd = currentCommand {
                     // End of code block - process the edit
-
-                    let content = currentContent.joined(separator: "\n")
-
-                    // Resolve the path relative to workspace
-                    let resolvedPath = try toolContext?.resolvePath(cmd.path) ?? URL(fileURLWithPath: cmd.path)
-
-                    if cmd.type == "FindReplace" {
-                        if let (find, replace) = parseFindAndReplace(currentContent) {
-                            parts.append(.codeEdit(.findReplace(path: resolvedPath, find: find, replace: replace)))
-                        } else {
-                            // Skip
-                        }
-                    } else if cmd.type == "Append" {
-                        parts.append(.codeEdit(.append(path: resolvedPath, content: content)))
-                    } else if cmd.type == "Write" {
-                        parts.append(.codeEdit(.write(path: resolvedPath, content: content)))
-                    } else if cmd.type == "Replace" || cmd.type == "Insert" {
-                        // Parse the range
-                        let rangeParts = cmd.range.split(separator: "-")
-                        if rangeParts.isEmpty { continue }
-
-                        guard let start = Int(rangeParts[0]) else { continue }
-
-                        if cmd.type == "Insert" {
-                            parts.append(.codeEdit(.replace(path: resolvedPath, lineRangeStart: start, lineRangeLen: 0, lines: currentContent)))
-                        } else {
-                            let end: Int
-                            if rangeParts.count > 1 {
-                                guard let parsedEnd = Int(rangeParts[1]) else { continue }
-                                end = parsedEnd
-                            } else {
-                                end = start
-                            }
-                            let len = end - start + 1
-                            parts.append(.codeEdit(.replace(path: resolvedPath, lineRangeStart: start, lineRangeLen: len, lines: currentContent)))
-                        }
-                    }
-
-                    currentCommand = nil
-                    currentContent = []
+                    try appendEdit(cmd: cmd)
                 } else {
                     // Start of code block - look for command
                     currentContent = []
@@ -111,6 +126,10 @@ enum EditParser {
                 // Normal line
                 appendLine(line)
             }
+        }
+
+        if partial, let currentCommand {
+            try? appendEdit(cmd: currentCommand)
         }
 
         return parts
