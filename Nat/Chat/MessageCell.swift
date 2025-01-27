@@ -38,6 +38,7 @@ private struct CodeEditInlineView: View {
     var edit: CodeEdit
 
     var body: some View {
+        let outline = RoundedRectangle(cornerRadius: 8, style: .continuous)
         VStack(alignment: .leading, spacing: 4) {
             switch edit {
             case .replace(let path, _, _, let lines):
@@ -49,7 +50,7 @@ private struct CodeEditInlineView: View {
             case .append(let path, let content):
                 Text("Append to " + path.lastPathComponent).bold()
                 body(lines: content.lines)
-            case .findReplace(let path, let find, let replace):
+            case .findReplace(let path, _, let replace):
                 Text("Edit " + path.lastPathComponent).bold()
                 body(lines: replace)
             }
@@ -57,18 +58,19 @@ private struct CodeEditInlineView: View {
         .font(Font.system(size: 12, weight: .bold))
         .foregroundStyle(.white)
         .frame(maxWidth: 300, alignment: .leading)
-        .padding()
-        .frame(maxHeight: 100)
-        .overlay(alignment: .top) {
-            LinearGradient(colors: [Color.black.opacity(0), Color.black], startPoint: .init(x: 0, y: 0.9), endPoint: .init(x: 0, y: 1))
-                .frame(height: 100)
-        }
-        .background(Color.black)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(6)
+//        .frame(maxHeight: 100)
+//        .overlay(alignment: .top) {
+//            LinearGradient(colors: [Color.black.opacity(0), Color.black], startPoint: .init(x: 0, y: 0.9), endPoint: .init(x: 0, y: 1))
+//                .frame(height: 100)
+//        }
+//        .background(Color.black)
+//        .clipShape(outline)
+        .background(outline.fill(Color.white).shadow(radius: 4).opacity(0.15))
     }
 
     @ViewBuilder func body(lines: [String]) -> some View {
-        Text(lines.prefix(5).joined(separator: "\n"))
+        Text(lines.suffix(5).joined(separator: "\n"))
             .font(.system(size: 10, weight: .medium, design: .monospaced))
             .opacity(0.7)
     }

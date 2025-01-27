@@ -23,7 +23,8 @@ extension ThreadModel {
                 cells += loopItem.cellModels(idPrefix: step.id + "/toolUseLoop/\(i)/")
             }
             if let last = step.assistantMessageForUser {
-                cells.append(MessageCellModel(id: step.id + "/last", content: .assistantMessage(last.asPlainText)))
+                cells += last.cellModels(idPrefix: step.id + "last/")
+//                cells.append(MessageCellModel(id: step.id + "/last", content: .assistantMessage(last.asPlainText)))
             }
         }
         if let lastError {
