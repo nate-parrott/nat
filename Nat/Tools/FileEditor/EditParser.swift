@@ -132,7 +132,13 @@ enum EditParser {
             try? appendEdit(cmd: currentCommand)
         }
 
-        return parts
+        // Filter out empty text parts between code edits
+        return parts.filter { part in
+            if case .textLines(let lines) = part {
+                return lines.contains { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            }
+            return true
+        }
     }
 
     static func parseEditsOnly(from string: String, toolContext: ToolContext) throws -> [CodeEdit] {

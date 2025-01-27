@@ -17,15 +17,7 @@ extension FileEditorTool {
     New Line 1
     New Line 2...
     \(Self.codeFence)
-    
-    `Append` lets you append text to an existing file.
-    Format:
-    \(Self.codeFence)
-    > Append /path/file.swift
-    New Line 1
-    New Line 2...
-    \(Self.codeFence)
-    
+        
     `FindReplace` lets you edit a portion of a file by specifying original text to find and new text to replace it with, separated by a ===WITH=== line.
     Your original text must be unique, and exist EXACTLY AS-IS in the current version of file ONCE. Your replacement should slot perfectly in, including indentation.
     Each code fence can contain a single find/replace pair, but you can use multiple sets of code fences per response.
@@ -50,7 +42,7 @@ extension FileEditorTool {
     When editing, make sure your edits reference the MOST RECENT copy of the file in the thread that was read from disk or the product of an accepted edit.
     
     When using FindReplace, the 'find' portion of your edit (the part before \(Self.findReplaceDivider)) MUST match a UNIQUE portion of the file, VERTBATIM, including whitespace.
-    
+        
     # Edit sizes
     When refactoring more than 60% of a file, replace the whole thing; otherwise try to make targeted edits to specific lines.
     Targeted edits should replace whole code units, like functions, properties, definitions, subtrees, etc. Do not try to do weird edits across logic boundaries.

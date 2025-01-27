@@ -294,4 +294,25 @@ final class FileEditorTests: XCTestCase {
         // Test invalid range throws
         XCTAssertThrowsError(try applyReplacement(existing: original, lineRangeStart: 10, len: 1, lines: ["invalid"]))
     }
+
+    func testEmptyPartsBetweenEditsOmitted() throws {
+        let input = """
+        %%%
+        > Write /test/file1.swift
+        let x = 1
+        %%%
+
+        %%%
+        > Write /test/file2.swift
+        let y = 2
+        %%%
+        """
+        let parts = try EditParser.parse(string: input, toolContext: .stub())
+        XCTAssertEqual(parts.count, 2)
+        for part in parts {
+            if case .textLines = part {
+                XCTFail("Should not have any text parts")
+            }
+        }
+    }
 }
