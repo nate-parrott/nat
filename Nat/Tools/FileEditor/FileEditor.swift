@@ -19,6 +19,11 @@ struct FileEditorTool: Tool {
         print("[FileEditorTool] parsed into file edits: \(fileEdits)")
         let editsDesc = fileEdits.map(\.description).joined(separator: ", ")
 
+        // Dry-run applying changes before presenting to user
+        for edit in fileEdits {
+            _ = try edit.getBeforeAfter()
+        }
+
         var output = [ContextItem]()
         do {
             let confirmation: FileEditorReviewPanelResult = !context.confirmFileEdits ? .accept :  try await context.presentUI(title: "Accept Edits?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
@@ -255,10 +260,18 @@ func applyReplacement(existing: String, lineRangeStart: Int, len: Int, lines new
 func applyFindReplace(existing: String, find: [String], replace: [String]) throws -> String {
     var lines = existing.lines
     let matchingRanges = lines.ranges(of: find)
-    if matchingRanges.count != 1 {
-        throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Expected exactly 1 match for find, got \(matchingRanges.count)"])
+    if matchingRanges.count == 0 {
+        throw ApplyEditError.noMatch("When applying FindReplace, you asked to replace this string, but it was not found VERBATIM in the latest copy of the file:\n\(find.joined(separator: "\n"))\n\nIf you're having trouble, consider using `Write` to replace the whole file.")
+//        throw NSError(domain: "FileEditor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Expected exactly 1 match for find, got \(matchingRanges.count)"])
+    } else if matchingRanges.count > 1 {
+        throw ApplyEditError.moreThanOneMatch("When applying FindReplace, you asked to replace this string, but it was found more than once in the file:\n\(find.joined(separator: "\n"))\n\nThe `find` string should ONLY exist EXACTLY once verbatim in the file. If you're having trouble, consider using `Write` to replace the whole file.")
     }
     let range = matchingRanges[0]
     lines.replaceSubrange(range, with: replace)
     return lines.joined(separator: "\n")
+}
+
+private enum ApplyEditError: Error {
+    case noMatch(String)
+    case moreThanOneMatch(String)
 }
