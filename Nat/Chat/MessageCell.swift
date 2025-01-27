@@ -21,11 +21,8 @@ struct MessageCell: View {
             } else {
                 LogView(markdown: markdown, symbol: symbol)
             }
-//            Text("\(string)")
-//                .font(.caption)
-//                .foregroundStyle(.secondary)
-//                .lineLimit(nil)
-//                .multilineTextAlignment(.center)
+        case .codeEdit(let edit):
+            CodeEditInlineView(edit: edit)
         case .error(let string):
             Text("\(string)")
                 .font(.caption)
@@ -34,6 +31,46 @@ struct MessageCell: View {
                 .lineLimit(nil)
                 .multilineTextAlignment(.center)
         }
+    }
+}
+
+private struct CodeEditInlineView: View {
+    var edit: CodeEdit
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            switch edit {
+            case .replace(let path, _, _, let lines):
+                Text("Edit " + path.lastPathComponent).bold()
+                body(lines: lines)
+            case .write(let path, let content):
+                Text("Write to " + path.lastPathComponent).bold()
+                body(lines: content.lines)
+            case .append(let path, let content):
+                Text("Append to " + path.lastPathComponent).bold()
+                body(lines: content.lines)
+            case .findReplace(let path, let find, let replace):
+                Text("Edit " + path.lastPathComponent).bold()
+                body(lines: replace)
+            }
+        }
+        .font(Font.system(size: 12, weight: .bold))
+        .foregroundStyle(.white)
+        .frame(maxWidth: 300, alignment: .leading)
+        .padding()
+        .frame(maxHeight: 100)
+        .overlay(alignment: .top) {
+            LinearGradient(colors: [Color.black.opacity(0), Color.black], startPoint: .init(x: 0, y: 0.9), endPoint: .init(x: 0, y: 1))
+                .frame(height: 100)
+        }
+        .background(Color.black)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    @ViewBuilder func body(lines: [String]) -> some View {
+        Text(lines.prefix(5).joined(separator: "\n"))
+            .font(.system(size: 10, weight: .medium, design: .monospaced))
+            .opacity(0.7)
     }
 }
 

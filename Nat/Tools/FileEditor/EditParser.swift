@@ -1,12 +1,13 @@
 import Foundation
 
 enum EditParser {
-    enum Part {
+    enum Part: Equatable, Codable {
         case textLines([String])
         case codeEdit(CodeEdit)
     }
 
-    static func parse(string: String, toolContext: ToolContext) throws -> [Part] {
+    // `toolContext` can be nil for pure parsing, but needs to be set when generating code edits for application
+    static func parse(string: String, toolContext: ToolContext?) throws -> [Part] {
         var parts = [Part]()
 
         func appendLine(_ str: String) {
@@ -37,7 +38,7 @@ enum EditParser {
                     let content = currentContent.joined(separator: "\n")
 
                     // Resolve the path relative to workspace
-                    let resolvedPath = try toolContext.resolvePath(cmd.path)
+                    let resolvedPath = try toolContext?.resolvePath(cmd.path) ?? URL(fileURLWithPath: cmd.path)
 
                     if cmd.type == "FindReplace" {
                         if let (find, replace) = parseFindAndReplace(currentContent) {

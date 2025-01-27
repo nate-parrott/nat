@@ -166,7 +166,7 @@ struct FileEdit {
     }
 }
 
-enum CodeEdit: Equatable {
+enum CodeEdit: Equatable, Codable {
     // line range end is INCLUSIVE and zero-indexed.
     case replace(path: URL, lineRangeStart: Int, lineRangeLen: Int, lines: [String])
     case write(path: URL, content: String)

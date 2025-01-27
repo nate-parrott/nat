@@ -9,6 +9,7 @@ struct MessageCellModel: Equatable, Identifiable {
         case userMessage(String)
         case assistantMessage(String)
         case toolLog(UserVisibleLog)
+        case codeEdit(CodeEdit)
         case error(String)
     }
 }
@@ -19,12 +20,7 @@ extension ThreadModel {
         for step in steps {
             cells.append(MessageCellModel(id: step.id + "/initial", content: .userMessage(step.initialRequest.asPlainText(includeSystemMessages: false))))
             for (i, loopItem) in step.toolUseLoop.enumerated() {
-                if let text = loopItem.initialResponse.asPlainText.nilIfEmpty {
-                    cells.append(MessageCellModel(id: step.id + "/tools/\(i)/initial", content: .assistantMessage(text.trimmingCharacters(in: .whitespacesAndNewlines))))
-                }
-                for (j, log) in loopItem.userVisibleLogs.enumerated() {
-                    cells.append(MessageCellModel(id: step.id + "/tools/\(i)/logs/\(j)", content: .toolLog(log)))
-                }
+                cells += loopItem.cellModels(idPrefix: step.id + "/toolUseLoop/\(i)/")
             }
             if let last = step.assistantMessageForUser {
                 cells.append(MessageCellModel(id: step.id + "/last", content: .assistantMessage(last.asPlainText)))
@@ -34,6 +30,36 @@ extension ThreadModel {
             cells.append(MessageCellModel(id: "error", content: .error(lastError)))
         }
         return cells
+    }
+}
+
+private extension ThreadModel.Step.ToolUseStep {
+    func cellModels(idPrefix: String) -> [MessageCellModel] {
+        var cells = [MessageCellModel]()
+        cells += initialResponse.cellModels(idPrefix: idPrefix + "/initial/")
+//        if let text = initialResponse.asPlainText.nilIfEmpty {
+//            cells.append(MessageCellModel(id: idPrefix + "initial", content: .assistantMessage(text.trimmingCharacters(in: .whitespacesAndNewlines))))
+//        }
+        for (j, log) in userVisibleLogs.enumerated() {
+            cells.append(MessageCellModel(id: idPrefix + "logs/\(j)", content: .toolLog(log)))
+        }
+        return cells
+    }
+}
+
+private extension TaggedLLMMessage {
+    func cellModels(idPrefix: String) -> [MessageCellModel] {
+        if content.count == 1, let item = content.first, case .text(let string) = item, let parsed = try? EditParser.parse(string: string, toolContext: nil) {
+            return parsed.enumerated().map { (i, item) in
+                switch item {
+                case .codeEdit(let edit):
+                    return MessageCellModel(id: idPrefix + "\(i)", content: .codeEdit(edit))
+                case .textLines(let lines):
+                    return MessageCellModel(id: idPrefix + "\(i)", content: .assistantMessage(lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)))
+                }
+            }
+        }
+        return [MessageCellModel(id: idPrefix + "text", content: .assistantMessage(asPlainText))]
     }
 }
 
