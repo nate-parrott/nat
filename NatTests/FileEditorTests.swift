@@ -38,7 +38,7 @@ final class FileEditorTests: XCTestCase {
                 </table>
         %%%
         """
-        let resp =  try CodeEdit.edits(fromString: input, toolContext: .stub())
+        let resp =  try EditParser.parseEditsOnly(from: input, toolContext: .stub())
         XCTAssertEqual(resp.count, 1)
     }
 
@@ -53,7 +53,7 @@ final class FileEditorTests: XCTestCase {
         %%%
         """
 
-        let edits = try CodeEdit.edits(fromString: input, toolContext: .stub())
+        let edits = try EditParser.parseEditsOnly(from: input, toolContext: .stub())
         XCTAssertEqual(edits.count, 1)
         switch edits[0] {
         case .findReplace(path: _, find: let find, replace: let replace):
@@ -72,7 +72,7 @@ final class FileEditorTests: XCTestCase {
         %%%
         """
 
-        let edits = try CodeEdit.edits(fromString: input, toolContext: .stub())
+        let edits = try EditParser.parseEditsOnly(from: input, toolContext: .stub())
         XCTAssertEqual(edits.count, 1)
         switch edits[0] {
         case .findReplace(path: _, find: let find, replace: let replace):
@@ -117,7 +117,7 @@ final class FileEditorTests: XCTestCase {
         %%%
         """
 
-        let edits = try CodeEdit.edits(fromString: input, toolContext: .stub())
+        let edits = try EditParser.parseEditsOnly(from: input, toolContext: .stub())
         XCTAssertEqual(edits.count, 1)
         switch edits[0] {
         case .append(let path, let lines):
@@ -144,7 +144,7 @@ final class FileEditorTests: XCTestCase {
         %%%
         """
         
-        let edits = try CodeEdit.edits(fromString: input, toolContext: .stub())
+        let edits = try EditParser.parseEditsOnly(from: input, toolContext: .stub())
         XCTAssertEqual(edits.count, 1)
         
         if case .write(let path, let content) = edits[0] {
@@ -164,7 +164,7 @@ final class FileEditorTests: XCTestCase {
         %%%
         """
         
-        let edits = try CodeEdit.edits(fromString: input, toolContext: .stub())
+        let edits = try EditParser.parseEditsOnly(from: input, toolContext: .stub())
         XCTAssertEqual(edits.count, 1)
         
         if case .replace(let path, let start, let len, let lines) = edits[0] {
@@ -185,7 +185,7 @@ final class FileEditorTests: XCTestCase {
         %%%
         """
         
-        let edits = try CodeEdit.edits(fromString: input, toolContext: .stub())
+        let edits = try EditParser.parseEditsOnly(from: input, toolContext: .stub())
         XCTAssertEqual(edits.count, 1)
         
         if case .replace(let path, let start, let len, let lines) = edits[0] {
@@ -210,7 +210,7 @@ final class FileEditorTests: XCTestCase {
         %%%
         """
         
-        let edits = try CodeEdit.edits(fromString: input, toolContext: .stub())
+        let edits = try EditParser.parseEditsOnly(from: input, toolContext: .stub())
         XCTAssertEqual(edits.count, 2)
         
         XCTAssertEqual(edits.filter { 
