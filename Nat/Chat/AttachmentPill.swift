@@ -27,6 +27,7 @@ struct FloatingXModifier: ViewModifier {
                     .foregroundColor(.primary)
                     .bold()
                     .help(Text("Remove"))
+                    .font(.system(size: 14))
             }
             .frame(both: 24)
             .onHover { hovering in
