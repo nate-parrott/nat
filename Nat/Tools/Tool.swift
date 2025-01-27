@@ -75,7 +75,7 @@ extension ToolContext {
     @MainActor
     func presentUI<Result>(title: String, @ViewBuilder _ viewBlock: @MainActor @escaping (@escaping (Result) -> Void) -> AnyView) async throws -> Result {
         // HACK
-        guard let baseVC = (NSApplication.shared.mainWindow ?? NSApplication.shared.windows.last)?.contentViewController else {
+        guard let baseVC = NSApplication.shared.mainWindow?.contentViewController ?? NSApplication.shared.windows.compactMap(\.contentViewController).last else {
             throw ToolUIError.noWindow
         }
         return await withCheckedContinuation { cont in

@@ -73,6 +73,7 @@ private struct CodeEditInlineView: View {
         Text(lines.suffix(5).joined(separator: "\n"))
             .font(.system(size: 10, weight: .medium, design: .monospaced))
             .opacity(0.7)
+            .lineLimit(1)
     }
 }
 
