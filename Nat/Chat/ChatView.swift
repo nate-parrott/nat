@@ -22,6 +22,9 @@ struct ChatView: View {
                 .overlay(alignment: .bottomTrailing) {
                     TerminalThumbnail()
                 }
+                .overlay {
+                    ToolModalPresenter()
+                }
             }
             Divider()
             ChatInput(send: sendMessage(text:), onStop: stopAgent)
@@ -87,6 +90,32 @@ struct ChatView: View {
             state.thread.isTyping = false
         }
     }
+}
+
+private struct ToolModalPresenter: View {
+    @Environment(\.document) private var document
+    @State private var toolModal: NSViewController? = nil
+
+    var body: some View {
+        ZStack {
+            if let toolModal {
+                ViewControllerPresenter(viewController: toolModal)
+                    .background(.thickMaterial)
+                    .id(ObjectIdentifier(toolModal))
+            }
+        }
+        .onReceive(document.$toolModalToPresent, perform: { self.toolModal = $0 })
+    }
+}
+
+private struct ViewControllerPresenter: NSViewControllerRepresentable {
+    var viewController: NSViewController
+
+    func makeNSViewController(context: Context) -> NSViewController {
+        viewController
+    }
+
+    func updateNSViewController(_ nsViewController: NSViewController, context: Context) { }
 }
 
 // A generic thread view that automatically scrolls to bottom when content changes

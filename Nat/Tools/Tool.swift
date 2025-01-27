@@ -82,8 +82,9 @@ extension ToolContext {
             DispatchQueue.main.async {
                 let modalBox = Box<NSViewController>()
                 let anyView = viewBlock {
-                    if let modal = modalBox.value {
-                        baseVC.dismiss(modal)
+                    if let modal = modalBox.value, document?.toolModalToPresent == modal {
+                        document?.toolModalToPresent = nil
+//                        baseVC.dismiss(modal)
                     }
                     cont.resume(returning: $0)
                 }
@@ -91,7 +92,12 @@ extension ToolContext {
                 modal.title = title
                 modalBox.value = modal
                 modal.view.frame = CGRect(x: 0, y: 0, width: 600, height: 500)
-                baseVC.presentAsSheet(modal)
+                if let document, document.toolModalToPresent == nil {
+                    // HACK: Ensure we don't deallocate this modal before calling the callback, which would leak this continuation
+                    document.toolModalToPresent = modal
+                } else {
+                    baseVC.presentAsSheet(modal)
+                }
             }
         }
     }

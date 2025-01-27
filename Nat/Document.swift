@@ -43,6 +43,7 @@ extension DocumentState {
 
 class Document: NSDocument {
     let store = DataStore(persistenceKey: nil, defaultModel: DocumentState(), queue: .main)
+    @Published var toolModalToPresent: NSViewController?
 
     override init() {
         super.init()
