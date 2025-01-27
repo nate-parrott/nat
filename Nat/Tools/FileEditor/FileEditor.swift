@@ -14,14 +14,20 @@ struct FileEditorTool: Tool {
         if codeEdits.isEmpty {
             return nil
         }
-        print("[FileEditorTool] HANDLING PSUEDO FN:\n\(response)")
+//        print("[FileEditorTool] HANDLING PSUEDO FN:\n\(response)")
         let fileEdits = FileEdit.edits(fromCodeEdits: codeEdits)
-        print("[FileEditorTool] parsed into file edits: \(fileEdits)")
+//        print("[FileEditorTool] parsed into file edits: \(fileEdits)")
         let editsDesc = fileEdits.map(\.description).joined(separator: ", ")
 
         // Dry-run applying changes before presenting to user
-        for edit in fileEdits {
-            _ = try edit.getBeforeAfter()
+        do {
+            for edit in fileEdits {
+                _ = try edit.getBeforeAfter()
+            }
+        }
+        catch {
+            context.log(.toolError("Failed to apply edits"))
+            return [.text("Your edits were not applied because of an error:\n\(error)")]
         }
 
         var output = [ContextItem]()
