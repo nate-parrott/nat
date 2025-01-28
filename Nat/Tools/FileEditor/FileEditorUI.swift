@@ -88,46 +88,42 @@ struct FileEditorReviewPanel: View {
     @State private var commentText = ""
     
     var body: some View {
-//        NavigationStack {
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(edits.enumerated()), id: \.offset) { pair in
-                            let (i, edit) = pair
-                            let diff: Diff = i < diffs.count ? diffs[i] : Diff(lines: [])
-                            DiffEditView(edit: edit, diff: diff)
-                        }
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(edits.enumerated()), id: \.offset) { pair in
+                        let (i, edit) = pair
+                        let diff: Diff = i < diffs.count ? diffs[i] : Diff(lines: [])
+                        DiffEditView(edit: edit, diff: diff)
                     }
                 }
-                
-                Divider()
-                
-                ReviewActionBar(
-                    commentText: $commentText,
-                    onApprove: { comment in
-                        if comment.isEmpty {
-                            finish(.accept)
-                        } else {
-                            finish(.acceptWithComment(comment))
-                        }
-                    },
-                    onReject: { comment in
-                        if comment.isEmpty {
-                            finish(.reject)
-                        } else {
-                            finish(.requestChanged(comment))
-                        }
+            }
+
+            Divider()
+
+            ReviewActionBar(
+                commentText: $commentText,
+                onApprove: { comment in
+                    if comment.isEmpty {
+                        finish(.accept)
+                    } else {
+                        finish(.acceptWithComment(comment))
                     }
-                )
-            }
-            .onAppear {
-                diffs = []
-                for edit in edits {
-                    diffs.append((try? edit.asDiff()) ?? Diff(lines: []))
+                },
+                onReject: { comment in
+                    if comment.isEmpty {
+                        finish(.reject)
+                    } else {
+                        finish(.requestChanged(comment))
+                    }
                 }
+            )
+        }
+        .onAppear {
+            diffs = []
+            for edit in edits {
+                diffs.append((try? edit.asDiff()) ?? Diff(lines: []))
             }
-//            .navigationTitle("Review Changes")
-//        }
-//        .frame(minWidth: 600, minHeight: 400)
+        }
     }
 }

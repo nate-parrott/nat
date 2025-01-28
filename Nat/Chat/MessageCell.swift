@@ -122,6 +122,8 @@ extension UserVisibleLog {
         switch self {
         case .readFile(let path):
             return ("Read file: `\(path)`", "doc")
+        case .usingEditCleanupModel(let message):
+            return (message, "bandage")
         case .grepped(let query):
             return ("Searched for: `\(query)`", "magnifyingglass")
         case .editedFile(let path):

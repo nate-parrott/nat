@@ -43,6 +43,7 @@ enum UserVisibleLog: Equatable, Codable {
     case wroteFile(String)
     case deletedFile(String)  // Added this case
     case codeSearch(String)
+    case usingEditCleanupModel(String)
     case listedFiles
     case tokenUsage(prompt: Int, completion: Int, model: String)
     case effort(String)

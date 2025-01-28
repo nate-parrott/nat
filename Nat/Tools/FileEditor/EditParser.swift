@@ -4,6 +4,13 @@ enum EditParser {
     enum Part: Equatable, Codable {
         case textLines([String])
         case codeEdit(CodeEdit)
+
+        var ifString: String? {
+            if case .textLines(let array) = self {
+                return array.joined(separator: "\n")
+            }
+            return nil
+        }
     }
 
     static func parse(string: String, toolContext: ToolContext) throws -> [Part] {

@@ -11,21 +11,29 @@ struct FileEditorTool: Tool {
     
     func handlePsuedoFunction(fromPlaintext response: String, context: ToolContext) async throws -> [ContextItem]? {
         let codeEdits = try EditParser.parseEditsOnly(from: response, toolContext: context)
+        let comments = try EditParser.parse(string: response, toolContext: context).compactMap(\.ifString).joined(separator: "\n\n")
+
         if codeEdits.isEmpty {
             return nil
         }
         let fileEdits = FileEdit.edits(fromCodeEdits: codeEdits)
+        var fixedFileEdits = [FileEdit]()
         let editsDesc = fileEdits.map(\.description).joined(separator: ", ")
 
         // Dry-run applying changes before presenting to user
-        do {
-            for edit in fileEdits {
+        for edit in fileEdits {
+            do {
                 _ = try edit.getBeforeAfter()
+                fixedFileEdits.append(edit)
+            } catch {
+                if edit.canBeAppliedUsingApplierModel {
+                    context.log(.usingEditCleanupModel("Using edit cleanup model for \(edit.path.lastPathComponent)"))
+                    let edit = try await edit.applyUsingLLM(comments: comments)
+                } else {
+                    context.log(.toolError("Failed to apply edits"))
+                    return [.text("Your edits were not applied because of an error:\n\(error)\nPlease try again or try a different approach.")]
+                }
             }
-        }
-        catch {
-            context.log(.toolError("Failed to apply edits"))
-            return [.text("Your edits were not applied because of an error:\n\(error)\nPlease try again or try a different approach.")]
         }
 
         var output = [ContextItem]()
@@ -128,9 +136,10 @@ extension FileEdit {
 
     func getBeforeAfter() throws -> (String, String) {
         var before = ""
-        if requiresReadFromDisk {
-            before = (try? String(contentsOf: path, encoding: .utf8)) ?? ""
-        }
+        // Always read from disk even when overwriting
+//        if requiresReadFromDisk {
+        before = (try? String(contentsOf: path, encoding: .utf8)) ?? ""
+//        }
         let after = try applyToExisting(content: before)
         return (before, after)
     }
