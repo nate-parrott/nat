@@ -9,7 +9,12 @@ struct DocsList: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             List(files, id: \.self, selection: $selectedFile) { url in
-                Text(url.lastPathComponent)
+                HStack {
+                    Text(url.lastPathComponent)
+                    if url.lastPathComponent == "notes.markdown" {
+                        Image(systemName: "star")
+                    }
+                }
                     .contextMenu {
                         Button(action: { wantsDelete(url) }) {
                             Text("Delete")

@@ -14,7 +14,7 @@ struct BasicContextTool: Tool {
     }
 
     var notes: String? {
-        if let docsURL = document?.store.model.natDocsDir {
+        if let docsURL = document?.store.model.natDocsDir?.appendingPathComponent("notes.markdown", isDirectory: false) {
             return try? String(contentsOf: docsURL, encoding: .utf8).nilIfEmpty
         }
         return nil
