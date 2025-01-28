@@ -21,9 +21,6 @@ struct ChatView: View {
                 .overlay(alignment: .bottomTrailing) {
                     TerminalThumbnail()
                 }
-                .overlay {
-                    ToolModalPresenter()
-                }
             }
             Divider()
             ChatInput(send: sendMessage(text:attachments:), onStop: stopAgent)
@@ -32,6 +29,9 @@ struct ChatView: View {
             if typing {
                 Shimmer()
             }
+        }
+        .overlay {
+            ToolModalPresenter()
         }
         .onReceive(document.store.publisher.map(\.thread.isTyping).removeDuplicates(), perform: { self.typing = $0 })
         .onReceive(document.store.publisher.map(\.thread.cellModels).removeDuplicates(), perform: { self.messageCellModels = $0 })
@@ -108,6 +108,7 @@ private struct ToolModalPresenter: View {
                 ViewControllerPresenter(viewController: toolModal)
                     .background(.thickMaterial)
                     .id(ObjectIdentifier(toolModal))
+                    .clipped()
             }
         }
         .onReceive(document.$toolModalToPresent, perform: { self.toolModal = $0 })

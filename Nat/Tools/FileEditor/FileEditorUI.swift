@@ -88,7 +88,7 @@ struct FileEditorReviewPanel: View {
     @State private var commentText = ""
     
     var body: some View {
-        NavigationStack {
+//        NavigationStack {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
@@ -126,8 +126,8 @@ struct FileEditorReviewPanel: View {
                     diffs.append((try? edit.asDiff()) ?? Diff(lines: []))
                 }
             }
-            .navigationTitle("Review Changes")
-        }
-        .frame(minWidth: 600, minHeight: 400)
+//            .navigationTitle("Review Changes")
+//        }
+//        .frame(minWidth: 600, minHeight: 400)
     }
 }

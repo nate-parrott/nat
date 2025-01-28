@@ -67,51 +67,16 @@ extension Diff {
             case .remove(offset: let idx, element: let element, associatedWith: _):
                 let remainingItems = groups[idx].filter({ !isSame($0) }) + [.delete(element)]
                 groups.remove(at: idx)
+                // remainingItems will typically be the delete from the line we just deleted, but may also include other cascaded deletes
                 // Insert at subsequent group
                 if idx < groups.count {
-                    groups[idx] += remainingItems
+                    groups[idx].insert(contentsOf: remainingItems, at: 0)
                 } else {
                     endGroup.insert(contentsOf: remainingItems, at: 0)
                 }
             }
         }
         var items = (groups + [endGroup]).flatMap({ $0 })
-
-//        var editsByStartLine = [Int: [CollectionDifference<String>.Change]]()
-//        for edit in diff {
-//            switch edit {
-//            case .insert(offset: let idx, element: _, associatedWith: _):
-//                editsByStartLine[idx, default: []].append(edit)
-//            case .remove(offset: let idx, element: _, associatedWith: _):
-//                editsByStartLine[idx, default: []].append(edit)
-//            }
-//        }
-//
-//        var indexIntoOutput = 0
-//        var diffItems = [Diff.Line]()
-//        var remainingInputLines = before
-//        while true {
-//            // First, is there an edit to apply?
-//            if let edit = editsByStartLine[indexIntoOutput]?.first {
-//                editsByStartLine[indexIntoOutput]?.removeFirst()
-//                switch edit {
-//                case .insert(offset: _, element: let element, associatedWith: _):
-//                    diffItems.append(.insert(element))
-//                    indexIntoOutput += 1
-//                case .remove(offset: _, element: let element, associatedWith: _):
-//                    diffItems.append(.delete(element))
-//                    if remainingInputLines.count > 0 {
-//                        remainingInputLines.removeFirst()
-//                    }
-//                }
-//            } else if let line = remainingInputLines.first {
-//                remainingInputLines.removeFirst()
-//                diffItems.append(.same(line))
-//                indexIntoOutput += 1
-//            } else {
-//                break // done
-//            }
-//        }
         if collapseSames {
             items = Diff.collapseRunsOfSames(items)
         }

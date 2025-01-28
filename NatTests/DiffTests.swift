@@ -67,6 +67,40 @@ final class DiffTests: XCTestCase {
         ]))
     }
 
+    func testSingleDelete2() throws {
+        let str = """
+        let x = 1
+        let y = 2
+        """.trimmingCharacters(in: .whitespacesAndNewlines)
+        let str2 = """
+        let y = 2
+        """.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let diff = Diff.from(before: str.lines, after: str2.lines, collapseSames: false)
+        XCTAssertEqual(diff, Diff(lines: [
+            .delete("let x = 1"),
+            .same("let y = 2"),
+        ]))
+    }
+
+    func testDoubleDelete2() throws {
+        let str = """
+        let x = 1
+        let y = 2
+        let z = 3
+        """.trimmingCharacters(in: .whitespacesAndNewlines)
+        let str2 = """
+        let z = 3
+        """.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let diff = Diff.from(before: str.lines, after: str2.lines, collapseSames: false)
+        XCTAssertEqual(diff, Diff(lines: [
+            .delete("let x = 1"),
+            .delete("let y = 2"),
+            .same("let z = 3"),
+        ]))
+    }
+
     func testSingleReplace() throws {
         let str = """
         let x = 1
