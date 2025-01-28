@@ -117,6 +117,16 @@ class ViewController: NSViewController {
     @objc private func folderButtonPressed(_ sender: AnyObject?) {
         document?.pickFolder()
     }
+    
+    @IBAction func clearChat(_ sender: Any?) {
+        // Access ChatView's clear functionality via document store
+        document?.store.modify { state in
+            state.thread = .init()
+        }
+        // Cancel any running agent task
+        document?.currentAgentTask?.cancel()
+        document?.currentAgentTask = nil
+    }
 }
 
 extension Document {

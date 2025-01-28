@@ -101,6 +101,7 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
         textView.backgroundColor = .clear
         textView.isRichText = false
         textView.delegate = self
+        textView.allowsUndo = true
         NotificationCenter.default.addObserver(self, selector: #selector(textDidChange(_:)), name: NSText.didChangeNotification, object: textView)
 //        scrollView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(scrollView)

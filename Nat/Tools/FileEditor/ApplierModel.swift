@@ -46,7 +46,7 @@ extension FileEdit {
             }
         }
         let prompt = """
-        Your job is to apply a code edit written by an expert coder.
+        Your job is to apply a code edit written by an expert coder, fixing syntax errors at the insertion boundary along the way.
         I'll give you the current file and a list of edits.
         Edits may take the form of 'append' operations,
         'find and replace' operations or 'replace line range' operations.
@@ -92,6 +92,8 @@ extension FileEdit {
         
         And here are the edits:
         \(editDescriptions.joined(separator: "\n"))
+        
+        Now write your output within ``` fences, nothing else:
         """
         let makesSenseToUsePredictedOutput = true // content.count > editDescriptions.joined(separator: "\n").count * 2
         print("<applier-input>\n\(prompt)\n</applier-input>")

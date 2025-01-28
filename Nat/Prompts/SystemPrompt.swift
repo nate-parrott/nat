@@ -27,6 +27,7 @@ enum Prompts {
     # iOS Development Tips
     When building, use xcodebuild. List schemes first, then build the relevant scheme.
     Use the -quiet option.
+    Unless specified, run unit tests only, not UI tests. 
     
     When searching for definitions, keep in mind that symbols are typically defined as enums, structs or classes, and that you can search for all at once using a regex.
     

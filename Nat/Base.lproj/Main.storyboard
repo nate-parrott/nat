@@ -137,9 +137,15 @@
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="WRV-NI-Exz"/>
-                                        <menuItem title="Cut" keyEquivalent="x" id="uRl-iY-unG">
+                                        <menuItem title="Clear Chat" keyEquivalent="k" id="uRl-iY-unG">
                                             <connections>
-                                                <action selector="cut:" target="Ady-hI-5gd" id="YJe-68-I9s"/>
+                                                <action selector="clearChat:" target="Ady-hI-5gd" id="w3y-vt-V7A"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="zhc-4W-vk5"/>
+                                        <menuItem title="Cut" keyEquivalent="x" id="amp-Ee-IOI">
+                                            <connections>
+                                                <action selector="cut:" target="Ady-hI-5gd" id="OGz-Cp-eGO"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="Copy" keyEquivalent="c" id="x3v-GG-iWU">
@@ -704,8 +710,8 @@
                                 <toolbarItem implicitItemIdentifier="172E3048-980D-4170-98B6-B2155075085F" explicitItemIdentifier="Mode" label="Mode" paletteLabel="Mode" sizingBehavior="auto" id="mpi-D8-iH0">
                                     <nil key="toolTip"/>
                                     <segmentedControl key="view" verticalHuggingPriority="750" id="UaK-eI-TrG">
-                                        <rect key="frame" x="0.0" y="14" width="64" height="26"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                        <rect key="frame" x="0.0" y="14" width="62" height="23"/>
+                                        <autoresizingMask key="autoresizingMask"/>
                                         <segmentedCell key="cell" borderStyle="border" alignment="left" style="texturedSquare" trackingMode="selectOne" id="GTr-Gt-zqc">
                                             <font key="font" metaFont="system"/>
                                             <segments>
@@ -716,20 +722,27 @@
                                         </segmentedCell>
                                     </segmentedControl>
                                 </toolbarItem>
-                                <toolbarItem implicitItemIdentifier="EE6D202B-BDAA-497F-87C0-D92A170BFD8C" explicitItemIdentifier="Folder" label="Folder" paletteLabel="Folder" title="Button" sizingBehavior="auto" id="TaW-TO-eUD">
+                                <toolbarItem implicitItemIdentifier="EE6D202B-BDAA-497F-87C0-D92A170BFD8C" explicitItemIdentifier="Folder" label="Folder" paletteLabel="Folder" bordered="YES" title="Button" sizingBehavior="auto" id="TaW-TO-eUD">
                                     <nil key="toolTip"/>
                                     <button key="view" verticalHuggingPriority="750" id="7jQ-jY-ZsG">
-                                        <rect key="frame" x="0.0" y="14" width="82" height="32"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                        <rect key="frame" x="0.0" y="14" width="75" height="32"/>
+                                        <autoresizingMask key="autoresizingMask"/>
                                         <buttonCell key="cell" type="push" title="Button" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="wjL-6e-bSC">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
                                     </button>
                                 </toolbarItem>
+                                <toolbarItem implicitItemIdentifier="C96CE3B4-E37C-4488-808C-EEA95BA5CF46" label="Clear Chat" paletteLabel="Clear Chat" tag="-1" image="arrow.trianglehead.2.counterclockwise.rotate.90" catalog="system" bordered="YES" sizingBehavior="auto" id="dG7-yF-JE7">
+                                    <connections>
+                                        <action selector="clearChat:" target="6f7-a7-6o1" id="Fuu-Yf-G6K"/>
+                                    </connections>
+                                </toolbarItem>
                             </allowedToolbarItems>
                             <defaultToolbarItems>
+                                <toolbarItem reference="dG7-yF-JE7"/>
                                 <toolbarItem reference="mpi-D8-iH0"/>
+                                <toolbarItem reference="Jjb-Pg-eBX"/>
                                 <toolbarItem reference="TaW-TO-eUD"/>
                             </defaultToolbarItems>
                         </toolbar>
@@ -797,4 +810,7 @@
             <point key="canvasLocation" x="75" y="655"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="arrow.trianglehead.2.counterclockwise.rotate.90" catalog="system" width="16" height="15"/>
+    </resources>
 </document>

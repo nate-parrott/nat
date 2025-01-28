@@ -8,6 +8,8 @@ extension FileEditorTool {
     Editing commands begin and end with \(Self.codeFence),
     then a 'command line', then a portion of code.
     
+    After using editing commands, pause to allow the user to respond before continuing. Do not run tests or perform other research immediately after editing, until you see whether the edit is confirmed.
+    
     # Edit commands
     
     `Write` creates a file with text you provide, or overwrites an entire file.
@@ -34,11 +36,11 @@ extension FileEditorTool {
     # Rules
     
     You can use multiple separate code fences in a single response.
-    After editing, pause to allow the system to respond; do not use other tools in the same response.
             
     Your edits will be applied directly to the file, and your code may be linted or syntax-checked, so never say things like "...existing unchanged..." etc. Do not include comments explaining what you changed IN the code, but do include helpful comments for future readers, as an expert engineer would.
             
     Before editing existing files, you MUST read the file first using read_file. After editing a file, I'll echo back the new version on disk post-edit.
+    
     When editing, make sure your edits reference the MOST RECENT copy of the file in the thread that was read from disk or the product of an accepted edit.
     
     When using FindReplace, the 'find' portion of your edit (the part before \(Self.findReplaceDivider)) MUST match a UNIQUE portion of the file, VERTBATIM, including whitespace.
