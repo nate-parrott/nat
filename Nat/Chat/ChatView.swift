@@ -54,17 +54,6 @@ struct ChatView: View {
     
     private func sendMessage(text: String, attachments: [ContextItem]) {
         let msg = TaggedLLMMessage(role: .user, content: [.text(text)] + attachments)
-//        if let imageAttachment {
-//            try! msg.content.append(.image(imageAttachment.asLLMImage(detail: .high)))
-//            self.imageAttachment = nil
-//        }
-        
-        // Add file attachments
-//        for url in attachments {
-//            if let content = try? String(contentsOf: url, encoding: .utf8) {
-//                msg.content.append(.textFile(filename: url.lastPathComponent, content: content))
-//            }
-//        }
         let folderURL = document.store.model.folder
         let curFile = document.store.model.selectedFileInEditorRelativeToFolder
         
@@ -75,7 +64,7 @@ struct ChatView: View {
                 let tools: [Tool] = [
                     FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(),
                     TerminalTool(), WebResearchTool(), DeleteFileTool(), GrepTool(),
-                    BasicContextTool(currentFilenameFromXcode: curFile)
+                    BasicContextTool(document: document, currentFilenameFromXcode: curFile)
                 ]
                 try await document.send(message: msg, llm: LLMs.smartAgentModel(), document: document, tools: tools, folderURL: folderURL)
             } catch {

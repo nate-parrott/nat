@@ -33,6 +33,10 @@ struct DocumentState: Equatable, Codable {
 }
 
 extension DocumentState {
+    var natDocsDir: URL? {
+        folder?.appendingPathComponent("nat_docs", isDirectory: true)
+    }
+
     var selectedFileInEditorRelativeToFolder: String? {
         if let selectedFileInEditor, let folder {
             return selectedFileInEditor.asPathRelativeTo(base: folder)

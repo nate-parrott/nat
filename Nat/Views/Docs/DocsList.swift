@@ -38,14 +38,14 @@ struct DocsList: View {
 
     func newFile() {
         Task {
-            guard let folderURL = doc.store.model.folder else { return }
+            guard let docsDir = doc.store.model.natDocsDir else { return }
             guard var title = await Alerts.showAppPrompt(title: "New Doc File", message: "Choose a filename:", textPlaceholder: "my_doc.md", submitTitle: "Create", cancelTitle: "Cancel")?.nilIfEmpty else {
                 return
             }
             if (title as NSString).pathExtension == "" {
                 title += ".markdown"
             }
-            let url = folderURL.appending(component: "nat_docs").appendingPathComponent(title, isDirectory: false)
+            let url = docsDir.appendingPathComponent(title, isDirectory: false)
             try? "Your docs here".write(to: url, atomically: true, encoding: .utf8)
             reloadFileList()
             selectedFile = url

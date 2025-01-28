@@ -7,7 +7,7 @@ struct DocsView: View {
     var folder: URL? { document.store.model.folder }
     
     var docsFolder: URL? {
-        folder?.appendingPathComponent("nat_docs")
+        document.store.model.natDocsDir
     }
     
     func loadFiles() {
