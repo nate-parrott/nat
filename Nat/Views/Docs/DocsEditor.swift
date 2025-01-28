@@ -7,6 +7,7 @@ struct DocsEditor: NSViewRepresentable {
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSTextView.scrollablePlainDocumentContentTextView()
         let textView = scrollView.documentView as! NSTextView
+        textView.textContainerInset = NSSize(width: 6, height: 6)
         textView.delegate = context.coordinator
         textView.font = .monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
         textView.string = fileSaver.content

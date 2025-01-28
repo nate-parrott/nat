@@ -2,13 +2,14 @@ import SwiftUI
 
 struct DocsBrowser: View {
     let files: [URL]
+    let reloadFileList: () -> Void
     @State private var selectedFile: URL?
     @State private var fileSaver: DebouncedFileSaver?
-    
+
     var body: some View {
         HSplitView {
-            DocsList(files: files, selectedFile: $selectedFile)
-            
+            DocsList(files: files, reloadFileList: reloadFileList, selectedFile: $selectedFile)
+
             if let selectedFile = selectedFile, let fileSaver = fileSaver {
                 DocsEditor(fileSaver: fileSaver)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -23,6 +24,11 @@ struct DocsBrowser: View {
                 fileSaver = DebouncedFileSaver(fileURL: url)
             } else {
                 fileSaver = nil
+            }
+        }
+        .onAppear {
+            if selectedFile == nil, let first = files.first {
+                selectedFile = first
             }
         }
     }

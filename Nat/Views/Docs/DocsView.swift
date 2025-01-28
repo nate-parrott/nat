@@ -32,7 +32,7 @@ struct DocsView: View {
         do {
             try FileManager.default.createDirectory(at: docsFolder, withIntermediateDirectories: true)
             let notesURL = docsFolder.appendingPathComponent("notes.markdown")
-            try "".write(to: notesURL, atomically: true, encoding: .utf8)
+            try "Anything in notes.markdown will be passed as guidance to the agent automatically.".write(to: notesURL, atomically: true, encoding: .utf8)
             loadFiles()
         } catch {
             print("Error creating docs folder: \(error)")
@@ -45,7 +45,7 @@ struct DocsView: View {
                 Text("Open a folder to use docs")
                     .foregroundColor(.secondary)
             } else if let files = files, !files.isEmpty {
-                DocsBrowser(files: files)
+                DocsBrowser(files: files, reloadFileList: loadFiles)
             } else {
                 VStack {
                     Text("No docs folder found")
