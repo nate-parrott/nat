@@ -56,7 +56,7 @@ private struct CodeEditInlineView: View {
             }
         }
         .font(Font.system(size: 12, weight: .bold))
-        .foregroundStyle(.white)
+//        .foregroundStyle(.primary)
         .frame(maxWidth: 300, alignment: .leading)
         .padding(6)
 //        .frame(maxHeight: 100)
