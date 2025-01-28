@@ -16,19 +16,23 @@ struct FileEditorTool: Tool {
         if codeEdits.isEmpty {
             return nil
         }
-        let fileEdits = FileEdit.edits(fromCodeEdits: codeEdits)
+        let unfixedFileEdits = FileEdit.edits(fromCodeEdits: codeEdits)
         var fixedFileEdits = [FileEdit]()
-        let editsDesc = fileEdits.map(\.description).joined(separator: ", ")
+        let editsDesc = unfixedFileEdits.map(\.description).joined(separator: ", ")
 
         // Dry-run applying changes before presenting to user
-        for edit in fileEdits {
+        for edit in unfixedFileEdits {
             do {
+                if edit.canBeAppliedUsingApplierModel {
+                    throw ApplyEditError.fakeError // For testing
+                }
                 _ = try edit.getBeforeAfter()
                 fixedFileEdits.append(edit)
             } catch {
                 if edit.canBeAppliedUsingApplierModel {
                     context.log(.usingEditCleanupModel("Using edit cleanup model for \(edit.path.lastPathComponent)"))
-                    let edit = try await edit.applyUsingLLM(comments: comments)
+                    let newFullFileContent = try await edit.applyUsingLLM(comments: comments)
+                    fixedFileEdits.append(.init(path: edit.path, edits: [.write(path: edit.path, content: newFullFileContent)]))
                 } else {
                     context.log(.toolError("Failed to apply edits"))
                     return [.text("Your edits were not applied because of an error:\n\(error)\nPlease try again or try a different approach.")]
@@ -39,14 +43,15 @@ struct FileEditorTool: Tool {
         var output = [ContextItem]()
         do {
             let confirmation: FileEditorReviewPanelResult = !context.confirmFileEdits ? .accept :  try await context.presentUI(title: "Accept Edits?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
-                FileEditorReviewPanel(edits: fileEdits, finish: { result in
+                FileEditorReviewPanel(edits: fixedFileEdits, finish: { result in
                     dismiss(result)
                 }).asAny
             }
-            
+
+            let allEdits = fixedFileEdits.flatMap(\.edits)
             switch confirmation {
             case .accept, .acceptWithComment:
-                for edit in codeEdits { // TODO: use `fileEdits` instead
+                for edit in allEdits {
                     switch edit {
                     case .write: context.log(.wroteFile((edit.url as NSURL).lastPathComponent ?? ""))
                     case .replace, .findReplace, .append: context.log(.editedFile((edit.url as NSURL).lastPathComponent ?? ""))
@@ -56,19 +61,19 @@ struct FileEditorTool: Tool {
                 if case .acceptWithComment(let comment) = confirmation {
                     context.log(.info("Accepted with comment: \(comment)"))
                 }
-                output += try await apply(fileEdits: fileEdits, context: context)
+                output += try await apply(fileEdits: fixedFileEdits, context: context)
                 if case .acceptWithComment(let comment) = confirmation {
                     output.append(.text("[User approved the change above, but left this comment:]\n\(comment)"))
                 }
             case .reject:
                 context.log(.rejectedEdit(editsDesc)) 
                 output.append(.text("User rejected your latest message's edits. They were rolled back. Take a beat and let the user tell you more about what they wanted."))
-                output += try showLatestFileVersions(fileEdits: fileEdits, context: context)
+                output += try showLatestFileVersions(fileEdits: fixedFileEdits, context: context)
                 break
             case .requestChanged(let message):
                 context.log(.requestedChanges(editsDesc))
                 output.append(.text("[User requested changes to the edits in your last message. They were rolled back. Here is what they said:\n\n\(message)"))
-                output += try showLatestFileVersions(fileEdits: fileEdits, context: context)
+                output += try showLatestFileVersions(fileEdits: fixedFileEdits, context: context)
                 break
             }
         } catch {
@@ -300,4 +305,5 @@ func applyFindReplace(existing: String, find: [String], replace: [String]) throw
 private enum ApplyEditError: Error {
     case noMatch(String)
     case moreThanOneMatch(String)
+    case fakeError
 }
