@@ -1,3 +1,4 @@
+import QuartzCore
 import Foundation
 import ChatToys
 
@@ -90,17 +91,27 @@ extension FileEdit {
         [END FILE]
         
         And here are the edits:
-        \(editDescriptions)
+        \(editDescriptions.joined(separator: "\n"))
         """
-        let makesSenseToUsePredictedOutput = content.count > editDescriptions.joined(separator: "\n").count * 2
+        let makesSenseToUsePredictedOutput = true // content.count > editDescriptions.joined(separator: "\n").count * 2
         print("<applier-input>\n\(prompt)\n</applier-input>")
         let predictedOutput: String? = makesSenseToUsePredictedOutput ? "```\n\(content)\n```" : nil
-        var llm = try LLMs.quickModel()
-        llm.prediction = predictedOutput
+        let llm = try LLMs.applierModel()
+        let start = CACurrentMediaTime()
+//        llm.prediction = predictedOutput
+//        llm.reportUsage = { usage in
+//            if let predHits = usage.completion_tokens_details?.accepted_prediction_tokens, let predMisses = usage.completion_tokens_details?.rejected_prediction_tokens {
+//                print("-> 🚅 Predicted outputs: \(predHits) hits \(predMisses) misses")
+//            } else {
+//                print("No predicted output stats")
+//            }
+//        }
         let resp = try await llm.complete(prompt: [
             LLMMessage(role: .system, content: prompt)
         ]).content.trimmingCharacters(in: CharacterSet(charactersIn: "`"))
+        let elapsed = CACurrentMediaTime() - start
         print("<applier-output>\n\(resp)\n</applier-output>")
+        print("Applier model took \(elapsed)s")
         return resp
     }
 }
