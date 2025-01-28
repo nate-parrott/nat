@@ -14,9 +14,7 @@ struct FileEditorTool: Tool {
         if codeEdits.isEmpty {
             return nil
         }
-//        print("[FileEditorTool] HANDLING PSUEDO FN:\n\(response)")
         let fileEdits = FileEdit.edits(fromCodeEdits: codeEdits)
-//        print("[FileEditorTool] parsed into file edits: \(fileEdits)")
         let editsDesc = fileEdits.map(\.description).joined(separator: ", ")
 
         // Dry-run applying changes before presenting to user
@@ -27,7 +25,7 @@ struct FileEditorTool: Tool {
         }
         catch {
             context.log(.toolError("Failed to apply edits"))
-            return [.text("Your edits were not applied because of an error:\n\(error)")]
+            return [.text("Your edits were not applied because of an error:\n\(error)\nPlease try again or try a different approach.")]
         }
 
         var output = [ContextItem]()
