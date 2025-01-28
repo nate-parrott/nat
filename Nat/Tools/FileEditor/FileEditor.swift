@@ -56,19 +56,32 @@ struct FileEditorTool: Tool {
                 }
             case .reject:
                 context.log(.rejectedEdit(editsDesc)) 
-                output.append(.text("User rejected your latest message's edits. They were rolled back Take a beat and let the user tell you more about what they wanted."))
+                output.append(.text("User rejected your latest message's edits. They were rolled back. Take a beat and let the user tell you more about what they wanted."))
+                output += try showLatestFileVersions(fileEdits: fileEdits, context: context)
                 break
             case .requestChanged(let message):
                 context.log(.requestedChanges(editsDesc))
                 output.append(.text("[User requested changes to the edits in your last message. They were rolled back. Here is what they said:\n\n\(message)"))
+                output += try showLatestFileVersions(fileEdits: fileEdits, context: context)
                 break
             }
-            // TODO: Append latest version whe there's a rejection
         } catch {
             print("FAILED TO APPLY EDITS: \(editsDesc)")
             output.append(.text("Edits '\(editsDesc)' failed to apply due to error: \(error)."))
         }
         // TODO: return proper context items
+        return output
+    }
+    
+    private func showLatestFileVersions(fileEdits: [FileEdit], context: ToolContext) throws -> [ContextItem] {
+        var output = [ContextItem]()
+        for fileEdit in fileEdits {
+            if let content = try? String(contentsOf: fileEdit.path) {
+                let projectRelativePath = context.activeDirectory.flatMap { fileEdit.path.asPathRelativeTo(base: $0) } ?? fileEdit.path.path()
+                output.append(.text("\nLatest version of \(projectRelativePath):"))
+                try output.append(.fileSnippet(FileSnippet(path: fileEdit.path, projectRelativePath: projectRelativePath, lineStart: 0, linesCount: content.lines.count)))
+            }
+        }
         return output
     }
 
