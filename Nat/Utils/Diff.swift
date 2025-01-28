@@ -67,8 +67,9 @@ extension Diff {
             case .remove(offset: let idx, element: let element, associatedWith: _):
                 let remainingItems = groups[idx].filter({ !isSame($0) }) + [.delete(element)]
                 groups.remove(at: idx)
-                if idx + 1 < groups.count {
-                    groups[idx + 1] += remainingItems
+                // Insert at subsequent group
+                if idx < groups.count {
+                    groups[idx] += remainingItems
                 } else {
                     endGroup.insert(contentsOf: remainingItems, at: 0)
                 }
