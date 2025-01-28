@@ -54,6 +54,7 @@ extension FileEdit {
         (``` ONLY)
         The edit instructions may contain minor mistakes about WHERE to insert the file or exactly what text to REPLACE; your job is to output the syntactically valid, reasonable version WITHOUT changing the code that the edits add. 
         Do not take liberties or fix the code yourself besides inserting the code in the reasonable place.
+        Do not remove comments, resolve todos, or fix ANYTHING unrelated to the faithul application of these edits.
         It is your job to write the WHOLE new file so it can be written to disk. Never omit.
         
         For example, you might have a file like this:

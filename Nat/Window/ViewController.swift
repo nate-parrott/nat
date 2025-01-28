@@ -11,9 +11,6 @@ struct ContentViewWrapper: View {
                 switch mode {
                 case .agent:
                     ChatView()
-                        .overlay {
-                            ChatEmptyState()
-                        }
                 case .codeSearch:
                     SearchView()
                 case .docs:

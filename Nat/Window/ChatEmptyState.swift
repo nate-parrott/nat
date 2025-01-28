@@ -9,7 +9,6 @@ struct ChatEmptyState: View {
                 AgentSettings()
                     .frame(maxWidth: 500)
                 .padding()
-                .padding(.bottom, 60) // to center visually
             }
         }
     }

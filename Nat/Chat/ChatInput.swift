@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ChatInput: View {
+    var maxHeight: CGFloat?
     var send: (String, [ContextItem]) -> Void
     var onStop: () -> Void
     @Environment(\.document) private var document
@@ -26,7 +27,7 @@ struct ChatInput: View {
                     onEvent: textFieldEvent(_:),
                     contentSize: $textFieldSize
                 )
-                .frame(height: max(textFieldSize.height, 60))
+                .frame(height: min(maxHeight ?? 999, max(textFieldSize.height, 60)))
 
                 buttons
             }
@@ -39,6 +40,7 @@ struct ChatInput: View {
         .onAppear {
             focusDate = Date()
         }
+        .background(.thinMaterial)
         .onReceive(document.store.publisher.map(\.selectedFileInEditorRelativeToFolder).removeDuplicates(), perform: { self.currentFileOpenInXcode = $0 })
         .onReceive(document.store.publisher.map(\.folder?.lastPathComponent).removeDuplicates(), perform: { self.folderName = $0 })
     }

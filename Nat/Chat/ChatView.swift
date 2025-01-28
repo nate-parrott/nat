@@ -8,7 +8,8 @@ struct ChatView: View {
     @State private var typing = false
     @State private var messageCellModels = [MessageCellModel]()
     @State private var debug = false
-    
+    @State private var height: CGFloat?
+
     var body: some View {
         VStack(spacing: 0) {
             if debug {
@@ -18,12 +19,15 @@ struct ChatView: View {
                     MessageCell(model: message)
                         .frame(maxWidth: 800, alignment: .leading)
                 }
+                .overlay {
+                    ChatEmptyState()
+                }
                 .overlay(alignment: .bottomTrailing) {
                     TerminalThumbnail()
                 }
             }
             Divider()
-            ChatInput(send: sendMessage(text:attachments:), onStop: stopAgent)
+            ChatInput(maxHeight: inputMaxHeight, send: sendMessage(text:attachments:), onStop: stopAgent)
         }
         .overlay(alignment: .bottom) {
             if typing {
@@ -43,8 +47,13 @@ struct ChatView: View {
                 Text("Debug")
             }
         }
+        .measureSize { self.height = $0.height }
     }
-    
+
+    private var inputMaxHeight: CGFloat? {
+        height != nil ? max(60, height! - 100) : nil
+    }
+
     private func clear() {
         document.store.modify { state in
             state.thread = .init()
