@@ -31,6 +31,9 @@ struct DocsList: View {
     func wantsDelete(_ url: URL) {
         try? FileManager.default.removeItem(at: url)
         reloadFileList()
+        if selectedFile == url {
+            selectedFile = nil
+        }
     }
 
     func newFile() {
@@ -42,7 +45,7 @@ struct DocsList: View {
             if (title as NSString).pathExtension == "" {
                 title += ".markdown"
             }
-            let url = folderURL.appendingPathComponent(title, isDirectory: false)
+            let url = folderURL.appending(component: "nat_docs").appendingPathComponent(title, isDirectory: false)
             try? "Your docs here".write(to: url, atomically: true, encoding: .utf8)
             reloadFileList()
             selectedFile = url
