@@ -53,13 +53,6 @@ enum UserVisibleLog: Equatable, Codable {
     case terminal(command: String)
 }
 
-extension ThreadModel {
-    func truncatedSteps() -> [Step] {
-        // TODO: truncate middle, try not to break prompt cache
-        steps
-    }
-}
-
 extension ThreadModel.Step {
     // incomplete thread steps reflect actions that failed partway thru. We can't send these in a new thread because they miss part of the necessary message responses
     var isComplete: Bool {
@@ -85,17 +78,28 @@ extension ThreadModel.Step {
     }
     var asLLMMessages: [LLMMessage] {
         asTaggedLLMMessages.map { $0.asLLMMessage() }
-//        var messages: [LLMMessage] = [initialRequest.asLLMMessage()]
-//        for step in toolUseLoop {
-//            messages.append(step.initialResponse.asLLMMessage())
-//            messages.append(LLMMessage(functionResponses: step.computerResponse.map(\.asLLMResponse)))
-//            if let psuedoFunctionResponse = step.psuedoFunctionResponse {
-//                messages.append(psuedoFunctionResponse.asLLMMessage())
-//            }
-//        }
-//        if let assistantMessageForUser {
-//            messages.append(assistantMessageForUser.asLLMMessage())
-//        }
-//        return messages
+    }
+}
+
+extension Array where Element == TaggedLLMMessage {
+    // Typically the system message is not included in the array at this point
+    func truncateTaggedLLMessages(keepFirstN: Int = 2, keepLastN: Int = 10, round: Int = 7) -> [TaggedLLMMessage] {
+        if count <= keepFirstN + keepLastN {
+            return self
+        }
+        let cutoff = Swift.max(keepFirstN, (count - keepLastN).round(round))
+        var remaining = Array(self[..<keepFirstN] + [TaggedLLMMessage(role: .system, content: [.text("[Old messages omitted]")])] + self[cutoff...])
+        remaining[keepFirstN - 1].functionCalls = [] // Cannot be any function calls b/c we won't be responding to them
+        remaining[cutoff].functionResponses = [] // Cannot be any function responses b/c there was nothing to respond to
+        if remaining[cutoff].content.isEmpty {
+            remaining[cutoff].content = [.text("[Omitted]")]
+        }
+        return remaining.asArray
+    }
+}
+
+extension Int {
+    func round(_ div: Int) -> Int {
+        quotientAndRemainder(dividingBy: div).quotient * div
     }
 }

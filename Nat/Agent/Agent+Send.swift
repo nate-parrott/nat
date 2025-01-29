@@ -74,9 +74,10 @@ extension AgentThreadStore {
             var i = 0
             while true {
                 // Loop and handle function calls
-                let taggedLLMMessages: [TaggedLLMMessage] = await readThreadModel().truncatedSteps()
+                let taggedLLMMessages: [TaggedLLMMessage] = await readThreadModel().steps
                     .flatMap(\.asTaggedLLMMessages)
                     .asArray
+                    .truncateTaggedLLMessages()
                     .byDroppingRedundantContext()
                 var llmMessages = taggedLLMMessages.map { $0.asLLMMessage() }
                 if fakeFunctions { llmMessages = llmMessages.map(\.byConvertingFunctionsToFakeFunctions) }

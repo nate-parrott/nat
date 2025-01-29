@@ -42,3 +42,10 @@ extension Array {
         return result
     }
 }
+
+// Written by Phil
+extension Array where Element: Numeric {
+    func sum() -> Element {
+        return reduce(0, +)
+    }
+}
