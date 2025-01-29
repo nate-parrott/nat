@@ -37,5 +37,13 @@ struct DocsEditor: NSViewRepresentable {
             guard let textView = notification.object as? NSTextView else { return }
             fileSaver.content = textView.string
         }
+
+        // We need to provide our own undo mgr to avoid propagating undos to the document level and triggering "Edited" UI on the window
+        let undoMgr = UndoManager()
+        func undoManager(for view: NSTextView) -> UndoManager? {
+            undoMgr
+        }
     }
 }
+
+

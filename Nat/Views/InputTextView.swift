@@ -160,7 +160,9 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
                 height: max(takenSize.height, minHeight) + options.insets.height * 2
             )
             if let contentSize, contentSize.wrappedValue != size {
-                contentSize.wrappedValue = size
+                DispatchQueue.main.async {
+                    contentSize.wrappedValue = size
+                }
             }
         }
 //        DispatchQueue.main.async {
@@ -213,4 +215,10 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
     }
 
     override var mouseDownCanMoveWindow: Bool { true }
+
+    // We need to provide our own undo mgr to avoid propagating undos to the document level and triggering "Edited" UI on the windows
+    let undoMgr = UndoManager()
+    func undoManager(for view: NSTextView) -> UndoManager? {
+        undoMgr
+    }
 }
