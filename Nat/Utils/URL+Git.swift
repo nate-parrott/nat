@@ -19,7 +19,7 @@ extension URL {
             return self
         }
         if pathComponents.count > 1 {
-            return deletingPathExtension()._ancestorGitDir
+            return deletingLastPathComponent()._ancestorGitDir
         }
         return nil
     }
