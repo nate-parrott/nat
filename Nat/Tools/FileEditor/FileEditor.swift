@@ -119,11 +119,30 @@ struct FileEditorTool: Tool {
             try content.write(to: path, atomically: true, encoding: .utf8)
             output.append(.text("Updated \(projectRelativePath):"))
             try output.append(.fileSnippet(FileSnippet(path: path, projectRelativePath: projectRelativePath, lineStart: 0, linesCount: content.lines.count)))
-//            summaries.append("Updated \(path.relativePath). New content:")
-//            summaries.append("Updated \(path.relativePath). New content:\n\(stringWithLineNumbers(content))\n")
         }
         return output
     }
+
+    // MARK: apply_edits fn
+    // HACK: The model tends to write edits and then call other functions, like running tests, rather than yielding to see if the edit is applied. Rather than let it do this, we provide a fake apply_edits function that a model can use.
+
+    var functions: [LLMFunction] {
+        [fn.asLLMFunction]
+    }
+
+    let fn = TypedFunction<Args>(name: "apply_edits", description: "Applies edits written using code fences in your response's main body, above this function call. NO ARGS FOR THIS FN DIRECTLY.", type: Args.self)
+
+    struct Args: FunctionArgs {
+        static var schema: [String : LLMFunction.JsonSchema] { [:] }
+    }
+
+    func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse? {
+        if fn.checkMatch(call: call) != nil {
+            return call.response(text: "") // The real response will be sent by the psuedo-fn handler above
+        }
+        return nil
+    }
+
 }
 
 extension FileEdit {

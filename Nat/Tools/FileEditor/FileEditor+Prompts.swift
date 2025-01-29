@@ -8,7 +8,7 @@ extension FileEditorTool {
     Editing commands begin and end with \(Self.codeFence),
     then a 'command line', then a portion of code.
     
-    After using editing commands, pause to allow the user to respond before continuing. Do not run tests or perform other research immediately after editing, until you see whether the edit is confirmed.
+    After using editing commands within your response, call apply_edits with no args to apply them and see if they are accepted. Do not run tests or perform other research immediately after editing, until you see whether the edit is confirmed.
     
     # Edit commands
     
