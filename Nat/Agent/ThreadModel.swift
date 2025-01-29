@@ -90,9 +90,11 @@ extension Array where Element == TaggedLLMMessage {
         let cutoff = Swift.max(keepFirstN, (count - keepLastN).round(round))
         var remaining = Array(self[..<keepFirstN] + [TaggedLLMMessage(role: .system, content: [.text("[Old messages omitted]")])] + self[cutoff...])
         remaining[keepFirstN - 1].functionCalls = [] // Cannot be any function calls b/c we won't be responding to them
-        remaining[cutoff].functionResponses = [] // Cannot be any function responses b/c there was nothing to respond to
-        if remaining[cutoff].content.isEmpty {
-            remaining[cutoff].content = [.text("[Omitted]")]
+
+        // Modify the first item after the cut
+        remaining[keepFirstN + 1].functionResponses = [] // Cannot be any function responses b/c there was nothing to respond to
+        if remaining[keepFirstN + 1].content.isEmpty {
+            remaining[keepFirstN + 1].content = [.text("[Omitted]")]
         }
         return remaining.asArray
     }

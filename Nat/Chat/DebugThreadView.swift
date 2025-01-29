@@ -9,8 +9,10 @@ struct DebugThreadView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 if let threadModel {
-                    let msgs = threadModel.truncatedSteps()
+                    let msgs = threadModel
+                        .steps
                         .flatMap(\.asTaggedLLMMessages)
+                        .truncateTaggedLLMessages()
                         .byDroppingRedundantContext()
                         .asArray
                     ForEachUnidentifiable(items: msgs) { msg in
