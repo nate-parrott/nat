@@ -11,31 +11,33 @@ struct ChatView: View {
     @State private var height: CGFloat?
 
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack {
             if debug {
                 DebugThreadView()
             } else {
-                ScrollToBottomThreadView(data: messageCellModels) { message in
-                    MessageCell(model: message)
-                        .frame(maxWidth: 800, alignment: .leading)
+                VStack(spacing: 0) {
+                    ScrollToBottomThreadView(data: messageCellModels) { message in
+                        MessageCell(model: message)
+                            .frame(maxWidth: 800, alignment: .leading)
+                    }
+                    .overlay {
+                        ChatEmptyState()
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        TerminalThumbnail()
+                    }
+                    Divider()
+                    ChatInput(maxHeight: inputMaxHeight, send: sendMessage(text:attachments:), onStop: stopAgent)
+                }
+                .overlay(alignment: .bottom) {
+                    if typing {
+                        Shimmer()
+                    }
                 }
                 .overlay {
-                    ChatEmptyState()
-                }
-                .overlay(alignment: .bottomTrailing) {
-                    TerminalThumbnail()
+                    ToolModalPresenter()
                 }
             }
-            Divider()
-            ChatInput(maxHeight: inputMaxHeight, send: sendMessage(text:attachments:), onStop: stopAgent)
-        }
-        .overlay(alignment: .bottom) {
-            if typing {
-                Shimmer()
-            }
-        }
-        .overlay {
-            ToolModalPresenter()
         }
         .onReceive(document.store.publisher.map(\.thread.isTyping).removeDuplicates(), perform: { self.typing = $0 })
         .onReceive(document.store.publisher.map(\.thread.cellModels).removeDuplicates(), perform: { self.messageCellModels = $0 })

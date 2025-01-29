@@ -92,11 +92,19 @@ extension AgentThreadStore {
                 }
                 print("[\(agentName)] Got response with \(step.pendingFunctionCallsToExecute.count) functions")
 
+                // Use this new tool context to immediately grab logs and display 'em
+                let childToolCtx = ToolContext(activeDirectory: folderURL, log: {
+                    step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs.append($0)
+                    Task {
+                        await saveStep()
+                    }
+                }, document: document)
+
                 // If message has function calls, handle. In this case, we will have appended a new function loop step:
                 if step.pendingFunctionCallsToExecute.count > 0 {
                     // Handle edge case where we get function calls AND psuedo-functions in the same response:
                     var prependToFirstFnResponse: [ContextItem]? = nil
-                    if let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: step.toolUseLoop.last?.initialResponse.asPlainText ?? "", agentName: agentName, tools: tools, toolCtx: toolCtx) {
+                    if let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: step.toolUseLoop.last?.initialResponse.asPlainText ?? "", agentName: agentName, tools: tools, toolCtx: childToolCtx) {
                         prependToFirstFnResponse = psuedoFnResponse
                     }
 
@@ -104,13 +112,6 @@ extension AgentThreadStore {
                         finishResult = finish
                         break
                     }
-                    // Use this new tool context to immediately grab logs and display 'em
-                    let childToolCtx = ToolContext(activeDirectory: folderURL, log: {
-                        step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs.append($0)
-                        Task {
-                            await saveStep()
-                        }
-                    }, document: document)
                     var fnResponses = try await self.handleFunctionCalls(
                         step.pendingFunctionCallsToExecute,
                         tools: tools,
@@ -129,7 +130,7 @@ extension AgentThreadStore {
                     try Task.checkCancellation()
                 }
                 // If message has psuedo-functions only, handle those. In this case, we will have a final `assistantMessageForUser` set, but we want to remove it and make it into a step in the loop:
-                else if let assistantMsg = step.assistantMessageForUser, let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: assistantMsg.asPlainText, agentName: agentName, tools: tools, toolCtx: toolCtx) {
+                else if let assistantMsg = step.assistantMessageForUser, let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: assistantMsg.asPlainText, agentName: agentName, tools: tools, toolCtx: childToolCtx) {
 
                     // This is a psuedo-fn, so it's tool use too!
                     step.toolUseLoop.append(ThreadModel.Step.ToolUseStep(

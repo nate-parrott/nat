@@ -101,3 +101,9 @@ extension View {
         }
     }
 }
+
+extension Text {
+    init(markdown: String) {
+        self = .init(LocalizedStringKey(markdown))
+    }
+}

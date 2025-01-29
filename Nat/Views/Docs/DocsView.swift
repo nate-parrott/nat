@@ -47,14 +47,17 @@ struct DocsView: View {
             } else if let files = files, !files.isEmpty {
                 DocsBrowser(files: files, reloadFileList: loadFiles)
             } else {
-                VStack {
-                    Text("No docs folder found")
+                VStack(spacing: 17) {
+                    Text(markdown: "You can use the `nat_docs` folder to write docs to help the agent understand your codebase.")
                         .foregroundColor(.secondary)
                     Button("Create docs folder") {
                         createDocsFolder()
                     }
                     .buttonStyle(.bordered)
                 }
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 400)
+                .padding()
             }
         }
         .onAppear {
