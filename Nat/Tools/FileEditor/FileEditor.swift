@@ -21,11 +21,12 @@ struct FileEditorTool: Tool {
         let editsDesc = unfixedFileEdits.map(\.description).joined(separator: ", ")
 
         // Dry-run applying changes before presenting to user
+        // TODO: Concurrent
         for edit in unfixedFileEdits {
             do {
-                if edit.canBeAppliedUsingApplierModel {
-                    throw ApplyEditError.fakeError // For testing
-                }
+//                if edit.canBeAppliedUsingApplierModel {
+//                    throw ApplyEditError.fakeError // For testing
+//                }
                 _ = try edit.getBeforeAfter()
                 fixedFileEdits.append(edit)
             } catch {
