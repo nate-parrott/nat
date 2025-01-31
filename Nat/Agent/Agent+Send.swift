@@ -161,12 +161,11 @@ extension AgentThreadStore {
             }
             try await saveStep()
         } catch {
+            // Add error to thread
             await modifyThreadModel { state in
                 // Do not modify state if cancelled
                 if (error as? CancellationError) == nil {
-                    state.status = .none
-                    // Do nothing (status should already be reset, and we may actually be in a new state)
-//                    state.status = .stoppedWithError("\(error)")
+                    state.status = .stoppedWithError("\(error)")
                 }
             }
             throw error

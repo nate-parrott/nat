@@ -84,7 +84,9 @@ struct ChatView: View {
                 if Task.isCancelled { return }
                 // Do nothing (We already handle it)
             }
-            document.currentAgentTask = nil
+            if !Task.isCancelled {
+                document.currentAgentTask = nil
+            }
         }
     }
     
