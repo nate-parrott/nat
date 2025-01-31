@@ -38,6 +38,7 @@ extension Document {
         // Cancel the current agent task
         currentAgentTask?.cancel()
         currentAgentTask = nil
+        toolModalToPresent = nil
 
         // Reset typing state
         store.modify { state in

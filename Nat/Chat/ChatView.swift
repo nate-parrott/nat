@@ -34,7 +34,9 @@ struct ChatView: View {
                     }
                 }
                 .overlay {
-                    ToolModalPresenter()
+                    if status == .running {
+                        ToolModalPresenter()
+                    }
                 }
             }
         }
