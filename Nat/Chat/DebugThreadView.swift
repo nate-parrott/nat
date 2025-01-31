@@ -21,7 +21,7 @@ struct DebugThreadView: View {
 //                    ForEach(threadModel.steps) {
 //                        StepView(step: $0)
 //                    }
-                    Text("status: \(threadModel.isTyping ? "typing" : "finished")")
+                    Text("status: \(threadModel.status)")
                 }
             }
             .padding()

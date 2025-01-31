@@ -7,6 +7,7 @@ enum TextFieldEvent {
         case enter
         case upArrow
         case downArrow
+        case other
     }
 
     case key(Key)
@@ -205,6 +206,7 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
             onEvent?(.key(.downArrow))
             return true
         default:
+            onEvent?(.key(.other))
             return false
         }
     }

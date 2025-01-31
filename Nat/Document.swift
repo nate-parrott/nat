@@ -58,8 +58,14 @@ extension DocumentState {
     }
 }
 
+class DocDataStore: DataStore<DocumentState> {
+    override func processModelAfterLoad(model: inout DocumentState) {
+        model.thread.status = .none
+    }
+}
+
 class Document: NSDocument {
-    nonisolated let store = DataStore(persistenceKey: nil, defaultModel: DocumentState(), queue: .main)
+    nonisolated let store = DocDataStore(persistenceKey: nil, defaultModel: DocumentState(), queue: .main)
     @Published var toolModalToPresent: NSViewController?
 
     override init() {

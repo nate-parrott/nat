@@ -1,3 +1,5 @@
+import SwiftUI
+import Combine
 //import ChatToys
 //import Foundation
 //
@@ -130,7 +132,7 @@
 //}
 
 class EphemeralAgent: AgentThreadStore {
-    var model: ThreadModel
+    @Published var model: ThreadModel
 
     init(model: ThreadModel) {
         self.model = model
@@ -142,5 +144,9 @@ class EphemeralAgent: AgentThreadStore {
     
     func modifyThreadModel<ReturnVal>(_ callback: @escaping (inout ThreadModel) -> ReturnVal) async -> ReturnVal {
         callback(&model)
+    }
+
+    func threadModelPublisher() -> AnyPublisher<ThreadModel, Never> {
+        $model.eraseToAnyPublisher()
     }
 }

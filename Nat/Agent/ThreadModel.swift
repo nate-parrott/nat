@@ -1,10 +1,17 @@
 import Foundation
 import ChatToys
 
+enum AgentStatus: Equatable, Codable {
+    case none
+    case running
+    case paused
+    case stoppedWithError(String)
+}
+
 struct ThreadModel: Equatable, Codable {
     var steps = [Step]()
-    var isTyping = false
-    var lastError: String?
+    var status = AgentStatus.none
+    var cancelCount = 0 // HACK: to allow use to break out of the checkCancelOrPause loop when cancelling
 
     struct Step: Equatable, Codable, Identifiable {
         var id: String

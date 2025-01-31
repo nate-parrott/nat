@@ -16,13 +16,12 @@ extension AgentThreadStore {
     ) async throws -> LLMMessage.FunctionCall? {
         // Safely see if thread is idle, and set ourselves as in-progress:
         let alreadyRunning = await modifyThreadModel { state in
-            if state.isTyping {
+            if state.status == .paused || state.status == .running {
                 return true
             }
             // Start modifying thread
-            state.isTyping = true
-            state.lastError = nil
-            state.deleteIncompleteSteps()
+            state.status = .running
+            state.fixIncompleteSteps()
             return false
         }
         if alreadyRunning {
@@ -57,10 +56,9 @@ extension AgentThreadStore {
             var step = ThreadModel.Step(id: UUID().uuidString, initialRequest: message, toolUseLoop: [])
             await modifyThreadModel { state in
                 state.appendOrUpdate(step)
-                state.isTyping = true
             }
-            func saveStep() async { // causes ui to update
-                if Task.isCancelled { return }
+            func saveStep() async throws { // causes ui to update
+                try await checkCancelOrPause()
                 await modifyThreadModel { state in
                     state.appendOrUpdate(step)
                 }
@@ -89,7 +87,7 @@ extension AgentThreadStore {
                 let allowedFns = i > 0 && i + 1 == maxIterations && finishFunction != nil ? [finishFunction!] : allFunctions
                 for try await partial in llm.completeStreaming(prompt: llmMessages, functions: fakeFunctions ? [] : allowedFns) {
                     step.appendOrUpdatePartialResponse(partial.byConvertingFakeFunctionCallsToRealOnes)
-                    await saveStep()
+                    try await saveStep()
                 }
                 print("[\(agentName)] Got response with \(step.pendingFunctionCallsToExecute.count) functions")
 
@@ -97,7 +95,7 @@ extension AgentThreadStore {
                 let childToolCtx = ToolContext(activeDirectory: folderURL, log: {
                     step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs.append($0)
                     Task {
-                        await saveStep()
+                        try await saveStep()
                     }
                 }, document: document)
 
@@ -127,8 +125,7 @@ extension AgentThreadStore {
                     step.toolUseLoop[step.toolUseLoop.count - 1].computerResponse = fnResponses
 //                    step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs += collectedLogs
                     collectedLogs.removeAll()
-                    await saveStep()
-                    try Task.checkCancellation()
+                    try await saveStep()
                 }
                 // If message has psuedo-functions only, handle those. In this case, we will have a final `assistantMessageForUser` set, but we want to remove it and make it into a step in the loop:
                 else if let assistantMsg = step.assistantMessageForUser, let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: assistantMsg.asPlainText, agentName: agentName, tools: tools, toolCtx: childToolCtx) {
@@ -142,8 +139,7 @@ extension AgentThreadStore {
                     ))
                     collectedLogs.removeAll() // since we just added them
                     step.assistantMessageForUser = nil // Remove final assistant msg, since we handled this as a fn call.
-                    await saveStep()
-                    try Task.checkCancellation()
+                    try await saveStep()
                 }
                 // Handle response with no tools:
                 else {
@@ -158,19 +154,25 @@ extension AgentThreadStore {
                         step.assistantMessageForUser = TaggedLLMMessage(role: .assistant, content: [.text("[Agent timed out]")])
                     }
                 }
-                await saveStep()
+                try await saveStep()
                 try Task.checkCancellation()
             }
-            await saveStep()
+            try await saveStep()
         } catch {
             await modifyThreadModel { state in
-                state.lastError = "Error: \(error)"
-                state.isTyping = false
+                if (error as? CancellationError) == nil {
+                    state.status = .stoppedWithError("\(error)")
+                } else {
+                    state.status = .none // if error is cancellation, don't render it
+                }
             }
             throw error
         }
         await modifyThreadModel { state in
-            state.isTyping = false
+            // If not in error state, set state to none
+            if state.status == .running {
+                state.status = .none
+            }
         }
         return finishResult
     }
@@ -226,6 +228,12 @@ extension ThreadModel {
         }
     }
 
+    mutating func fixIncompleteSteps() {
+        if steps.count > 0 {
+            steps[steps.count - 1].fixIfIncomplete()
+        }
+    }
+
     var lastStep: Step? {
         get {
             steps.last
@@ -243,6 +251,16 @@ extension ThreadModel {
 }
 
 extension ThreadModel.Step {
+    mutating func fixIfIncomplete() {
+        if isComplete { return }
+        if toolUseLoop.count > 0 {
+            toolUseLoop[toolUseLoop.count - 1].fixIfIncomplete()
+        }
+        if assistantMessageForUser == nil {
+            assistantMessageForUser = .init(role: .assistant, content: [.text("[Response was interrupted]")])
+        }
+    }
+
     mutating func appendOrUpdatePartialResponse(_ response: LLMMessage) {
         if response.functionCalls.count > 0 {
             // This has function calls, so it's not the final assistant message
@@ -265,5 +283,18 @@ extension ThreadModel.Step {
             return step.initialResponse.functionCalls
         }
         return []
+    }
+}
+
+extension ThreadModel.Step.ToolUseStep {
+    mutating func fixIfIncomplete() {
+        if isComplete { return }
+        if initialResponse.functionCalls.count > 0 {
+            computerResponse = initialResponse.functionCalls.map({ call in
+                return call.response(text: "[Response was interrupted]")
+            })
+        } else {
+            psuedoFunctionResponse = .init(role: .user, content: [.text("[Response was interrupted]")])
+        }
     }
 }

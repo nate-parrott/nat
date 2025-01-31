@@ -5,7 +5,7 @@ struct ChatView: View {
 //    @State private var imageAttachment: ChatUINSImage? = nil
     
     @Environment(\.document) private var document
-    @State private var typing = false
+    @State private var status = AgentStatus.none
     @State private var messageCellModels = [MessageCellModel]()
     @State private var debug = false
     @State private var height: CGFloat?
@@ -29,7 +29,7 @@ struct ChatView: View {
                     ChatInput(maxHeight: inputMaxHeight, send: sendMessage(text:attachments:), onStop: stopAgent)
                 }
                 .overlay(alignment: .bottom) {
-                    if typing {
+                    if status == .running {
                         Shimmer()
                     }
                 }
@@ -38,7 +38,7 @@ struct ChatView: View {
                 }
             }
         }
-        .onReceive(document.store.publisher.map(\.thread.isTyping).removeDuplicates(), perform: { self.typing = $0 })
+        .onReceive(document.store.publisher.map(\.thread.status).removeDuplicates(), perform: { self.status = $0 })
         .onReceive(document.store.publisher.map(\.thread.cellModels).removeDuplicates(), perform: { self.messageCellModels = $0 })
         .contextMenu {
             Button(action: clear) {
@@ -56,6 +56,7 @@ struct ChatView: View {
     }
 
     private func clear() {
+        document.stop()
         document.store.modify { state in
             state.thread = .init()
         }
@@ -66,16 +67,15 @@ struct ChatView: View {
         let msg = TaggedLLMMessage(role: .user, content: [.text(text)] + attachments)
         let folderURL = document.store.model.folder
         let curFile = document.store.model.selectedFileInEditorRelativeToFolder
-        
-        document.currentAgentTask?.cancel() // Cancel any existing task
-        
+
+        document.stop()
+
         document.currentAgentTask = Task {
             do {
                 let tools: [Tool] = [
                     FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(),
                     TerminalTool(), WebResearchTool(), DeleteFileTool(), GrepTool(),
                     BasicContextTool(document: document, currentFilenameFromXcode: curFile),
-                    TodoTool()
                 ]
                 try await document.send(message: msg, llm: LLMs.smartAgentModel(), document: document, tools: tools, folderURL: folderURL)
             } catch {
@@ -87,14 +87,7 @@ struct ChatView: View {
     }
     
     private func stopAgent() {
-        // Cancel the current agent task
-        document.currentAgentTask?.cancel()
-        document.currentAgentTask = nil
-        
-        // Reset typing state
-        document.store.modify { state in
-            state.thread.isTyping = false
-        }
+        document.stop()
     }
 }
 

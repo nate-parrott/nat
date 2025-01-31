@@ -27,8 +27,8 @@ extension ThreadModel {
 //                cells.append(MessageCellModel(id: step.id + "/last", content: .assistantMessage(last.asPlainText)))
             }
         }
-        if let lastError {
-            cells.append(MessageCellModel(id: "error", content: .error(lastError)))
+        if case .stoppedWithError(let err) = status {
+            cells.append(MessageCellModel(id: "error", content: .error(err)))
         }
         return cells
     }

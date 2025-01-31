@@ -12,11 +12,8 @@ struct ChatInput: View {
     @State private var currentFileOpenInXcode: String?
     @State private var folderName: String?
     @State private var attachments: [ContextItem] = []
+    @State private var status = AgentStatus.none
 
-    private var isTyping: Bool {
-        document.store.model.thread.isTyping
-    }
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .bottom) {
@@ -61,31 +58,18 @@ struct ChatInput: View {
             }
             .buttonStyle(PlainButtonStyle())
 
-            if isTyping {
-                // Show stop button when agent is typing
-                Button(action: onStop) {
-                    Image(systemName: "pause.circle.fill")
-                        .help(Text("Stop Response"))
-                        .foregroundColor(.accentColor)
-                        .font(.system(size: 22))
-                        .frame(both: 40)
+            Group {
+                if status == .running {
+                    PlayPauseButton(icon: "pause.circle.fill", label: "Pause", action: { document.pause() })
+                } else {
+                    PlayPauseButton(icon: "play.circle.fill", label: "Start", action: { sendOrResume() })
+                        .disabled(text.isEmpty && status == .none)
                 }
-                .buttonStyle(PlainButtonStyle())
-            } else {
-                // Show send button when not typing
-                Button(action: submit) {
-                    Image(systemName: "play.circle.fill")
-                        .help(Text("Send Message"))
-                        .foregroundColor(.accentColor)
-                        .font(.system(size: 22))
-                        .frame(both: 40)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .disabled(text.isEmpty)
             }
         }
         .frame(height: 60)
         .padding(.trailing)
+        .onReceive(document.store.publisher.map(\.thread.status).removeDuplicates(), perform: { self.status = $0 })
     }
 
     private var textFieldOptions: InputTextFieldOptions {
@@ -109,8 +93,14 @@ struct ChatInput: View {
 
     private func textFieldEvent(_ event: TextFieldEvent) -> Void {
         switch event {
-        case .key(.enter):
-            if text != "" { submit() }
+        case .key(let key):
+            switch key {
+            case .enter:
+                if text != "", NSEvent.modifierFlags.contains(.command) {
+                    sendOrResume()
+                }
+            default: document.pause()
+            }
         case .paste(let text):
             attachments.append(.largePaste(text))
         default:
@@ -118,12 +108,16 @@ struct ChatInput: View {
         }
     }
     
-    private func submit() {
-        let text = self.text
-        let attachments = self.attachments
-        self.text = ""
-        self.attachments = []
-        send(text, attachments)
+    private func sendOrResume() {
+        if text != "" || attachments.count > 0 {
+            let text = self.text
+            let attachments = self.attachments
+            self.text = ""
+            self.attachments = []
+            send(text, attachments)
+        } else if status == .paused {
+            document.unpause()
+        }
     }
     
     @MainActor
@@ -154,5 +148,22 @@ struct ChatInput: View {
             .padding(12)
         }
 //        .frame(height: attachments.isEmpty ? 0 : 32)
+    }
+}
+
+private struct PlayPauseButton: View {
+    var icon: String
+    var label: String
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .help(Text(label))
+                .foregroundColor(.accentColor)
+                .font(.system(size: 22))
+                .frame(both: 40)
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
