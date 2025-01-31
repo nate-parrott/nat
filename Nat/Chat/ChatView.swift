@@ -26,7 +26,6 @@ struct ChatView: View {
                     .overlay(alignment: .bottomTrailing) {
                         TerminalThumbnail()
                     }
-                    Divider()
                     ChatInput(maxHeight: inputMaxHeight, send: sendMessage(text:attachments:), onStop: stopAgent)
                 }
                 .overlay(alignment: .bottom) {

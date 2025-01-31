@@ -48,10 +48,10 @@ struct ChatInput: View {
     @ViewBuilder var buttons: some View {
         HStack(spacing: 0) {
             Button(action: pickFile) {
-                Image(systemName: "paperclip")
+                Image(systemName: "rectangle.dashed.and.paperclip")
                     .help(Text("Attach File"))
                     .foregroundColor(.secondary)
-                    .font(.system(size: 16))
+                    .font(.system(size: 19))
                     .frame(both: 40)
             }
             .buttonStyle(PlainButtonStyle())
@@ -59,20 +59,20 @@ struct ChatInput: View {
             if isTyping {
                 // Show stop button when agent is typing
                 Button(action: onStop) {
-                    Image(systemName: "stop.circle.fill")
+                    Image(systemName: "pause.circle.fill")
                         .help(Text("Stop Response"))
-                        .foregroundColor(.red)
-                        .font(.system(size: 30))
+                        .foregroundColor(.accentColor)
+                        .font(.system(size: 22))
                         .frame(both: 40)
                 }
                 .buttonStyle(PlainButtonStyle())
             } else {
                 // Show send button when not typing
                 Button(action: submit) {
-                    Image(systemName: "arrow.up.circle.fill")
+                    Image(systemName: "play.circle.fill")
                         .help(Text("Send Message"))
                         .foregroundColor(.accentColor)
-                        .font(.system(size: 30))
+                        .font(.system(size: 22))
                         .frame(both: 40)
                 }
                 .buttonStyle(PlainButtonStyle())

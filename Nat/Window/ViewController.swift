@@ -85,9 +85,9 @@ class ViewController: NSViewController {
         document!.store.publisher.map(\.folder).removeDuplicates().sink { [weak self] folderURL in
             guard let button = self?.folderButton else { return }
             if let folderURL {
-                button.title = folderURL.lastPathComponent
+                button.setTitleAndGlyph(folderURL.lastPathComponent, glyph: "folder")
             } else {
-                button.title = "Choose Folder..."
+                button.setTitleAndGlyph("Choose Folder...", glyph: "folder.badge.plus")
             }
         }.store(in: &subscriptions)
         folderButton!.target = self
