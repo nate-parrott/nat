@@ -96,7 +96,7 @@ struct ChatInput: View {
         case .key(let key):
             switch key {
             case .enter:
-                if text != "", NSEvent.modifierFlags.contains(.command) {
+                if text != "" {
                     sendOrResume()
                 }
             default: document.pause()
