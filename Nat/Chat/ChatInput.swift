@@ -37,6 +37,11 @@ struct ChatInput: View {
                 attachmentsView
             }
         }
+        .overlay(alignment: .top) {
+            if textFieldSize.height > 100 {
+                Divider()
+            }
+        }
         .onAppear {
             focusDate = Date()
         }

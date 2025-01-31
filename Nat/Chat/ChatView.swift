@@ -74,7 +74,8 @@ struct ChatView: View {
                 let tools: [Tool] = [
                     FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(),
                     TerminalTool(), WebResearchTool(), DeleteFileTool(), GrepTool(),
-                    BasicContextTool(document: document, currentFilenameFromXcode: curFile)
+                    BasicContextTool(document: document, currentFilenameFromXcode: curFile),
+                    TodoTool()
                 ]
                 try await document.send(message: msg, llm: LLMs.smartAgentModel(), document: document, tools: tools, folderURL: folderURL)
             } catch {

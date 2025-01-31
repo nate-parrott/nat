@@ -30,6 +30,19 @@ struct DocumentState: Equatable, Codable {
     var terminalVisible = false
     var mode = DocumentMode.agent
     var selectedFileInEditor: URL?
+    var todos = [String: Todo]()
+}
+
+struct Todo: Equatable, Codable {
+    var id: String
+    var description: String
+    var status = Status.queued
+
+    enum Status: String, Equatable, Codable {
+        case queued
+        case inProgress
+        case complete
+    }
 }
 
 extension DocumentState {
@@ -46,7 +59,7 @@ extension DocumentState {
 }
 
 class Document: NSDocument {
-    let store = DataStore(persistenceKey: nil, defaultModel: DocumentState(), queue: .main)
+    nonisolated let store = DataStore(persistenceKey: nil, defaultModel: DocumentState(), queue: .main)
     @Published var toolModalToPresent: NSViewController?
 
     override init() {
