@@ -23,6 +23,7 @@ extension FileEditorTool {
     `FindReplace` lets you edit a portion of a file by specifying original text to find and new text to replace it with, separated by a ===WITH=== line.
     Your original text must be unique, and exist EXACTLY AS-IS in the current version of file ONCE. Your replacement should slot perfectly in, including indentation.
     Each code fence can contain a single find/replace pair, but you can use multiple sets of code fences per response.
+    Only one ==WITH== delimiter per FindReplace block.
     Form:
     \(Self.codeFence)
     > FindReplace /path/file.swift
