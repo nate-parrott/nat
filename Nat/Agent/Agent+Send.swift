@@ -93,7 +93,9 @@ extension AgentThreadStore {
 
                 // Use this new tool context to immediately grab logs and display 'em
                 let childToolCtx = ToolContext(activeDirectory: folderURL, log: {
-                    step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs.append($0)
+                    if step.toolUseLoop.count > 0 {
+                        step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs.append($0)
+                    } // HACK: where to put user visible logs if handling psuedo-fns?
                     Task {
                         try await saveStep()
                     }
@@ -160,18 +162,22 @@ extension AgentThreadStore {
             try await saveStep()
         } catch {
             await modifyThreadModel { state in
+                // Do not modify state if cancelled
                 if (error as? CancellationError) == nil {
-                    state.status = .stoppedWithError("\(error)")
-                } else {
-                    state.status = .none // if error is cancellation, don't render it
+                    state.status = .none
+                    // Do nothing (status should already be reset, and we may actually be in a new state)
+//                    state.status = .stoppedWithError("\(error)")
                 }
             }
             throw error
         }
-        await modifyThreadModel { state in
-            // If not in error state, set state to none
-            if state.status == .running {
-                state.status = .none
+        // Do not modify state if cancelled
+        if !Task.isCancelled {
+            await modifyThreadModel { state in
+                // If not in error state, set state to none
+                if state.status == .running {
+                    state.status = .none
+                }
             }
         }
         return finishResult

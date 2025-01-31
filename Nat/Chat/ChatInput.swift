@@ -42,6 +42,9 @@ struct ChatInput: View {
         .onAppear {
             focusDate = Date()
         }
+        .onChange(of: text, perform: { newValue in
+            if newValue != "" { document.pause() }
+        })
         .background(.thinMaterial)
         .onReceive(document.store.publisher.map(\.selectedFileInEditorRelativeToFolder).removeDuplicates(), perform: { self.currentFileOpenInXcode = $0 })
         .onReceive(document.store.publisher.map(\.folder?.lastPathComponent).removeDuplicates(), perform: { self.folderName = $0 })
@@ -93,14 +96,8 @@ struct ChatInput: View {
 
     private func textFieldEvent(_ event: TextFieldEvent) -> Void {
         switch event {
-        case .key(let key):
-            switch key {
-            case .enter:
-                if text != "" {
-                    sendOrResume()
-                }
-            default: document.pause()
-            }
+        case .key(.enter):
+            sendOrResume()
         case .paste(let text):
             attachments.append(.largePaste(text))
         default:
