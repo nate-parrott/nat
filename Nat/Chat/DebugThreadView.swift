@@ -12,7 +12,7 @@ struct DebugThreadView: View {
                     let msgs = threadModel
                         .steps
                         .flatMap(\.asTaggedLLMMessages)
-                        .truncateTaggedLLMessages()
+                        .truncateOldMessages()
                         .byDroppingRedundantContext()
                         .asArray
                     ForEachUnidentifiable(items: msgs) { msg in

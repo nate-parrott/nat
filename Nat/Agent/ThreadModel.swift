@@ -91,7 +91,7 @@ extension ThreadModel.Step {
 extension Array where Element == TaggedLLMMessage {
     // Typically the system message is not included in the array at this point
     // TODO: summarize old messages
-    func truncateTaggedLLMessages(keepFirstN: Int = 4, keepLastN: Int = 40, round: Int = 7) -> [TaggedLLMMessage] {
+    func omitOldMessages(keepFirstN: Int = 4, keepLastN: Int = 40, round: Int = 7) -> [TaggedLLMMessage] {
         if count <= keepFirstN + keepLastN {
             return self
         }
@@ -106,6 +106,64 @@ extension Array where Element == TaggedLLMMessage {
         }
         return remaining.asArray
     }
+    
+    func truncateOldMessages(keepFirstN: Int = 4, keepLastN: Int = 40, round: Int = 7) -> [TaggedLLMMessage] {
+        if count <= keepFirstN + keepLastN {
+            return self
+        }
+        let cutoff = Swift.max(keepFirstN, (count - keepLastN).round(round))
+        var truncated = self
+        for i in keepFirstN..<cutoff {
+            truncated[i].shorten()
+        }
+//        var remaining = Array(self[..<keepFirstN] + [TaggedLLMMessage(role: .system, content: [.text("[Old messages omitted]")])] + self[cutoff...])
+//        remaining[keepFirstN - 1].functionCalls = [] // Cannot be any function calls b/c we won't be responding to them
+//
+//        // Modify the first item after the cut
+//        remaining[keepFirstN + 1].functionResponses = [] // Cannot be any function responses b/c there was nothing to respond to
+//        if remaining[keepFirstN + 1].content.isEmpty {
+//            remaining[keepFirstN + 1].content = [.text("[Omitted]")]
+//        }
+        return truncated
+    }
+}
+
+extension TaggedLLMMessage {
+    mutating func shorten() {
+        // TODO: truncate function calls?
+        for i in functionResponses.indices {
+            functionResponses[i].content = truncateContent(functionResponses[i].content)
+        }
+        content = truncateContent(content)
+    }
+}
+
+func truncateContent(_ items: [ContextItem]) -> [ContextItem] {
+    // Keep only first, remove images
+    let items = items.compactMap { item -> ContextItem? in
+        switch item {
+        case .text(let string):
+            return ContextItem.text(string.truncateMiddleWithEllipsis(chars: 200))
+        case .fileSnippet:
+            return ContextItem.omission("[Old file content omitted; request again if you need]")
+        case .image: return nil
+        case .systemInstruction(let string):
+            return ContextItem.systemInstruction(string.truncateMiddleWithEllipsis(chars: 200))
+        case .textFile:
+            // TODO: better
+            return ContextItem.omission("[Old file content omitted; request again if you need]")
+        case .url(let url):
+            return .url(url)
+        case .largePaste(let string):
+            return .largePaste(string.truncateMiddleWithEllipsis(chars: 200))
+        case .omission(let string):
+            return .omission(string)
+        }
+    }
+    if let first = items.first {
+        return [first]
+    }
+    return [.omission("Old content omitted")]
 }
 
 extension Int {

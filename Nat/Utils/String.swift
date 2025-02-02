@@ -18,6 +18,15 @@ extension String {
         let endIndex = index(startIndex, offsetBy: chars)
         return self[..<endIndex] + "..."
     }
+    
+    func truncateMiddleWithEllipsis(chars: Int) -> String {
+        guard count > chars else { return self }
+        let cut = chars / 2
+        let prefix = self[..<index(startIndex, offsetBy: cut)]
+        let suffix = self[index(endIndex, offsetBy: -cut)...]
+        return prefix + "..." + suffix
+    }
+
 
     var lines: [String] {
         components(separatedBy: "\n")
