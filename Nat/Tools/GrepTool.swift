@@ -3,12 +3,12 @@ import ChatToys
 
 struct GrepTool: Tool {
     var functions: [LLMFunction] {
-        [fn.asLLMFunction]
+        [Self.fn.asLLMFunction]
     }
 
     var useLineNumbers = Constants.useLineNumbers
 
-    let fn = TypedFunction<Args>(name: "grep", description: "Search for patterns in files using regex", type: Args.self)
+    static let fn = TypedFunction<Args>(name: "grep", description: "Search for patterns in files using regex", type: Args.self)
     
     struct Args: FunctionArgs {
         var pattern: String
@@ -22,7 +22,7 @@ struct GrepTool: Tool {
     }
     
     func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse? {
-        guard let args = fn.checkMatch(call: call) else { return nil }
+        guard let args = Self.fn.checkMatch(call: call) else { return nil }
         
         guard let folderURL = context.activeDirectory else {
             return call.response(text: "Tell the user they need to choose a folder before you can search the codebase.")

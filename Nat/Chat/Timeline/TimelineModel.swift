@@ -1,16 +1,14 @@
 //import Foundation
 //
-//struct TimelineItem: Equatable, Identifiable {
-//    var id: String
+//struct TimelineItem: Equatable {
 //    var icon: String?
 //    
 //    var chats: [MessageCellModel] // shown as overlay, except when content is nil
 //    var background: Background?
 //    
 //    enum Background: Equatable {
+//        case edit(CodeEdit)
 //        case terminal
-//        case listFileTree
-//        case codeSearch(CodeSearchVis)
 //    }
 //    
 //    struct CodeSearchVis: Equatable {
@@ -63,49 +61,40 @@
 //        }
 //        
 //        for step in steps {
-//            startNewItem()
+//            startNewItem() // new page for each user message
 //            currentItem.icon = "text.bubble"
 //            // TODO: Show attachments in chat
 //            currentItem.chats.append(.init(id: step.id + "/initial", content: .userMessage(step.initialRequest.asPlainText(includeSystemMessages: false))))
 //            
 //            for (i, toolUseStep) in step.toolUseLoop.enumerated() {
 //                let idPrefix = step.id + "/step/\(i)/"
+//                
+//                // Is this a file edit?
+//                if toolUseStep.hasFileEdits, currentItem.background != .chatExclusive {
+//                    // Go straight to chat
+//                    startNewItem()
+//                    currentItem = .chatExclusive
+//                }
+//                
 //                currentItem.chats += toolUseStep.initialResponse.assistantCellModels(idPrefix: idPrefix)
-//                for (j, log) in toolUseStep.userVisibleLogs.enumerated() {
-//                    switch log {
-//                    case .readFile(let url):
-//                        modifyCodeSearchViz { viz in
-//                            viz.files.append(url)
-//                        }
-//                    case .grepped(let string):
-//                        modifyCodeSearchViz { viz in
-//                            viz.greps.append(string)
-//                        }
-//                    case .edits:
-//                        currentItem.chats.append(.init(id: idPrefix + "j", content: .toolLog(log)))
-//                    case .webSearch(let string):
-//                        <#code#>
-//                    case .deletedFile(let uRL):
-//                        <#code#>
-//                    case .codeSearch(let string):
-//                        <#code#>
-//                    case .usingEditCleanupModel(let uRL):
-//                        <#code#>
-//                    case .listedFiles:
-//                        <#code#>
-//                    case .tokenUsage(let prompt, let completion, let model):
-//                        <#code#>
-//                    case .effort(let string):
-//                        <#code#>
-//                    case .toolWarning(let string):
-//                        <#code#>
-//                    case .toolError(let string):
-//                        <#code#>
-//                    case .terminal(let command):
-//                        <#code#>
-//                    }
+//                                
+//                for fnCall in toolUseStep.initialResponse.functionCalls {
+//                    
 //                }
 //            }
 //        }
+//    }
+//}
+//
+//
+//private extension ThreadModel.Step.ToolUseStep {
+//    var hasFileEdits: Bool {
+//        for log in psuedoFunctionLogs {
+//            switch log {
+//            case .edits: return true
+//            default: continue
+//            }
+//        }
+//        return false
 //    }
 //}

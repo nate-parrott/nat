@@ -29,10 +29,10 @@ private enum TerminalToolError: Error {
 
 struct TerminalTool: Tool {
     var functions: [LLMFunction] {
-        [fn.asLLMFunction]
+        [Self.fn.asLLMFunction]
     }
     
-    let fn = TypedFunction<Args>(name: "terminal", description: """
+    static let fn = TypedFunction<Args>(name: "terminal", description: """
         Execute a terminal command and return its output. 
         Only use this for commands that will complete quickly (within 10 minutes) like running tests, interacting with git, etc. 
         NEVER use for long-running or indefinite programs like servers, processes, interactive programs.
@@ -51,7 +51,7 @@ struct TerminalTool: Tool {
     }
     
     func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse? {
-        guard let args = fn.checkMatch(call: call) else { return nil }
+        guard let args = Self.fn.checkMatch(call: call) else { return nil }
         
         let command = args.command
         await context.log(.terminal(command: "\(command)"))

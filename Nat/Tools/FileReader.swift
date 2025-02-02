@@ -3,10 +3,10 @@ import ChatToys
 
 struct FileReaderTool: Tool {
     var functions: [LLMFunction] {
-        [fn.asLLMFunction]
+        [Self.fn.asLLMFunction]
     }
 
-    let fn = TypedFunction<Args>(name: "read_file", description: "Shows you the contents of a file.", type: Args.self)
+    static let fn = TypedFunction<Args>(name: "read_file", description: "Shows you the contents of a file.", type: Args.self)
 
     struct Args: FunctionArgs {
         var path: String
@@ -21,7 +21,7 @@ struct FileReaderTool: Tool {
     }
 
     func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse? {
-        if let args = fn.checkMatch(call: call) {
+        if let args = Self.fn.checkMatch(call: call) {
             let path = args.path
             let offset = args.line_offset ?? 0
             do {

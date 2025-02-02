@@ -3,10 +3,10 @@ import ChatToys
 
 struct WebResearchTool: Tool {
     var functions: [LLMFunction] {
-        [fn.asLLMFunction]
+        [Self.fn.asLLMFunction]
     }
     
-    let fn = TypedFunction<Args>(name: "web_research", description: "Takes a specific prompt and uses perplexity/llama-3.1-sonar-large-128k-online to fetch answers from the web", type: Args.self)
+    static let fn = TypedFunction<Args>(name: "web_research", description: "Takes a specific prompt and uses perplexity/llama-3.1-sonar-large-128k-online to fetch answers from the web", type: Args.self)
     
     struct Args: FunctionArgs {
         var prompt: String
@@ -19,7 +19,7 @@ struct WebResearchTool: Tool {
     }
     
     func handleCallIfApplicable(_ call: LLMMessage.FunctionCall, context: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse? {
-        if let args = fn.checkMatch(call: call) {
+        if let args = Self.fn.checkMatch(call: call) {
             do {
                 await context.log(.webSearch(args.prompt))
                 
