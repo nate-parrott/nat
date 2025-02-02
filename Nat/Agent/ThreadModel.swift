@@ -90,7 +90,8 @@ extension ThreadModel.Step {
 
 extension Array where Element == TaggedLLMMessage {
     // Typically the system message is not included in the array at this point
-    func truncateTaggedLLMessages(keepFirstN: Int = 2, keepLastN: Int = 10, round: Int = 7) -> [TaggedLLMMessage] {
+    // TODO: summarize old messages
+    func truncateTaggedLLMessages(keepFirstN: Int = 4, keepLastN: Int = 40, round: Int = 7) -> [TaggedLLMMessage] {
         if count <= keepFirstN + keepLastN {
             return self
         }

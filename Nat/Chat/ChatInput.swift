@@ -1,3 +1,4 @@
+
 import SwiftUI
 
 struct ChatInput: View {
@@ -79,7 +80,8 @@ struct ChatInput: View {
         return .init(
             placeholder: placeholderText,
             font: .systemFont(ofSize: 14),
-            insets: .init(width: 12, height: 21)
+            insets: .init(width: 12, height: 21),
+            requireCmdEnter: true
         )
     }
 

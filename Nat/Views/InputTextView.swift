@@ -21,6 +21,7 @@ struct InputTextFieldOptions: Equatable {
     var color: NSColor = NSColor.textColor
     var insets = CGSize(width: 0, height: 0)
     var placeholderColor: NSColor? = nil
+    var requireCmdEnter: Bool = false
 
     var effectivePlaceholderColor: NSColor {
         return placeholderColor ?? color.withAlphaComponentSafe(0.5)
@@ -190,14 +191,19 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
     func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         switch commandSelector {
         case #selector(NSResponder.insertNewline(_:)):
-            // If shift is pressed, insert newline, otherwise send event
-            if NSEvent.modifierFlags.contains(.shift) {
+            let flags = NSEvent.modifierFlags
+            // If shift pressed, always insert newline
+            if flags.contains(.shift) {
                 return false
-            } else {
-                onEvent?(.key(.enter))
-                contentSizeMayHaveChanged()
-                return true
             }
+            // If cmd required but not pressed, insert newline
+            if options.requireCmdEnter && !flags.contains(.command) {
+                return false
+            }
+            // Otherwise send event
+            onEvent?(.key(.enter))
+            contentSizeMayHaveChanged()
+            return true
         case #selector(NSResponder.moveUp(_:)):
             onEvent?(.key(.upArrow))
             return true

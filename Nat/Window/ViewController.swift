@@ -87,7 +87,7 @@ class ViewController: NSViewController {
             if let folderURL {
                 button.setTitleAndGlyph(folderURL.lastPathComponent, glyph: "folder")
             } else {
-                button.setTitleAndGlyph("Choose Folder...", glyph: "folder.badge.plus")
+                button.setTitleAndGlyph("Choose...", glyph: "folder.badge.plus")
             }
         }.store(in: &subscriptions)
         folderButton!.target = self
