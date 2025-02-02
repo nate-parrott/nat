@@ -189,6 +189,12 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
     }
     
     func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        // https://stackoverflow.com/questions/11682939/add-hotkey-to-nstextfield
+        if NSEvent.modifierFlags.contains(.command) && NSApp.currentEvent?.keyCode == 0x24, options.requireCmdEnter {
+            onEvent?(.key(.enter))
+            contentSizeMayHaveChanged()
+            return true
+        }
         switch commandSelector {
         case #selector(NSResponder.insertNewline(_:)):
             let flags = NSEvent.modifierFlags
