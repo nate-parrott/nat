@@ -25,7 +25,7 @@ struct FileReaderTool: Tool {
             let path = args.path
             let offset = args.line_offset ?? 0
             do {
-                let output = try generateReadFileString(path: path, context: context, offset: offset)
+                let output = try await generateReadFileString(path: path, context: context, offset: offset)
                 return call.response(items: [.fileSnippet(output)])
             }
             catch {
@@ -50,10 +50,9 @@ extension LLMMessage.FunctionCall {
     }
 }
 
-private func generateReadFileString(path: String, context: ToolContext, offset: Int = 0, nLines: Int = 2000) throws -> FileSnippet {
-    context.log(.readFile((path as NSString).lastPathComponent))
-
+private func generateReadFileString(path: String, context: ToolContext, offset: Int = 0, nLines: Int = 2000) async throws -> FileSnippet {
     let absoluteURL = try context.resolvePath(path)
+    await context.log(.readFile(absoluteURL))
     var encoding: String.Encoding = .utf8
     guard let contents = try? String(contentsOf: absoluteURL, usedEncoding: &encoding) else {
         throw FileReaderError.fileNotFound(absoluteURL.path(percentEncoded: false))

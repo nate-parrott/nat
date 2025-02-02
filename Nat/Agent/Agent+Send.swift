@@ -1,7 +1,17 @@
+import SwiftUI
 import Foundation
 import ChatToys
 
+private struct AgentInfo {
+    var name: String
+    var folder: URL?
+    var tools: [Tool]
+    var document: Document?
+    var autorun: @MainActor () -> Bool
+}
+
 extension AgentThreadStore {
+    @MainActor
     @discardableResult func send(
         message: TaggedLLMMessage,
         llm: any FunctionCallingLLM,
@@ -27,15 +37,16 @@ extension AgentThreadStore {
         if alreadyRunning {
             throw AgentError.alreadyRunning
         }
+        
+        let info = AgentInfo(name: agentName, folder: folderURL, tools: tools, document: document, autorun: { document?.store.model.autorun ?? false })
 
         var allFunctions = tools.flatMap({ $0.functions })
         if let finishFunction {
             allFunctions.append(finishFunction)
         }
         
-        var collectedLogs = [UserVisibleLog]()
-        let toolCtx = ToolContext(activeDirectory: folderURL, log: { collectedLogs.append($0) }, document: document)
-
+//        var collectedLogs = [UserVisibleLog]()
+        let toolCtx = ToolContext(activeDirectory: folderURL, log: { _ in () }, document: document, autorun: { false })
         assert(systemPrompt.contains("[[CONTEXT]]"), "[\(agentName)] system prompt must have a [[CONTEXT]] token.")
         var initialCtx = try await tools.asyncThrowingMap { tool in
             try await tool.contextToInsertAtBeginningOfThread(context: toolCtx)
@@ -67,7 +78,7 @@ extension AgentThreadStore {
             var llm = try LLMs.smartAgentModel()
             llm.reportUsage = { usage in
                 print("[💰 Usage]: \(usage.prompt_tokens) prompt, \(usage.completion_tokens) completion for model \(llm.options.model.name)")
-                collectedLogs.append(.tokenUsage(prompt: usage.prompt_tokens, completion: usage.completion_tokens, model: llm.options.model.name))
+//                collectedLogs.append(.tokenUsage(prompt: usage.prompt_tokens, completion: usage.completion_tokens, model: llm.options.model.name))
             }
             var i = 0
             while true {
@@ -91,63 +102,20 @@ extension AgentThreadStore {
                 }
                 print("[\(agentName)] Got response with \(step.pendingFunctionCallsToExecute.count) functions")
 
-                // Use this new tool context to immediately grab logs and display 'em
-                let childToolCtx = ToolContext(activeDirectory: folderURL, log: {
-                    if step.toolUseLoop.count > 0 {
-                        step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs.append($0)
-                    } // HACK: where to put user visible logs if handling psuedo-fns?
+                if let finish = step.pendingFunctionCallsToExecute.first(where: { $0.name == finishFunction?.name }) {
+                    finishResult = finish
+                    break
+                }
+                
+                // CALL
+                let shouldContinue = try await handleFunctionCalls(agent: info, step: .init(get: { step }, set: {
+                    step = $0
                     Task {
-                        try await saveStep()
+                        try? await saveStep()
                     }
-                }, document: document)
-
-                // If message has function calls, handle. In this case, we will have appended a new function loop step:
-                if step.pendingFunctionCallsToExecute.count > 0 {
-                    // Handle edge case where we get function calls AND psuedo-functions in the same response:
-                    var prependToFirstFnResponse: [ContextItem]? = nil
-                    if let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: step.toolUseLoop.last?.initialResponse.asPlainText ?? "", agentName: agentName, tools: tools, toolCtx: childToolCtx) {
-                        prependToFirstFnResponse = psuedoFnResponse
-                    }
-
-                    if let finish = step.pendingFunctionCallsToExecute.first(where: { $0.name == finishFunction?.name }) {
-                        finishResult = finish
-                        break
-                    }
-                    var fnResponses = try await self.handleFunctionCalls(
-                        step.pendingFunctionCallsToExecute,
-                        tools: tools,
-                        agentName: agentName,
-                        toolCtx: childToolCtx
-                    )
-                    // attach psuedo-fn response to ONE of the real fn responses, since we can't pass the result any other way.
-                    if let prependToFirstFnResponse {
-                        fnResponses[0].content += prependToFirstFnResponse
-//                        fnResponses[0].text += "\n\n\(prependToFirstFnResponse)"
-                    }
-                    step.toolUseLoop[step.toolUseLoop.count - 1].computerResponse = fnResponses
-//                    step.toolUseLoop[step.toolUseLoop.count - 1].userVisibleLogs += collectedLogs
-                    collectedLogs.removeAll()
-                    try await saveStep()
-                }
-                // If message has psuedo-functions only, handle those. In this case, we will have a final `assistantMessageForUser` set, but we want to remove it and make it into a step in the loop:
-                else if let assistantMsg = step.assistantMessageForUser, let psuedoFnResponse = try await handlePsuedoFunction(plaintextResponse: assistantMsg.asPlainText, agentName: agentName, tools: tools, toolCtx: childToolCtx) {
-
-                    // This is a psuedo-fn, so it's tool use too!
-                    step.toolUseLoop.append(ThreadModel.Step.ToolUseStep(
-                        initialResponse: assistantMsg,
-                        computerResponse: [],
-                        psuedoFunctionResponse: TaggedLLMMessage(role: .user, content: psuedoFnResponse), // LLMMessage(role: .user, content: psuedoFnResponse),
-                        userVisibleLogs: collectedLogs
-                    ))
-                    collectedLogs.removeAll() // since we just added them
-                    step.assistantMessageForUser = nil // Remove final assistant msg, since we handled this as a fn call.
-                    try await saveStep()
-                }
-                // Handle response with no tools:
-                else {
-                    print("[\(agentName)] Received final response (no function calls): \(step.assistantMessageForUser?.asPlainText ?? "[None!!!]")")
-                    // expect assistantMessageForUser has been set by appendOrUpdatePartialResponse
-                    break // we're done!
+                }))
+                if !shouldContinue {
+                    break
                 }
                 i += 1
                 if i >= maxIterations {
@@ -181,26 +149,71 @@ extension AgentThreadStore {
         }
         return finishResult
     }
-
-    private func handlePsuedoFunction(plaintextResponse: String?, agentName: String, tools: [Tool], toolCtx: ToolContext) async throws -> [ContextItem]? {
-        guard let plaintextResponse else { return nil }
-        for tool in tools {
-            if let resp = try await tool.handlePsuedoFunction(fromPlaintext: plaintextResponse, context: toolCtx) {
-                return resp
+    
+    // Returns true if we should CONTINUE w/ the loop, false if we should break
+    private func handleFunctionCalls(agent: AgentInfo, step: Binding<ThreadModel.Step>) async throws -> Bool {
+        // First, see if we can handle this message as a psuedo-function.
+        // There are two cases:
+        // 1. if there are no other fn calls
+        // 2. if there are other fn calls
+        var psuedoFnTool: Tool?
+        if let msg = step.wrappedValue.assistantMessageForUser {
+            let plaintext = msg.asPlainText
+            psuedoFnTool = try await agent.tools.concurrentMapThrowing({ try await $0.canHandlePsuedoFunction(fromPlaintext: plaintext) ? $0 : nil }).compactMap(\.self).first
+            
+            // Convert this assistant message into a tool-use loop
+            if psuedoFnTool != nil {
+                step.wrappedValue.assistantMessageForUser = nil // Remove final assistant msg, since we handled this as a fn call.
+                step.wrappedValue.toolUseLoop.append(.init(initialResponse: msg, computerResponse: []))
             }
+            
+        } else if let lastToolUseStep = step.wrappedValue.lastToolUseStep {
+            assert(!lastToolUseStep.isComplete)
+            let plaintext = lastToolUseStep.initialResponse.asPlainText
+            psuedoFnTool = try await agent.tools.concurrentMapThrowing({ try await $0.canHandlePsuedoFunction(fromPlaintext: plaintext) ? $0 : nil }).compactMap(\.self).first
         }
-        return nil
+        
+        if let finalMsg = step.wrappedValue.assistantMessageForUser {
+            print("[\(agent.name)] Received final response (no function calls): \(finalMsg.asPlainText)")
+            // expect assistantMessageForUser has been set by appendOrUpdatePartialResponse
+            return false // we're done!
+        }
+        
+        // Let's assume we have an incomplete tool-use step
+        assert(step.lastToolUseStep.wrappedValue != nil)
+        assert(!step.wrappedValue.lastToolUseStep!.isComplete)
+        
+        
+        // The last text response is EITHER in the tool-use loop already (if it had normal fn calls) OR in the assistant message response (if no tool use but MAYBE psuedo fn)
+        let psuedoFnToolContext = ToolContext(activeDirectory: agent.folder, log: {
+            step.wrappedValue.lastToolUseStep?.psuedoFunctionLogs.append($0)
+        }, document: agent.document, autorun: agent.autorun)
+        
+        if let psuedoFnTool {
+            let resp = try await handlePsuedoFunction(plaintextResponse: step.wrappedValue.lastToolUseStep!.initialResponse.asPlainText, agentName: agent.name, tool: psuedoFnTool, toolCtx: psuedoFnToolContext)
+            step.wrappedValue.lastToolUseStep?.psuedoFunctionResponse = resp
+        }
+        
+        // Now, handle all fn calls:
+        for fnCall in step.wrappedValue.lastToolUseStep!.initialResponse.functionCalls {
+            let toolCtx = ToolContext(
+                activeDirectory: agent.folder,
+                log: { step.wrappedValue.lastToolUseStep?.functionCallLogs[fnCall.id ?? "", default: []].append($0) },
+                document: agent.document,
+                autorun: agent.autorun)
+            let resp = try await handleFunctionCall(fnCall, tools: agent.tools, toolCtx: toolCtx)
+            step.wrappedValue.lastToolUseStep!.computerResponse.append(resp)
+        }
+        
+        return true // Continue
     }
 
-    private func handleFunctionCalls(_ calls: [LLMMessage.FunctionCall], tools: [Tool], agentName: String, toolCtx: ToolContext) async throws -> [TaggedLLMMessage.FunctionResponse] {
-        var responses = [TaggedLLMMessage.FunctionResponse]()
-        for call in calls {
-            print("[\(agentName)] Handling function call \(call.name)\((call.argumentsJson ?? ""))")
-            let resp = try await handleFunctionCall(call, tools: tools, toolCtx: toolCtx)
-            print("[Begin Response]\n\(resp.asLLMResponse.text.truncateTail(maxLen: 1000))\n[End Response]")
-            responses.append(resp)
+    private func handlePsuedoFunction(plaintextResponse: String?, agentName: String, tool: Tool, toolCtx: ToolContext) async throws -> [ContextItem]? {
+        guard let plaintextResponse else { return nil }
+        if let resp = try await tool.handlePsuedoFunction(fromPlaintext: plaintextResponse, context: toolCtx) {
+            return resp
         }
-        return responses
+        return nil
     }
 
     private func handleFunctionCall(_ call: LLMMessage.FunctionCall, tools: [Tool], toolCtx: ToolContext) async throws -> TaggedLLMMessage.FunctionResponse {
@@ -256,6 +269,17 @@ extension ThreadModel {
 }
 
 extension ThreadModel.Step {
+    var lastToolUseStep: ToolUseStep? {
+        get {
+            toolUseLoop.count > 0 ? toolUseLoop[toolUseLoop.count - 1] : nil
+        }
+        set {
+            if let newValue, toolUseLoop.count > 0 {
+                toolUseLoop[toolUseLoop.count - 1] = newValue
+            }
+        }
+    }
+    
     mutating func fixIfIncomplete() {
         if isComplete { return }
         if toolUseLoop.count > 0 {
@@ -299,7 +323,8 @@ extension ThreadModel.Step.ToolUseStep {
                 return call.response(text: "[Response was interrupted]")
             })
         } else {
-            psuedoFunctionResponse = .init(role: .user, content: [.text("[Response was interrupted]")])
+            psuedoFunctionResponse = [.text("[Response was interrupted]")]
+//            psuedoFunctionResponse = .init(role: .user, content: [.text("[Response was interrupted]")])
         }
     }
 }

@@ -36,7 +36,7 @@ struct DeleteFileTool: Tool {
             return call.response(text: "File deletion cancelled")
         }
         
-        context.log(.deletedFile(filename))
+        await context.log(.deletedFile(resolvedPath))
         
         do {
             try FileManager.default.removeItem(at: resolvedPath)

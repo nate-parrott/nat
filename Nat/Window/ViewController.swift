@@ -75,7 +75,9 @@ class ViewController: NSViewController {
         let modes = modeSegmentedControl!
         modes.segmentCount = DocumentMode.allCases.count
         for (i, mode) in DocumentMode.allCases.enumerated() {
-            modes.setLabel(mode.displayName, forSegment: i)
+            modes.setImage(NSImage(systemSymbolName: mode.sfSymbolName, accessibilityDescription: mode.displayName), forSegment: i)
+            modes.setLabel("", forSegment: i)
+            modes.setToolTip(mode.displayName, forSegment: i)
         }
         modes.target = self
         modes.action = #selector(modeChanged(_:))

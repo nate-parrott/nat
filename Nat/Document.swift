@@ -22,6 +22,17 @@ enum DocumentMode: String, Equatable, Codable, CaseIterable {
             return "Docs"
         }
     }
+    
+    var sfSymbolName: String {
+        switch self {
+        case .agent:
+            return "person.2.circle"
+        case .codeSearch:
+            return "magnifyingglass"
+        case .docs:
+            return "doc.text"
+        }
+    }
 }
 
 struct DocumentState: Equatable, Codable {
@@ -30,6 +41,7 @@ struct DocumentState: Equatable, Codable {
     var terminalVisible = false
     var mode = DocumentMode.agent
     var selectedFileInEditor: URL?
+    var autorun = false
 //    var todos = [String: Todo]()
 }
 

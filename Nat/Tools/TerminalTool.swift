@@ -54,7 +54,7 @@ struct TerminalTool: Tool {
         guard let args = fn.checkMatch(call: call) else { return nil }
         
         let command = args.command
-        context.log(.terminal(command: "\(command)"))
+        await context.log(.terminal(command: "\(command)"))
 
         guard let activeDirectory = context.activeDirectory else {
             return call.response(text: "No active directory selected")
@@ -64,7 +64,7 @@ struct TerminalTool: Tool {
             throw TerminalToolError.noDocument
         }
 
-        if context.confirmTerminalCommands, await !Alerts.showAppConfirmationDialog(title: "Run terminal command?", message: "Would run \(command) in \(activeDirectory.path())", yesTitle: "Run", noTitle: "Deny") {
+        if await !context.autorun(), await !Alerts.showAppConfirmationDialog(title: "Run terminal command?", message: "Would run \(command) in \(activeDirectory.path())", yesTitle: "Run", noTitle: "Deny") {
             return call.response(text: "User blocked this command from running. Take a beat and ask them what they want to do.")
         }
 

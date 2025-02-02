@@ -28,7 +28,7 @@ struct SearchView: View {
                         guard let folderURL = document.store.model.folder else { return }
                         Task {
                             do {
-                                let ctx = ToolContext(activeDirectory: folderURL, log: {_ in () })
+                                let ctx = ToolContext(activeDirectory: folderURL, log: {_ in () }, autorun: { true })
                                 let searchResult = try await codeSearch2(queries: [query], folder: folderURL, context: ctx)
                                 let results = searchResult.snippets.map { $0.asString(withLineNumbers: true) }.joined(separator: "\n\n")
                                 status = .done(results, searchResult.stats)

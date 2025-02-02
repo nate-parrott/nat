@@ -20,7 +20,7 @@ struct DocsView: View {
             let urls = try FileManager.default.contentsOfDirectory(
                 at: docsFolder,
                 includingPropertiesForKeys: nil
-            ).filter { $0.pathExtension.lowercased() == "markdown" }
+            ).filter { ["markdown", "md"].contains($0.pathExtension.lowercased()) }
             files = urls.sorted { $0.lastPathComponent < $1.lastPathComponent }
         } catch {
             files = nil

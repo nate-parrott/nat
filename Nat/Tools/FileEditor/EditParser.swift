@@ -20,6 +20,15 @@ enum EditParser {
     static func parsePartial(string: String) throws -> [Part] {
         try _parse(string: string, toolContext: nil, partial: true)
     }
+    
+    static func containsEdits(string: String) throws -> Bool {
+        for part in try _parse(string: string, toolContext: nil, partial: false) {
+            if case .codeEdit = part {
+                return true
+            }
+        }
+        return false
+    }
 
     // `toolContext` can be nil for pure parsing, but needs to be set when generating code edits for application
     private static func _parse(string: String, toolContext: ToolContext?, partial: Bool) throws -> [Part] {

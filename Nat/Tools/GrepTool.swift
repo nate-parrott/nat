@@ -28,7 +28,7 @@ struct GrepTool: Tool {
             return call.response(text: "Tell the user they need to choose a folder before you can search the codebase.")
         }
         
-        context.log(.grepped(args.pattern))
+        await context.log(.grepped(args.pattern))
 
         do {
             let hits = try await grepToSnippets(pattern: args.pattern, folder: folderURL, linesAroundMatchToInclude: 2, limit: 20)

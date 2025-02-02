@@ -1,12 +1,32 @@
 import Foundation
 import SwiftUI
 
-enum FileEditorReviewPanelResult: Equatable {
+enum FileEditorReviewPanelResult: Equatable, Codable {
     case accept
     case acceptWithComment(String)
     case reject
     case requestChanged(String)
+    
+    var accepted: Bool {
+        switch self {
+        case .accept, .acceptWithComment: return true
+        case .reject, .requestChanged: return false
+        }
+    }
+    
+    var comment: String? {
+        // Written by Phil
+        switch self {
+        case .accept:
+            return nil
+        case .acceptWithComment(let comment), .requestChanged(let comment):
+            return comment
+        case .reject:
+            return nil
+        }
+    }
 }
+
 // Shows a single diff with its description header
 private struct DiffEditView: View {
     let edit: FileEdit

@@ -121,19 +121,27 @@ extension UserVisibleLog {
     var asMarkdownAndSymbol: (String, String) {
         switch self {
         case .readFile(let path):
-            return ("Read file: `\(path)`", "doc")
-        case .usingEditCleanupModel(let message):
-            return (message, "bandage")
+            return ("Read file: `\(path.lastPathComponent)`", "doc")
+        case .usingEditCleanupModel(let url):
+            return ("Using edit cleanup model for `\(url.lastPathComponent)`", "bandage")
         case .grepped(let query):
             return ("Searched for: `\(query)`", "magnifyingglass")
-        case .editedFile(let path):
-            return ("Edited file: `\(path)`", "pencil")
-        case .rejectedEdit(let path):
-            return ("Rejected edit to: `\(path)`", "xmark")
-        case .requestedChanges(let path):
-            return ("Requested changes to: `\(path)`", "exclamationmark.triangle")
-        case .wroteFile(let path):
-            return ("Wrote file: `\(path)`", "plus.circle")
+        case .edits(let edits):
+            let paths = edits.paths.map(\.lastPathComponent).joined(separator: ", ")
+            if edits.accepted {
+                if let comment = edits.comment {
+                    return ("Accepted edits to `\(paths)` with comment: **'\(comment)'**", "checkmark")
+                } else {
+                    return ("Accepted edits to `\(paths)`", "checkmark")
+                }
+            } else {
+                if let comment = edits.comment {
+                    return ("Rejected edits to `\(paths)` with comment: **'\(comment)'**", "xmark")
+                } else {
+                    return ("Rejected edits to `\(paths)`", "xmark")
+                }
+
+            }
         case .deletedFile(let path):
             return ("Deleted file: `\(path)`", "trash")
         case .codeSearch(let query):
@@ -150,8 +158,6 @@ extension UserVisibleLog {
             return (effort, "flame")
         case .webSearch(let query):
             return ("Web research: _\(query)_", "globe")
-        case .info(let text):
-            return (text, "info")
         case .toolWarning(let text):
             return (text, "exclamationmark.triangle.fill")
         }

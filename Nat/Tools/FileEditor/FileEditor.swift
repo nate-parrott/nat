@@ -9,6 +9,10 @@ struct FileEditorTool: Tool {
         Constants.useLineNumbers ? sysPromptForLineNumberBasedEditing : sysPromptForReplaceBasedEditing
     }
     
+    func canHandlePsuedoFunction(fromPlaintext response: String) async throws -> Bool {
+        return try EditParser.containsEdits(string: response)
+    }
+    
     func handlePsuedoFunction(fromPlaintext response: String, context: ToolContext) async throws -> [ContextItem]? {
         let codeEdits = try EditParser.parseEditsOnly(from: response, toolContext: context)
         let comments = try EditParser.parse(string: response, toolContext: context).compactMap(\.ifString).joined(separator: "\n\n")
@@ -31,11 +35,11 @@ struct FileEditorTool: Tool {
                 fixedFileEdits.append(edit)
             } catch {
                 if edit.canBeAppliedUsingApplierModel {
-                    context.log(.usingEditCleanupModel("Using edit cleanup model for \(edit.path.lastPathComponent)"))
+                    await context.log(.usingEditCleanupModel(edit.path))
                     let newFullFileContent = try await edit.applyUsingLLM(comments: comments)
                     fixedFileEdits.append(.init(path: edit.path, edits: [.write(path: edit.path, content: newFullFileContent)]))
                 } else {
-                    context.log(.toolError("Failed to apply edits"))
+                    await context.log(.toolError("Failed to apply edits"))
                     return [.text("Your edits were not applied because of an error:\n\(error)\nPlease try again or try a different approach.")]
                 }
             }
@@ -43,36 +47,28 @@ struct FileEditorTool: Tool {
 
         var output = [ContextItem]()
         do {
-            let confirmation: FileEditorReviewPanelResult = !context.confirmFileEdits ? .accept :  try await context.presentUI(title: "Accept Edits?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
+            let autorun = await context.autorun()
+            let confirmation: FileEditorReviewPanelResult = autorun ? .accept :  try await context.presentUI(title: "Accept Edits?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
                 FileEditorReviewPanel(edits: fixedFileEdits, finish: { result in
                     dismiss(result)
                 }).asAny
             }
 
             let allEdits = fixedFileEdits.flatMap(\.edits)
+            let log: UserVisibleLog.Edits = .init(paths: allEdits.map(\.url), accepted: confirmation.accepted, comment: confirmation.comment)
+            await context.log(.edits(log))
+            
             switch confirmation {
             case .accept, .acceptWithComment:
-                for edit in allEdits {
-                    switch edit {
-                    case .write: context.log(.wroteFile((edit.url as NSURL).lastPathComponent ?? ""))
-                    case .replace, .findReplace, .append: context.log(.editedFile((edit.url as NSURL).lastPathComponent ?? ""))
-                    }
-                }
-                
-                if case .acceptWithComment(let comment) = confirmation {
-                    context.log(.info("Accepted with comment: \(comment)"))
-                }
                 output += try await apply(fileEdits: fixedFileEdits, context: context)
                 if case .acceptWithComment(let comment) = confirmation {
                     output.append(.text("[User approved the change above, but left this comment:]\n\(comment)"))
                 }
             case .reject:
-                context.log(.rejectedEdit(editsDesc)) 
                 output.append(.text("User rejected your latest message's edits. They were rolled back. Take a beat and let the user tell you more about what they wanted."))
                 output += try showLatestFileVersions(fileEdits: fixedFileEdits, context: context)
                 break
             case .requestChanged(let message):
-                context.log(.requestedChanges(editsDesc))
                 output.append(.text("[User requested changes to the edits in your last message. They were rolled back. Here is what they said:\n\n\(message)"))
                 output += try showLatestFileVersions(fileEdits: fixedFileEdits, context: context)
                 break

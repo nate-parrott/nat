@@ -31,13 +31,13 @@ struct CodeSearchTool: Tool {
             let effort = args.parsedEffort
             // Append search terms in ui:
             if effort != .one {
-                context.log(.effort("Searching with effort: \(args.parsedEffort.rawValue)"))
+                await context.log(.effort("Searching with effort: \(args.parsedEffort.rawValue)"))
             }
             for q in args.questions ?? [] {
-                context.log(.codeSearch(q))
+                await context.log(.codeSearch(q))
             }
             for q in args.regexes ?? [] {
-                context.log(.grepped(q))
+                await context.log(.grepped(q))
             }
 
             guard let folderURL = context.activeDirectory else {

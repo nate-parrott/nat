@@ -23,8 +23,7 @@ extension ThreadModel {
                 cells += loopItem.cellModels(idPrefix: step.id + "/toolUseLoop/\(i)/")
             }
             if let last = step.assistantMessageForUser {
-                cells += last.cellModels(idPrefix: step.id + "last/")
-//                cells.append(MessageCellModel(id: step.id + "/last", content: .assistantMessage(last.asPlainText)))
+                cells += last.assistantCellModels(idPrefix: step.id + "last/")
             }
         }
         if case .stoppedWithError(let err) = status {
@@ -37,19 +36,16 @@ extension ThreadModel {
 private extension ThreadModel.Step.ToolUseStep {
     func cellModels(idPrefix: String) -> [MessageCellModel] {
         var cells = [MessageCellModel]()
-        cells += initialResponse.cellModels(idPrefix: idPrefix + "/initial/")
-//        if let text = initialResponse.asPlainText.nilIfEmpty {
-//            cells.append(MessageCellModel(id: idPrefix + "initial", content: .assistantMessage(text.trimmingCharacters(in: .whitespacesAndNewlines))))
-//        }
-        for (j, log) in userVisibleLogs.enumerated() {
+        cells += initialResponse.assistantCellModels(idPrefix: idPrefix + "/initial/")
+        for (j, log) in allLogs.enumerated() {
             cells.append(MessageCellModel(id: idPrefix + "logs/\(j)", content: .toolLog(log)))
         }
         return cells
     }
 }
 
-private extension TaggedLLMMessage {
-    func cellModels(idPrefix: String) -> [MessageCellModel] {
+extension TaggedLLMMessage {
+    func assistantCellModels(idPrefix: String) -> [MessageCellModel] {
         if content.count == 1, let item = content.first, case .text(let string) = item, let parsed = try? EditParser.parsePartial(string: string) {
             return parsed.enumerated().map { (i, item) in
                 switch item {

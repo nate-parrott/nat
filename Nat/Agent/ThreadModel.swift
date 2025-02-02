@@ -25,10 +25,16 @@ struct ThreadModel: Equatable, Codable {
 
             // These two are mutually exclusive
             var computerResponse: [TaggedLLMMessage.FunctionResponse]
-            var psuedoFunctionResponse: TaggedLLMMessage?
+            var psuedoFunctionResponse: [ContextItem]?
 
-            var userVisibleLogs = [UserVisibleLog]()
-
+            // Logs for each function call (by id)
+            var functionCallLogs = [String: [UserVisibleLog]]()
+            var psuedoFunctionLogs = [UserVisibleLog]()
+            
+            var allLogs: [UserVisibleLog] {
+                psuedoFunctionLogs + functionCallLogs.values.flatMap(\.self)
+            }
+            
             var isComplete: Bool {
                 computerResponse.count > 0 || psuedoFunctionResponse != nil
             }
@@ -38,19 +44,23 @@ struct ThreadModel: Equatable, Codable {
 
 // Used for events that will render cards into the feed
 enum UserVisibleLog: Equatable, Codable {
-    case readFile(String)
+    case readFile(URL)
     case grepped(String)
 
-    case editedFile(String)
-    case rejectedEdit(String)
-    case requestedChanges(String)
+    case edits(Edits)
+    struct Edits: Equatable, Codable {
+        var paths: [URL]
+        var accepted: Bool
+        var comment: String?
+    }
+    
     case webSearch(String)
-    case info(String)
 
-    case wroteFile(String)
-    case deletedFile(String)  // Added this case
+//    case wroteFile(URL)
+    case deletedFile(URL)  // Added this case
     case codeSearch(String)
-    case usingEditCleanupModel(String)
+    case usingEditCleanupModel(URL)
+    
     case listedFiles
     case tokenUsage(prompt: Int, completion: Int, model: String)
     case effort(String)
@@ -72,9 +82,17 @@ extension ThreadModel.Step {
         var messages: [TaggedLLMMessage] = [initialRequest]
         for step in toolUseLoop {
             messages.append(step.initialResponse)
-            messages.append(TaggedLLMMessage(functionResponses: step.computerResponse.map(\.asTaggedLLMResponse)))
-            if let psuedoFunctionResponse = step.psuedoFunctionResponse {
-                messages.append(psuedoFunctionResponse)
+            if step.computerResponse.count > 0 {
+                // We have responses to function calls. We may also need to jam a psuedo-fn response in there:
+                var respMsg = TaggedLLMMessage(functionResponses: step.computerResponse.map(\.asTaggedLLMResponse))
+                if let psuedoFunctionResponse = step.psuedoFunctionResponse {
+                    respMsg.functionResponses[0].content.insert(contentsOf: psuedoFunctionResponse, at: 0)
+                }
+                messages.append(respMsg)
+            } else if let psuedoFunctionResponse = step.psuedoFunctionResponse {
+                messages.append(.init(role: .assistant, content: psuedoFunctionResponse))
+            } else {
+                fatalError("Missing fn response for step \(step)")
             }
         }
         if let assistantMessageForUser {

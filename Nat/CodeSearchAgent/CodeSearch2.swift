@@ -92,7 +92,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
         let resolvedPath = try context.resolvePath(file)
 //        print(resolvedPath.path)
         snippetRanges.append(.init(path: resolvedPath, lineRangeStart: 0, lineRangeEnd: effort.linesToRead))
-        context.log(.readFile(resolvedPath.lastPathComponent))
+        await context.log(.readFile(resolvedPath))
     }
     if snippetRanges.count == 0 {
         return ([], 0)
@@ -179,7 +179,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
                     ))
                 } catch {
                     print("[_CodeSearch2] ⚠️ Error creating final snippet ranges: \(error)")
-                    context.log(.toolWarning("Failed to read file \(path)"))
+                    await context.log(.toolWarning("Failed to read file \(path)"))
                 }
             }
         }

@@ -5,10 +5,9 @@ import Foundation
 
 struct ToolContext {
     var activeDirectory: URL?
-    var log: (UserVisibleLog) -> Void
-    var confirmTerminalCommands = true
-    var confirmFileEdits = true
+    var log: @MainActor (UserVisibleLog) -> Void
     var document: Document?
+    var autorun: @MainActor () -> Bool
 }
 
 protocol Tool {
@@ -21,6 +20,7 @@ protocol Tool {
     func inlineContextUpdates(previous: String, context: ToolContext) async throws -> String?
 
     // Psuedo-functions are functions that we handle by parsing a standard (non tool call) response. They're valuable because wrapping new code in JSON
+    func canHandlePsuedoFunction(fromPlaintext response: String) async throws -> Bool
     func handlePsuedoFunction(fromPlaintext response: String, context: ToolContext) async throws -> [ContextItem]?
 }
 
@@ -34,6 +34,7 @@ extension Tool {
     func contextToInsertAtBeginningOfThread(context: ToolContext) async throws -> String? { nil }
     func inlineContextUpdates(previous: String, context: ToolContext) async throws -> String? { nil }
 
+    func canHandlePsuedoFunction(fromPlaintext response: String) async throws -> Bool { false }
     func handlePsuedoFunction(fromPlaintext response: String, context: ToolContext) async throws -> [ContextItem]? { nil }
 
 }
