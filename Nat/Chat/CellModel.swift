@@ -82,7 +82,14 @@ extension UserVisibleLog {
     func canClusterWith(prevItems: [UserVisibleLog]) -> Bool {
         guard let first = prevItems.first else { return false }
         switch self {
-        case .codeSearch, .effort, .readFile, .listedFiles, .grepped:
+        case .codeSearch, .effort, .listedFiles, .grepped:
+            if case .codeSearch = first {
+                return true
+            }
+        case .readFile:
+            if case .readFile = first {
+                return true
+            }
             if case .codeSearch = first {
                 return true
             }

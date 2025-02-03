@@ -146,13 +146,13 @@ private struct ScrollToBottomThreadView<Data: RandomAccessCollection, Content: V
                 .padding(.bottom, 400)
                 .frame(maxWidth: 800)
                 .frame(maxWidth: .infinity)
-                .animation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0.1), value: data.count)
+                .animation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.1), value: data.count)
             }
             .onChange(of: data.count) { oldCount, newCount in
                 withAnimation {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         if let last = data.last {
-                            withAnimation {
+                            withAnimation(.niceDefault) {
                                 proxy.scrollTo(last.id, anchor: .center)
                             }
                         }

@@ -11,16 +11,27 @@ struct MessageCell: View {
             Text(string)
                 .textSelection(.enabled)
                 .foregroundStyle(.white)
-                .modifier(CellBackdropModifier(enabled: true, tint: Color.blue))
+                .lineSpacing(3)
+                .modifier(TintedBackdropModifier(tint: .blue))
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.leading)
         case .assistantMessage(let string):
             AssistantMessageView(text: string)
                 .frame(maxWidth: .infinity, alignment: .leading)
         case .logs(let logs):
-            ForEachUnidentifiable(items: logs) { log in
-                LogView(log: log)
+            if logs.count > 1 {
+                CyclingLogsView(logs: logs)
                     .frame(maxWidth: .infinity, alignment: .leading)
+            } else if logs.count == 1 {
+                Group {
+                    if case .terminal = logs[0] {
+                        LogView(log: logs[0])
+                            .modifier(TerminalCellModifier())
+                    } else {
+                        LogView(log: logs[0])
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         case .codeEdit(let edit):
             CodeEditInlineView(edit: edit, msgId: model.id) // has cell BG already
@@ -61,7 +72,8 @@ private struct CodeEditInlineView: View {
         }
         .font(Font.system(size: 12, weight: .bold))
         .frame(maxWidth: 300, alignment: .leading)
-        .modifier(CellBackdropModifier(enabled: true))
+        .modifier(InsetCellModifier())
+//        .modifier(CellBackdropModifier(enabled: true))
     }
     
     @ViewBuilder func body(lines: [String]) -> some View {
@@ -70,6 +82,26 @@ private struct CodeEditInlineView: View {
             .opacity(0.7)
             .lineLimit(5)
             .fixedSize(horizontal: true, vertical: true)
+    }
+}
+
+private struct CyclingLogsView: View {
+    var logs: [UserVisibleLog]
+    
+    @StateObject private var array = ProgressiveRevealedArray<UserVisibleLog>()
+    
+    var body: some View {
+        ZStack(alignment: .leading) {
+            if let cur = array.current.last {
+                LogView(log: cur)
+                    .lineLimit(1)
+                    .id(array.current.count)
+                    .transition(.asymmetric(insertion: .offset(y: 10), removal: .offset(y: -10)).combined(with: .opacity))
+            }
+        }
+        .modifier(InsetCellModifier())
+        .animation(.niceDefault, value: array.current)
+        .onAppearOrChange(of: logs, perform: { array.target = $0 })
     }
 }
 
@@ -116,7 +148,7 @@ private struct LogView: View {
         case .effort(let description):
             Label("Effort: \(description)", systemImage: "person.fill")
         case .terminal(let command):
-            Label("Ran command: `\(command)`", systemImage: "terminal")
+            Label("`\(command)`", systemImage: "terminal")
         }
     }
 }
@@ -143,6 +175,7 @@ private struct AssistantMessageView: View {
                 Text(text)
             }
         }
+        .lineSpacing(3)
         .textSelection(.enabled)
         .multilineTextAlignment(.leading)
     }
