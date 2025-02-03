@@ -123,6 +123,7 @@ extension AgentThreadStore {
                     if step.assistantMessageForUser == nil {
                         step.assistantMessageForUser = TaggedLLMMessage(role: .assistant, content: [.text("[Agent timed out]")])
                     }
+                    break
                 }
                 try await saveStep()
                 try Task.checkCancellation()
