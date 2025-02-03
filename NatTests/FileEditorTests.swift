@@ -5,13 +5,7 @@ import Foundation
 // MARK: - ToolContext Testing Extension
 extension ToolContext {
     static func stub(workDir: URL = URL(fileURLWithPath: "/test")) -> ToolContext {
-        ToolContext(
-            activeDirectory: workDir,
-            log: { _ in }, // No-op logger
-            confirmTerminalCommands: false,
-            confirmFileEdits: false,
-            document: nil
-        )
+        ToolContext(log: { _ in () }, autorun: { true })
     }
 }
 
