@@ -12,7 +12,7 @@ struct ChatView: View {
     @StateObject private var detailCoord = DetailCoordinator()
 
     var body: some View {
-        let canShowSplitDetail = (size?.width ?? 100) >= 700
+        let canShowSplitDetail = (size?.width ?? 100) >= 850
         let splitPaneWidth = (size?.width ?? 100) * 0.5
         ZStack {
             if debug {
@@ -22,10 +22,12 @@ struct ChatView: View {
                     ScrollToBottomThreadView(data: messageCellModels) { message in
                         if canShowSplitDetail {
                             MessageCell(model: message)
+                                .padding(.horizontal)
                                 .frame(width: splitPaneWidth)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
                             MessageCell(model: message)
+                                .padding(.horizontal)
                                 .frame(maxWidth: 800, alignment: .center)
                         }
                     }
@@ -160,9 +162,8 @@ private struct ScrollToBottomThreadView<Data: RandomAccessCollection, Content: V
 
                     }
                 }
-                .padding()
                 .padding(.bottom, 400)
-                .frame(maxWidth: 800)
+                .padding(.vertical)
                 .frame(maxWidth: .infinity)
                 .animation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.1), value: data.count)
             }

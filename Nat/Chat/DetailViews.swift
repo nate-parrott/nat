@@ -11,12 +11,17 @@ struct SideDetailPresenter: View {
     @EnvironmentObject private var detail: DetailCoordinator
     
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 6, style: .continuous)
         if let clickedCellId = detail.clickedCellId ?? detail.implicitlyShownCellId, let cell = cellModels.first(where: { $0.id == clickedCellId }), let view = cell.detailView() {
             view
                 .background(.thickMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 4)
-                .padding()
+                .clipShape(shape)
+                .overlay {
+                    shape.stroke(Color.primary.opacity(0.1))
+                }
+                .shadow(color: Color.black.opacity(0.07), radius: 12, x: 0, y: 8)
+                .padding(40)
+                .padding(.bottom, 60)
         }
     }
 }
