@@ -36,6 +36,7 @@ struct ChatView: View {
                         ChatEmptyState(wantsWorktree: $wantsWorktree)
                     }
                     ChatInput(maxHeight: inputMaxHeight, send: sendMessage(text:attachments:), onStop: stopAgent)
+                    WorktreeFooter()
                 }
                 .overlay(alignment: .bottom) {
                     if status == .running {
