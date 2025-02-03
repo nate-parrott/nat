@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		358476662D515CF600EFD65A /* SwiftTreeSitter in Frameworks */ = {isa = PBXBuildFile; productRef = 358476652D515CF600EFD65A /* SwiftTreeSitter */; };
-		3584766F2D515E3600EFD65A /* TreeSitterSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3584766E2D515E3600EFD65A /* TreeSitterSwift */; };
 		5F1FC3312D3AF53500C8C87C /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 5F1FC3302D3AF53500C8C87C /* SwiftTerm */; };
 		5F34CEF02D2B3F5900DFD051 /* ChatToys in Frameworks */ = {isa = PBXBuildFile; productRef = 5F34CEEF2D2B3F5900DFD051 /* ChatToys */; };
 /* End PBXBuildFile section */
@@ -66,10 +64,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				358476662D515CF600EFD65A /* SwiftTreeSitter in Frameworks */,
 				5F1FC3312D3AF53500C8C87C /* SwiftTerm in Frameworks */,
 				5F34CEF02D2B3F5900DFD051 /* ChatToys in Frameworks */,
-				3584766F2D515E3600EFD65A /* TreeSitterSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,8 +136,6 @@
 			packageProductDependencies = (
 				5F34CEEF2D2B3F5900DFD051 /* ChatToys */,
 				5F1FC3302D3AF53500C8C87C /* SwiftTerm */,
-				358476652D515CF600EFD65A /* SwiftTreeSitter */,
-				3584766E2D515E3600EFD65A /* TreeSitterSwift */,
 			);
 			productName = Nat;
 			productReference = 5F34CED82D2B3F2500DFD051 /* Nat.app */;
@@ -178,8 +172,6 @@
 			packageReferences = (
 				5F34CEEE2D2B3F5900DFD051 /* XCLocalSwiftPackageReference "../chattoys" */,
 				5F1FC32F2D3AF53500C8C87C /* XCRemoteSwiftPackageReference "SwiftTerm" */,
-				358476642D515CF600EFD65A /* XCRemoteSwiftPackageReference "SwiftTreeSitter" */,
-				3584766D2D515E3600EFD65A /* XCRemoteSwiftPackageReference "tree-sitter-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5F34CED92D2B3F2500DFD051 /* Products */;
@@ -516,22 +508,6 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		358476642D515CF600EFD65A /* XCRemoteSwiftPackageReference "SwiftTreeSitter" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ChimeHQ/SwiftTreeSitter";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.9.0;
-			};
-		};
-		3584766D2D515E3600EFD65A /* XCRemoteSwiftPackageReference "tree-sitter-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/alex-pinkus/tree-sitter-swift/";
-			requirement = {
-				branch = "with-generated-files";
-				kind = branch;
-			};
-		};
 		5F1FC32F2D3AF53500C8C87C /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm";
@@ -543,16 +519,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		358476652D515CF600EFD65A /* SwiftTreeSitter */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 358476642D515CF600EFD65A /* XCRemoteSwiftPackageReference "SwiftTreeSitter" */;
-			productName = SwiftTreeSitter;
-		};
-		3584766E2D515E3600EFD65A /* TreeSitterSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3584766D2D515E3600EFD65A /* XCRemoteSwiftPackageReference "tree-sitter-swift" */;
-			productName = TreeSitterSwift;
-		};
 		5F1FC3302D3AF53500C8C87C /* SwiftTerm */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 5F1FC32F2D3AF53500C8C87C /* XCRemoteSwiftPackageReference "SwiftTerm" */;

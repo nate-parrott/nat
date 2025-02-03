@@ -1,3 +1,7 @@
+tests are in NatsTests/
+
+Run tests using scheme Nat
+
 Tools for the main agent are registered in ChatView.swift
 
 When calling external processes, make sure to read the file data BEFORE calling waitUntilExit:
