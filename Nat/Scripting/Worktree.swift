@@ -123,7 +123,7 @@ extension Document {
             LLMMessage(role: .system, content: """
             Create a git branch name based on the given prompt.
             - Use only letters, numbers, and underscores 
-            - Keep it under 50 chars
+            - Keep it under 30 chars
             - Make it descriptive but concise
             
             Respond in JSON using this format:
