@@ -124,6 +124,9 @@ extension Document {
             - Use only letters, numbers, and underscores 
             - Keep it under 50 chars
             - Make it descriptive but concise
+            
+            Respond in JSON using this format:
+            { "name": ... }
             """),
             LLMMessage(role: .user, content: prompt)
         ]
