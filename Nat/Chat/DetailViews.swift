@@ -4,15 +4,17 @@ extension MessageCellModel {
     func detailView() -> AnyView? {
         switch content {
         case .userMessage, .assistantMessage: return nil
-        case .toolLog(let userVisibleLog):
-            switch userVisibleLog {
-            case .readFile(let url):
-                return FileContentView(url: url).asAny
-            case .grepped, .edits, .webSearch, .deletedFile, .codeSearch, .usingEditCleanupModel, .listedFiles, .tokenUsage, .effort, .toolWarning, .toolError:
-                return nil
-            case .terminal:
-                return TerminalPreview().asAny
+        case .logs(let logsCluster):
+            for log in logsCluster {
+                switch log {
+                case .readFile(let url):
+                    return FileContentView(url: url).asAny
+                case .grepped, .edits, .webSearch, .deletedFile, .codeSearch, .usingEditCleanupModel, .listedFiles, .tokenUsage, .effort, .toolWarning, .toolError: ()
+                case .terminal:
+                    return TerminalPreview().asAny
+                }
             }
+            return nil
         case .codeEdit(let codeEdit):
             return CodeEditView(edit: codeEdit).asAny
         case .error:

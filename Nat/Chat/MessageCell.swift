@@ -17,9 +17,11 @@ struct MessageCell: View {
         case .assistantMessage(let string):
             AssistantMessageView(text: string)
                 .frame(maxWidth: .infinity, alignment: .leading)
-        case .toolLog(let log):
-            LogView(msgId: model.id, log: log)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        case .logs(let logs):
+            ForEachUnidentifiable(items: logs) { log in
+                LogView(log: log)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         case .codeEdit(let edit):
             CodeEditInlineView(edit: edit, msgId: model.id) // has cell BG already
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -72,7 +74,6 @@ private struct CodeEditInlineView: View {
 }
 
 private struct LogView: View {
-    var msgId: String
     var log: UserVisibleLog
         
     var body: some View {

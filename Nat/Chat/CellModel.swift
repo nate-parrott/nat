@@ -8,7 +8,7 @@ struct MessageCellModel: Equatable, Identifiable {
     enum Content: Equatable {
         case userMessage(String)
         case assistantMessage(String)
-        case toolLog(UserVisibleLog)
+        case logs([UserVisibleLog]) // Logs can be clustered together
         case codeEdit(CodeEdit)
         case error(String)
     }
@@ -29,6 +29,7 @@ extension ThreadModel {
         if case .stoppedWithError(let err) = status {
             cells.append(MessageCellModel(id: "error", content: .error(err)))
         }
+        cells = clusterLogs(cells)
         return cells
     }
 }
@@ -38,7 +39,7 @@ private extension ThreadModel.Step.ToolUseStep {
         var cells = [MessageCellModel]()
         cells += initialResponse.assistantCellModels(idPrefix: idPrefix + "/initial/")
         for (j, log) in allLogs.enumerated() {
-            cells.append(MessageCellModel(id: idPrefix + "logs/\(j)", content: .toolLog(log)))
+            cells.append(MessageCellModel(id: idPrefix + "logs/\(j)", content: .logs([log])))
         }
         return cells
     }
@@ -75,4 +76,32 @@ extension LLMMessage {
         }
         return parts.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
     }
+}
+
+extension UserVisibleLog {
+    func canClusterWith(prevItems: [UserVisibleLog]) -> Bool {
+        guard let first = prevItems.first else { return false }
+        switch self {
+        case .codeSearch, .effort, .readFile, .listedFiles, .grepped:
+            if case .codeSearch = first {
+                return true
+            }
+        default: ()
+        }
+        return false
+    }
+}
+
+func clusterLogs(_ cells: [MessageCellModel]) -> [MessageCellModel] {
+    var results = [MessageCellModel]()
+    
+    for cell in cells {
+        if case .logs(let logs) = cell.content, logs.count == 1, let last = results.last, case .logs(let prevLogs) = last.content, logs[0].canClusterWith(prevItems: prevLogs) {
+            results[results.count - 1] = .init(id: last.id, content: .logs(prevLogs + logs))
+        } else {
+            results.append(cell)
+        }
+    }
+    
+    return results
 }
