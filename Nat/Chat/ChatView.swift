@@ -35,7 +35,11 @@ struct ChatView: View {
                     .overlay {
                         ChatEmptyState(wantsWorktree: $wantsWorktree)
                     }
-                    ChatInput(maxHeight: inputMaxHeight, send: sendMessage(text:attachments:), onStop: stopAgent)
+                    ChatInput(maxHeight: inputMaxHeight, send: { text, attachments in
+                        Task {
+                            await self.sendMessage(text: text, attachments: attachments)
+                        }
+                    }, onStop: stopAgent)
                     WorktreeFooter()
                 }
                 .overlay(alignment: .bottom) {
@@ -86,7 +90,14 @@ struct ChatView: View {
         document.terminal = nil
     }
     
-    private func sendMessage(text: String, attachments: [ContextItem]) {
+    @MainActor
+    private func sendMessage(text: String, attachments: [ContextItem]) async {
+        if wantsWorktree, document.store.model.thread.steps.isEmpty {
+            if !(await document.enterWorktreeModeOrShowError(initialPrompt: text)) {
+                return
+            }
+        }
+        
         let msg = TaggedLLMMessage(role: .user, content: [.text(text)] + attachments)
         let folderURL = document.store.model.folder
         let curFile = document.store.model.selectedFileInEditorRelativeToFolder
