@@ -5,6 +5,9 @@ struct ChatTimelineView: View {
     
     @State var currentItem: TimelineItem.ID?
     @State var hoveredItem: TimelineItem.ID?
+    @State private var toolModal: NSViewController? = nil
+    @Environment(\.document) private var document
+    @State private var status: AgentStatus = .none
     
     var body: some View {
         VStack {
@@ -22,6 +25,16 @@ struct ChatTimelineView: View {
                     }
                 }
         }
+        .onReceive(document.$toolModalToPresent, perform: { self.toolModal = $0 })
+        .onReceive(document.store.publisher.map(\.thread.status), perform: { self.status = $0 })
+    }
+    
+    var effectiveTimelineItems: [TimelineItem] {
+        var items = self.items
+        if status == .running, let toolModal {
+            items.append(.init(id: "toolModal", backdrop: .toolModal(toolModal), markerIcon: "exclamationmark.bubble.fill", messages: []))
+        }
+        return items
     }
 }
 
@@ -55,6 +68,9 @@ private struct ChatTimelinePage: View {
                         FileContentView(url: url)
                     case .editFile(let codeEdit):
                         CodeEditView(edit: codeEdit)
+                    case .toolModal(let vc):
+                        ViewControllerPresenter(viewController: vc)
+                            .id(ObjectIdentifier(vc))
                     }
                 }
                 .overlay(alignment: .bottom) {

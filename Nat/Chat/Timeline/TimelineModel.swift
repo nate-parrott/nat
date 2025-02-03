@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 extension MessageCellModel {
@@ -25,6 +26,7 @@ enum TimelineBackdrop: Equatable {
     case terminal
     case viewFile(URL)
     case editFile(CodeEdit)
+    case toolModal(NSViewController)
 }
 
 struct TimelineItem: Equatable, Identifiable {

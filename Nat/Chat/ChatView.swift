@@ -35,11 +35,11 @@ struct ChatView: View {
                         Shimmer()
                     }
                 }
-                .overlay {
-                    if status == .running {
-                        ToolModalPresenter()
-                    }
-                }
+//                .overlay {
+//                    if status == .running {
+//                        ToolModalPresenter()
+//                    }
+//                }
             }
         }
         .onReceive(document.store.publisher.map(\.thread.status).removeDuplicates(), perform: { self.status = $0 })
@@ -120,7 +120,7 @@ private struct ToolModalPresenter: View {
     }
 }
 
-private struct ViewControllerPresenter: NSViewControllerRepresentable {
+struct ViewControllerPresenter: NSViewControllerRepresentable {
     var viewController: NSViewController
 
     func makeNSViewController(context: Context) -> NSViewController {
