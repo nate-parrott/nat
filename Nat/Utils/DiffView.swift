@@ -13,7 +13,7 @@ struct DiffView: View {
             case .same(let str):
                 Text(str)
             case .insert(let str):
-                Text(str).foregroundStyle(.green)
+                Text(str).foregroundStyle(Color.newCodeGreen)
             case .collapsed(let lines):
                 if expansionIndices.contains(pair.offset) {
                     DiffView(diff: Diff(lines: lines))

@@ -148,22 +148,22 @@ private struct CodeEditView: View {
                 Text("Replacing lines \(lineRangeStart)-\(lineRangeStart + lineRangeLen)")
                     .opacity(0.5)
                 Text(lines.joined(separator: "\n"))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.newCodeGreen)
             case .write(let path, let content):
                 Text("Writing to file:")
                     .opacity(0.5)
                 Text(content)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.newCodeGreen)
             case .append(let path, let content):
                 Text("Appending:")
                     .opacity(0.5)
                 Text(content)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.newCodeGreen)
             case .findReplace(let path, let find, let replace):
                 Text("Replacing \(find.count) lines with:")
                     .opacity(0.5)
                 Text(replace.joined(separator: "\n"))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.newCodeGreen)
             }
         }
     }
