@@ -47,6 +47,15 @@ struct FileEditorTool: Tool {
 
         var output = [ContextItem]()
         do {
+            // Check syntax before showing confirmation dialog
+            for fileEdit in fixedFileEdits {
+                if let syntaxError = await fileEdit.checkSyntax() {
+                    await context.log(.toolError("Syntax error in `\(fileEdit.path.lastPathComponent)`"))
+                    let response: [ContextItem] = [.text("Your edits were not applied because the Swift code has syntax errors:\n\n\(syntaxError)\n\nPlease fix and try again.")]
+                    return response + (try showLatestFileVersions(fileEdits: fixedFileEdits, context: context))
+                }
+            }
+            
             let autorun = await context.autorun()
             let confirmation: FileEditorReviewPanelResult = autorun ? .accept :  try await context.presentUI(title: "Accept Edits?") { (dismiss: @escaping (FileEditorReviewPanelResult) -> Void) in
                 FileEditorReviewPanel(edits: fixedFileEdits, finish: { result in
