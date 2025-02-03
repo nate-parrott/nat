@@ -51,7 +51,7 @@ struct FileEditorTool: Tool {
             for fileEdit in fixedFileEdits {
                 if let syntaxError = await fileEdit.checkSyntax() {
                     await context.log(.toolError("Syntax error in `\(fileEdit.path.lastPathComponent)`"))
-                    let response: [ContextItem] = [.text("Your edits were not applied because the Swift code has syntax errors:\n\n\(syntaxError)\n\nPlease fix and try again.")]
+                    let response: [ContextItem] = [.text("Your edits were not applied because the Swift code has syntax errors:\n\n\(syntaxError)\n\nPlease fix and try again. Consider rewriting the entire file rather than doing targeted edits.")]
                     return response + (try showLatestFileVersions(fileEdits: fixedFileEdits, context: context))
                 }
             }
