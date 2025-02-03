@@ -87,7 +87,7 @@ struct ChatView: View {
                     TerminalTool(), WebResearchTool(), DeleteFileTool(), GrepTool(),
                     BasicContextTool(document: document, currentFilenameFromXcode: curFile),
                 ]
-                try await document.send(message: msg, llm: llm, document: document, tools: tools, folderURL: folderURL)
+                try await document.send(message: msg, llm: llm, document: document, tools: tools, folderURL: folderURL, maxIterations: document.store.model.maxIterations)
             } catch {
                 if Task.isCancelled { return }
                 // Do nothing (We already handle it)

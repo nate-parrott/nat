@@ -42,6 +42,7 @@ struct DocumentState: Equatable, Codable {
     var mode = DocumentMode.agent
     var selectedFileInEditor: URL?
     var autorun = false
+    var maxIterations = 20
 //    var todos = [String: Todo]()
 }
 
