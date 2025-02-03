@@ -1,5 +1,26 @@
 import SwiftUI
 
+extension MessageCellModel {
+    func detailView() -> AnyView? {
+        switch content {
+        case .userMessage, .assistantMessage: return nil
+        case .toolLog(let userVisibleLog):
+            switch userVisibleLog {
+            case .readFile(let url):
+                return FileContentView(url: url).asAny
+            case .grepped, .edits, .webSearch, .deletedFile, .codeSearch, .usingEditCleanupModel, .listedFiles, .tokenUsage, .effort, .toolWarning, .toolError:
+                return nil
+            case .terminal:
+                return TerminalPreview().asAny
+            }
+        case .codeEdit(let codeEdit):
+            return CodeEditView(edit: codeEdit).asAny
+        case .error:
+            return nil
+        }
+    }
+}
+
 struct CodeEditView: View {
     var edit: CodeEdit
         

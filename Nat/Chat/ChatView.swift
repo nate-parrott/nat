@@ -7,10 +7,8 @@ struct ChatView: View {
     @Environment(\.document) private var document
     @State private var status = AgentStatus.none
     @State private var messageCellModels = [MessageCellModel]()
-    @State private var timelineItems = [TimelineItem]()
     @State private var debug = false
     @State private var height: CGFloat?
-    @StateObject private var cellFocusCoord = CellFocusCoordinator()
 
     var body: some View {
         ZStack {
@@ -22,13 +20,6 @@ struct ChatView: View {
                         MessageCell(model: message)
                             .frame(maxWidth: 800, alignment: .center)
                     }
-                    .overlay {
-                        FocusedCellDetailOverlay(messageCellModels: messageCellModels)
-                    }
-//                    .overlay(alignment: .bottomTrailing) {
-//                        TerminalThumbnail()
-//                    }
-//                    ChatTimelineView(items: timelineItems)
                     .overlay {
                         ChatEmptyState()
                     }
@@ -46,10 +37,8 @@ struct ChatView: View {
                 }
             }
         }
-        .environmentObject(cellFocusCoord)
         .onReceive(document.store.publisher.map(\.thread.status).removeDuplicates(), perform: { self.status = $0 })
         .onReceive(document.store.publisher.map(\.thread.cellModels).removeDuplicates(), perform: { self.messageCellModels = $0 })
-        .onReceive(document.store.publisher.map { $0.thread.timelineItems() }.removeDuplicates(), perform: { self.timelineItems = $0 })
         .contextMenu {
             Button(action: clear) {
                 Text("Clear")
