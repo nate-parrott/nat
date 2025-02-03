@@ -70,6 +70,7 @@ extension Document {
         
         // Update document state
         store.model.isWorktreeFromOriginalFolder = origBaseDir
+        store.model.worktreeBranch = branchName
         store.model.folder = newDir
         
         return (branchName, newDir)
