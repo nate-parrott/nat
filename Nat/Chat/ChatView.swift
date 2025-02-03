@@ -10,6 +10,7 @@ struct ChatView: View {
     @State private var debug = false
     @State private var size: CGSize?
     @StateObject private var detailCoord = DetailCoordinator()
+    @State private var wantsWorktree = false
 
     var body: some View {
         let canShowSplitDetail = (size?.width ?? 100) >= 850
@@ -32,7 +33,7 @@ struct ChatView: View {
                         }
                     }
                     .overlay {
-                        ChatEmptyState()
+                        ChatEmptyState(wantsWorktree: $wantsWorktree)
                     }
                     ChatInput(maxHeight: inputMaxHeight, send: sendMessage(text:attachments:), onStop: stopAgent)
                 }
@@ -42,7 +43,7 @@ struct ChatView: View {
                     }
                 }
                 .overlay {
-                    if canShowSplitDetail {
+                    if canShowSplitDetail, !messageCellModels.isEmpty {
                         SideDetailPresenter(cellModels: messageCellModels)
                             .frame(width: splitPaneWidth)
                             .frame(maxWidth: .infinity, alignment: .trailing)
