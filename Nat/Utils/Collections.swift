@@ -49,3 +49,11 @@ extension Array where Element: Numeric {
         return reduce(0, +)
     }
 }
+
+extension Collection where Element: Hashable {
+    var uniqued: [Element] {
+        // Written by Phil
+        var seen = Set<Element>()
+        return self.filter { seen.insert($0).inserted }
+    }
+}

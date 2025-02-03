@@ -154,7 +154,7 @@ extension UserVisibleLog {
         case .grepped(let query):
             return ("Searched for: `\(query)`", "magnifyingglass")
         case .edits(let edits):
-            let paths = edits.paths.map(\.lastPathComponent).joined(separator: ", ")
+            let paths = edits.paths.map(\.lastPathComponent).joined(separator: ", ").uniqued
             if edits.accepted {
                 if let comment = edits.comment {
                     return ("Accepted edits to `\(paths)` with comment: **'\(comment)'**", "checkmark")
