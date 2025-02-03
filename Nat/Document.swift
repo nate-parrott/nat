@@ -37,7 +37,10 @@ enum DocumentMode: String, Equatable, Codable, CaseIterable {
 
 struct DocumentState: Equatable, Codable {
     var thread: ThreadModel = .init()
+    
     var folder: URL?
+    var isWorktreeFromOriginalFolder: URL?
+    
     var terminalVisible = false
     var mode = DocumentMode.agent
     var selectedFileInEditor: URL?
@@ -75,7 +78,7 @@ class Document: NSDocument {
     }
     
     override func defaultDraftName() -> String {
-        "Task"
+        "Chat"
     }
 
     override class var autosavesInPlace: Bool {
