@@ -251,6 +251,12 @@ extension ThreadModel {
             steps[steps.count - 1].fixIfIncomplete()
         }
     }
+    
+    var withIncompleteStepsFixed: ThreadModel {
+        var m = self
+        m.fixIncompleteSteps()
+        return m
+    }
 
     var lastStep: Step? {
         get {

@@ -9,7 +9,7 @@ struct DebugThreadView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 if let threadModel {
-                    let msgs = threadModel
+                    let msgs = threadModel.withIncompleteStepsFixed
                         .steps
                         .flatMap(\.asTaggedLLMMessages)
                         .truncateOldMessages()

@@ -46,18 +46,6 @@ struct DocumentState: Equatable, Codable {
 //    var todos = [String: Todo]()
 }
 
-//struct Todo: Equatable, Codable {
-//    var id: String
-//    var description: String
-//    var status = Status.queued
-//
-//    enum Status: String, Equatable, Codable {
-//        case queued
-//        case inProgress
-//        case complete
-//    }
-//}
-
 extension DocumentState {
     var natDocsDir: URL? {
         folder?.appendingPathComponent("nat_docs", isDirectory: true)
@@ -84,6 +72,10 @@ class Document: NSDocument {
     override init() {
         super.init()
         // Add your subclass-specific initialization here.
+    }
+    
+    override func defaultDraftName() -> String {
+        "Task"
     }
 
     override class var autosavesInPlace: Bool {

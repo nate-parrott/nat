@@ -90,6 +90,20 @@ struct InsetCellModifier: ViewModifier {
     }
 }
 
+struct ClickForDetailModifier: ViewModifier {
+    var id: String
+    @EnvironmentObject private var detailCoord: DetailCoordinator
+    
+    func body(content: Content) -> some View {
+        content.modifier(ClickableCellInteraction(action: {
+            detailCoord.clickedCellId = id
+        }))
+        .onAppear {
+            detailCoord.implicitlyShownCellId = id
+        }
+    }
+}
+
 struct ClickableCellInteraction: ViewModifier {
     var action: () -> Void
     

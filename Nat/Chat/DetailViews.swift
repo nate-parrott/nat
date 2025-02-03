@@ -2,9 +2,26 @@ import SwiftUI
 
 class DetailCoordinator: ObservableObject {
     @Published var clickedCellId: String?
+    @Published var implicitlyShownCellId: String? // on appear, if there is room for a split view
 }
 
-struct DetailPresenter: View {
+struct SideDetailPresenter: View {
+    var cellModels: [MessageCellModel]
+    
+    @EnvironmentObject private var detail: DetailCoordinator
+    
+    var body: some View {
+        if let clickedCellId = detail.clickedCellId ?? detail.implicitlyShownCellId, let cell = cellModels.first(where: { $0.id == clickedCellId }), let view = cell.detailView() {
+            view
+                .background(.thickMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 4)
+                .padding()
+        }
+    }
+}
+
+struct ModalDetailPresenter: View {
     var cellModels: [MessageCellModel]
     
     @EnvironmentObject private var detail: DetailCoordinator
@@ -14,6 +31,7 @@ struct DetailPresenter: View {
             Color.black.opacity(detail.clickedCellId != nil ? 0.7 : 0)
                 .onTapGesture {
                     detail.clickedCellId = nil
+                    detail.implicitlyShownCellId = nil
                 }
             
             if let clickedCellId = detail.clickedCellId, let cell = cellModels.first(where: { $0.id == clickedCellId }), let view = cell.detailView() {

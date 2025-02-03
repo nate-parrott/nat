@@ -8,18 +8,26 @@ struct ChatView: View {
     @State private var status = AgentStatus.none
     @State private var messageCellModels = [MessageCellModel]()
     @State private var debug = false
-    @State private var height: CGFloat?
+    @State private var size: CGSize?
     @StateObject private var detailCoord = DetailCoordinator()
 
     var body: some View {
+        let canShowSplitDetail = (size?.width ?? 100) >= 700
+        let splitPaneWidth = (size?.width ?? 100) * 0.5
         ZStack {
             if debug {
                 DebugThreadView()
             } else {
                 VStack(spacing: 0) {
                     ScrollToBottomThreadView(data: messageCellModels) { message in
-                        MessageCell(model: message)
-                            .frame(maxWidth: 800, alignment: .center)
+                        if canShowSplitDetail {
+                            MessageCell(model: message)
+                                .frame(width: splitPaneWidth)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            MessageCell(model: message)
+                                .frame(maxWidth: 800, alignment: .center)
+                        }
                     }
                     .overlay {
                         ChatEmptyState()
@@ -32,7 +40,13 @@ struct ChatView: View {
                     }
                 }
                 .overlay {
-                    DetailPresenter(cellModels: messageCellModels)
+                    if canShowSplitDetail {
+                        SideDetailPresenter(cellModels: messageCellModels)
+                            .frame(width: splitPaneWidth)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    } else {
+                        ModalDetailPresenter(cellModels: messageCellModels)
+                    }
                 }
                 .overlay {
                     if status == .running {
@@ -52,11 +66,11 @@ struct ChatView: View {
                 Text("Debug")
             }
         }
-        .measureSize { self.height = $0.height }
+        .measureSize { self.size = $0 }
     }
 
     private var inputMaxHeight: CGFloat? {
-        height != nil ? max(60, height! - 100) : nil
+        size != nil ? max(60, size!.height - 100) : nil
     }
 
     private func clear() {
@@ -133,7 +147,7 @@ struct ViewControllerPresenter: NSViewControllerRepresentable {
 // A generic thread view that automatically scrolls to bottom when content changes
 private struct ScrollToBottomThreadView<Data: RandomAccessCollection, Content: View>: View where Data.Element: Identifiable {
     var data: Data
-    var content: (Data.Element) -> Content
+    @ViewBuilder var content: (Data.Element) -> Content
     var spacing: CGFloat = 12
 
     var body: some View {
