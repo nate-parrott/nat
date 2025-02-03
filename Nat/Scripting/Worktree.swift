@@ -80,10 +80,11 @@ extension Document {
     private func findValidWorktreeBranchNameAndDir(name: String, baseDir: URL) async throws -> (String, URL) {
         let baseName = name.lowercased()
         var suffix = 0
+        let projectName = baseDir.lastPathComponent
         
         while true {
             let branchName = suffix == 0 ? baseName : "\(baseName)_\(suffix)"
-            let dirName = suffix == 0 ? name : "\(name)_\(suffix)"
+            let dirName = suffix == 0 ? "\(projectName)_\(name)" : "\(projectName)_\(name)_\(suffix)"
             let potentialDir = baseDir.deletingLastPathComponent().appendingPathComponent(dirName)
             
             // Check if branch exists
