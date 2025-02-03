@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 struct ChatInput: View {
@@ -14,6 +13,7 @@ struct ChatInput: View {
     @State private var folderName: String?
     @State private var attachments: [ContextItem] = []
     @State private var status = AgentStatus.none
+    @State private var autorun = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -53,6 +53,7 @@ struct ChatInput: View {
         }
         .onReceive(document.store.publisher.map(\.selectedFileInEditorRelativeToFolder).removeDuplicates(), perform: { self.currentFileOpenInXcode = $0 })
         .onReceive(document.store.publisher.map(\.folder?.lastPathComponent).removeDuplicates(), perform: { self.folderName = $0 })
+        .onReceive(document.store.publisher.map(\.autorun).removeDuplicates(), perform: { self.autorun = $0 })
     }
 
     @ViewBuilder var buttons: some View {
@@ -60,12 +61,16 @@ struct ChatInput: View {
             Button(action: pickFile) {
                 Image(systemName: "rectangle.dashed.and.paperclip")
                     .help(Text("Attach File"))
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 19))
-                    .frame(both: 40)
             }
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(InputGlyphButtonStyle(color: .secondary, small: true))
 
+            Button(action: { document.store.model.autorun.toggle() }) {
+                Image(systemName: autorun ? "figure.run.circle.fill" : "figure.run.circle")
+                    .help(Text(autorun ? "Autopilot is on; edits and terminal commands will run automatically." : "Autopilot is off; edits and terminal commands will prompt you."))
+            }
+            .buttonStyle(InputGlyphButtonStyle(color: .secondary, small: true))
+
+            
             Group {
                 if status == .running {
                     PlayPauseButton(icon: "pause.circle.fill", label: "Pause", action: { document.pause() })
@@ -150,7 +155,6 @@ struct ChatInput: View {
             }
             .padding(12)
         }
-//        .frame(height: attachments.isEmpty ? 0 : 32)
     }
 }
 
@@ -163,10 +167,24 @@ private struct PlayPauseButton: View {
         Button(action: action) {
             Image(systemName: icon)
                 .help(Text(label))
-                .foregroundColor(.accentColor)
-                .font(.system(size: 22))
-                .frame(both: 40)
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(InputGlyphButtonStyle(color: .accentColor, small: false))
+    }
+}
+
+private struct InputGlyphButtonStyle: ButtonStyle {
+    var color: Color
+    var small: Bool
+    @State private var hovered = false
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundColor(color)
+            .font(.system(size: small ? 19 : 22))
+            .frame(width: 40, height: 40)
+            .scaleEffect(configuration.isPressed ? 0.9 : hovered ? 1.1 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+            .animation(.easeInOut(duration: 0.15), value: hovered)
+            .onHover { hovered = $0 }
     }
 }

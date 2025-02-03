@@ -42,6 +42,8 @@ extension FileEditorTool {
             
     Before editing existing files, you MUST read the file first using read_file. After editing a file, I'll echo back the new version on disk post-edit.
     
+    Before writing a FindReplace code fence, discuss briefly exactly WHERE you will be inserting/replacing code.
+    
     When editing, make sure your edits reference the MOST RECENT copy of the file in the thread that was read from disk or the product of an accepted edit.
     
     When using FindReplace, the 'find' portion of your edit (the part before \(Self.findReplaceDivider)) MUST match a UNIQUE portion of the file, VERTBATIM, including whitespace.

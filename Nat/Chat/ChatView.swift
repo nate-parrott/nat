@@ -57,11 +57,10 @@ struct ChatView: View {
     private func clear() {
         document.stop()
         document.store.modify { state in
-            state.thread = .init()
+            state.thread = .init(cancelCount: state.thread.cancelCount + 1)
             state.terminalVisible = false
         }
         document.terminal = nil
-//        imageAttachment = nil
     }
     
     private func sendMessage(text: String, attachments: [ContextItem]) {
