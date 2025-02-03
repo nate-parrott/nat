@@ -11,12 +11,12 @@ struct MessageCell: View {
         case .userMessage(let string):
             Text(string)
                 .foregroundStyle(.white)
-                .withCellBackdrop(true, blue: true)
+                .modifier(CellBackdropModifier(enabled: true, blue: true))
                 .frame(maxWidth: .infinity, alignment: .trailing)
 //            TextMessageBubble(Text(string), isFromUser: true)
         case .assistantMessage(let string):
             AssistantMessageView(text: string)
-                .withCellBackdrop(backdrop)
+                .modifier(CellBackdropModifier(enabled: backdrop, blue: false))
                 .frame(maxWidth: .infinity, alignment: .leading)
 //            TextMessageBubble(Text(string), isFromUser: false)
         case .toolLog(let log):
@@ -30,7 +30,7 @@ struct MessageCell: View {
                     LogView(markdown: markdown, symbol: symbol)
                 }
             }
-            .withCellBackdrop(backdrop)
+            .modifier(CellBackdropModifier(enabled: backdrop, blue: false))
             .frame(maxWidth: .infinity, alignment: .leading)
         case .codeEdit(let edit):
             if showCodeEditCards {
@@ -38,7 +38,7 @@ struct MessageCell: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 LogView(markdown: "Proposed code edit", symbol: "keyboard")
-                    .withCellBackdrop(backdrop)
+                    .modifier(CellBackdropModifier(enabled: backdrop, blue: false))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         case .error(let string):
@@ -48,45 +48,12 @@ struct MessageCell: View {
                 .foregroundStyle(.red)
                 .lineLimit(nil)
                 .multilineTextAlignment(.center)
-                .withCellBackdrop(backdrop)
+                .modifier(CellBackdropModifier(enabled: backdrop, blue: false))
                 .frame(maxWidth: .infinity)
         }
     }
 }
 
-private extension View {
-    @ViewBuilder
-    func withCellBackdrop(_ backdrop: Bool = true, blue: Bool = false) -> some View {
-        if backdrop {
-            self
-                .padding(.horizontal, backdrop ? 8 : 0)
-                .padding(.vertical, backdrop ? 6 : 0)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.1))
-                }
-                .background {
-                    if backdrop {
-                        if blue {
-                            Color.accentColor
-                                .overlay {
-                                    LinearGradient(colors: [Color.white, Color.white.opacity(0)], startPoint: .top, endPoint: .bottom)
-                                        .opacity(0.1)
-                                }
-                                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                .shadow(color: Color.blue.opacity(0.1), radius: 4, x: 0, y: 1)
-                        } else {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(.thickMaterial)
-                                .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 1)
-                        }
-                    }
-                }
-        } else {
-            self
-        }
-    }
-}
 
 private struct CodeEditInlineView: View {
     var edit: CodeEdit
@@ -112,15 +79,8 @@ private struct CodeEditInlineView: View {
         .font(Font.system(size: 12, weight: .bold))
 //        .foregroundStyle(.primary)
         .frame(maxWidth: 300, alignment: .leading)
-//        .padding(6)
-//        .frame(maxHeight: 100)
-//        .overlay(alignment: .top) {
-//            LinearGradient(colors: [Color.black.opacity(0), Color.black], startPoint: .init(x: 0, y: 0.9), endPoint: .init(x: 0, y: 1))
-//                .frame(height: 100)
-//        }
-//        .background(Color.black)
         .clipShape(outline)
-        .withCellBackdrop()
+        .modifier(CellBackdropModifier(enabled: true, blue: false))
     }
 
     @ViewBuilder func body(lines: [String]) -> some View {

@@ -45,6 +45,8 @@ extension FileEditorTool {
     When editing, make sure your edits reference the MOST RECENT copy of the file in the thread that was read from disk or the product of an accepted edit.
     
     When using FindReplace, the 'find' portion of your edit (the part before \(Self.findReplaceDivider)) MUST match a UNIQUE portion of the file, VERTBATIM, including whitespace.
+    
+    If you need to replace something that is not unique, include more lines or replace the whole function/class/etc.
         
     # Edit sizes
     When refactoring more than 60% of a file, replace the whole thing; otherwise try to make targeted edits to specific lines.
