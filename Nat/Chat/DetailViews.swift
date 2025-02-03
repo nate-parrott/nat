@@ -8,22 +8,22 @@ struct CodeEditView: View {
             Text("Editing \(edit.url.lastPathComponent)")
             Divider()
             switch edit {
-            case .replace(let path, let lineRangeStart, let lineRangeLen, let lines):
+            case .replace(_, let lineRangeStart, let lineRangeLen, let lines):
                 Text("Replacing lines \(lineRangeStart)-\(lineRangeStart + lineRangeLen)")
                     .opacity(0.5)
                 Text(lines.joined(separator: "\n"))
                     .foregroundStyle(Color.newCodeGreen)
-            case .write(let path, let content):
+            case .write(_, let content):
                 Text("Writing to file:")
                     .opacity(0.5)
                 Text(content)
                     .foregroundStyle(Color.newCodeGreen)
-            case .append(let path, let content):
+            case .append(_, let content):
                 Text("Appending:")
                     .opacity(0.5)
                 Text(content)
                     .foregroundStyle(Color.newCodeGreen)
-            case .findReplace(let path, let find, let replace):
+            case .findReplace(_, let find, let replace):
                 Text("Replacing \(find.count) lines with:")
                     .opacity(0.5)
                 Text(replace.joined(separator: "\n"))
