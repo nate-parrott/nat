@@ -27,14 +27,18 @@ enum FileEditorReviewPanelResult: Equatable, Codable {
     }
 }
 
+struct DescribedDiff {
+    var description: String
+    var diff: Diff
+}
+
 // Shows a single diff with its description header
 private struct DiffEditView: View {
-    let edit: FileEdit
-    let diff: Diff
+    let describedDiff: DescribedDiff
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(edit.description)
+            Text(describedDiff.description)
                 .multilineTextAlignment(.leading)
                 .font(.headline)
                 .lineLimit(nil)
@@ -44,83 +48,102 @@ private struct DiffEditView: View {
             
             Divider()
 
-            VStack(alignment: .leading, spacing: 2) {
-                DiffView(diff: diff)
+            VStack(alignment: .leading, spacing: 0) {
+                DiffView(diff: describedDiff.diff)
                     .lineLimit(nil)
                     .font(.system(.body, design: .monospaced))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
+            .padding(.vertical)
         }
     }
 }
-
 // Review action buttons and comment input
 private struct ReviewActionBar: View {
     @Binding var commentText: String
     var onApprove: (String) -> Void
     var onReject: (String) -> Void
+    @State private var focusDate: Date?
 
     var body: some View {
-        HStack(alignment: .bottom) {
+        HStack {
             InputTextField(
                 text: $commentText,
                 options: .init(
-                    placeholder: "Add a comment (optional)",
+                    placeholder: "Comment (optional)",
                     font: .systemFont(ofSize: 14),
                     insets: .init(width: 12, height: 21)
                 ),
-                focusDate: nil,
+                focusDate: focusDate,
                 onEvent: { _ in },
                 contentSize: .constant(.zero)
             )
             .frame(height: 60)
             
-            Button(action: { onApprove(commentText) }) {
-                Text("Approve")
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+            HStack {
+                Button(action: { onApprove(commentText) }) {
+                    Text("Approve")
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.accentColor)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: { onReject(commentText) }) {
+                    Text("Reject")
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.red)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
-            .buttonStyle(PlainButtonStyle())
-            
-            Button(action: { onReject(commentText) }) {
-                Text("Reject")
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.red)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-            }
-            .buttonStyle(PlainButtonStyle())
+            .padding(6)
+            .padding(.trailing, 8)
         }
-        .padding()
+        .onAppear {
+            focusDate = Date()
+        }
     }
 }
 
 struct FileEditorReviewPanel: View {
     var edits: [FileEdit]
     var finish: (FileEditorReviewPanelResult) -> Void
+    
+    var body: some View {
+        let describedDiffs = edits.map { edit in 
+            DescribedDiff(
+                description: edit.description,
+                diff: (try? edit.asDiff()) ?? Diff(lines: [])
+            )
+        }
+        _DiffReviewPanel(diffs: describedDiffs, finish: finish)
+    }
+}
 
-    @State private var diffs: [Diff] = []
+/// Internal view that handles the UI for reviewing diffs
+private struct _DiffReviewPanel: View {
+    var diffs: [DescribedDiff]
+    var finish: (FileEditorReviewPanelResult) -> Void
+    
     @State private var commentText = ""
     
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(edits.enumerated()), id: \.offset) { pair in
-                        let (i, edit) = pair
-                        let diff: Diff = i < diffs.count ? diffs[i] : Diff(lines: [])
-                        DiffEditView(edit: edit, diff: diff)
+                    ForEach(Array(diffs.enumerated()), id: \.offset) { i, diff in
+                        DiffEditView(describedDiff: diff)
                     }
                 }
             }
-
+            
             Divider()
-
+            
             ReviewActionBar(
                 commentText: $commentText,
                 onApprove: { comment in
@@ -139,11 +162,47 @@ struct FileEditorReviewPanel: View {
                 }
             )
         }
-        .onAppear {
-            diffs = []
-            for edit in edits {
-                diffs.append((try? edit.asDiff()) ?? Diff(lines: []))
-            }
-        }
+        .background(.thickMaterial)
+    }
+}
+
+// FUCK YOU SWIFTUI PREVIEWS!!!
+//struct FileEditorReviewPanel_Previews: PreviewProvider {
+//}
+
+struct _FileEditorDemo: View {
+    static var sampleDescribedDiff: DescribedDiff {
+        DescribedDiff(
+            description: "Change value type from Int to String",
+            diff: Diff(lines: [
+                .collapsed([.same("Line 1"), .same("Line 2")]),
+                .same("struct Example {"),
+                .delete("    var oldValue: Int"),
+                .delete("    var oldValue: Int"),
+                .insert("    var newValue: String"),
+                .insert("    var newValue: String"),
+                .insert("    var newValue: String"),
+                .same("}")
+            ])
+        )
+    }
+    
+    static var sampleDescribedDiff2: DescribedDiff {
+        DescribedDiff(
+            description: "Edit files/xyz.html",
+            diff: Diff(lines: [
+                .same("struct Example {"),
+                .delete("    var oldValue: Int"),
+                .insert("    var newValue: String"),
+                .same("}")
+            ])
+        )
+    }
+    
+    var body: some View {
+        _DiffReviewPanel(
+            diffs: [Self.sampleDescribedDiff, Self.sampleDescribedDiff2],
+            finish: { _ in }
+        )
     }
 }

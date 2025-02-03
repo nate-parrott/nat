@@ -18,17 +18,12 @@ struct ContentViewWrapper: View {
                 }
             }
             .environment(\.document, document)
+//            .overlay {
+//                _FileEditorDemo()
+//            }
         } else {
             Color.clear
         }
-    }
-}
-
-struct ContentView: View {
-    @Environment(\.document) var document: Document
-
-    var body: some View {
-        Text("hi!")
     }
 }
 
