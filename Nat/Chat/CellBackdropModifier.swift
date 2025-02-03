@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct CellBackdropModifier: ViewModifier {
-    let enabled: Bool
-    let blue: Bool
+    var enabled: Bool
+    var tint: Color?
     
     func body(content: Content) -> some View {
         if enabled {
@@ -14,8 +14,8 @@ struct CellBackdropModifier: ViewModifier {
                         .strokeBorder(Color.primary.opacity(0.1))
                 }
                 .background {
-                    if blue {
-                        Color.accentColor
+                    if let tint {
+                        tint
                             .overlay {
                                 LinearGradient(colors: [Color.white, Color.white.opacity(0)], startPoint: .top, endPoint: .bottom)
                                     .opacity(0.1)

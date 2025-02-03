@@ -10,6 +10,7 @@ struct ChatView: View {
     @State private var timelineItems = [TimelineItem]()
     @State private var debug = false
     @State private var height: CGFloat?
+    @StateObject private var cellFocusCoord = CellFocusCoordinator()
 
     var body: some View {
         ZStack {
@@ -19,11 +20,14 @@ struct ChatView: View {
                 VStack(spacing: 0) {
                     ScrollToBottomThreadView(data: messageCellModels) { message in
                         MessageCell(model: message)
-                            .frame(maxWidth: 800, alignment: .leading)
+                            .frame(maxWidth: 800, alignment: .center)
                     }
-                    .overlay(alignment: .bottomTrailing) {
-                        TerminalThumbnail()
+                    .overlay {
+                        FocusedCellDetailOverlay(messageCellModels: messageCellModels)
                     }
+//                    .overlay(alignment: .bottomTrailing) {
+//                        TerminalThumbnail()
+//                    }
 //                    ChatTimelineView(items: timelineItems)
                     .overlay {
                         ChatEmptyState()
@@ -42,6 +46,7 @@ struct ChatView: View {
                 }
             }
         }
+        .environmentObject(cellFocusCoord)
         .onReceive(document.store.publisher.map(\.thread.status).removeDuplicates(), perform: { self.status = $0 })
         .onReceive(document.store.publisher.map(\.thread.cellModels).removeDuplicates(), perform: { self.messageCellModels = $0 })
         .onReceive(document.store.publisher.map { $0.thread.timelineItems() }.removeDuplicates(), perform: { self.timelineItems = $0 })
@@ -64,7 +69,9 @@ struct ChatView: View {
         document.stop()
         document.store.modify { state in
             state.thread = .init()
+            state.terminalVisible = false
         }
+        document.terminal = nil
 //        imageAttachment = nil
     }
     

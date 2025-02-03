@@ -183,7 +183,6 @@ extension AgentThreadStore {
         assert(step.lastToolUseStep.wrappedValue != nil)
         assert(!step.wrappedValue.lastToolUseStep!.isComplete)
         
-        
         // The last text response is EITHER in the tool-use loop already (if it had normal fn calls) OR in the assistant message response (if no tool use but MAYBE psuedo fn)
         let psuedoFnToolContext = ToolContext(activeDirectory: agent.folder, log: {
             step.wrappedValue.lastToolUseStep?.psuedoFunctionLogs.append($0)
@@ -294,7 +293,7 @@ extension ThreadModel.Step {
         if response.functionCalls.count > 0 {
             // This has function calls, so it's not the final assistant message
             assistantMessageForUser = nil
-            if let lastToolUseStep = toolUseLoop.last, lastToolUseStep.computerResponse.isEmpty {
+            if let lastToolUseStep = toolUseLoop.last, lastToolUseStep.computerResponse.isEmpty && lastToolUseStep.psuedoFunctionResponse == nil {
                 // Update existing tool use step
                 toolUseLoop[toolUseLoop.count - 1] = .init(initialResponse: TaggedLLMMessage(message: response), computerResponse: [])
             } else {

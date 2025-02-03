@@ -5,40 +5,37 @@ struct MessageCell: View {
     var model: MessageCellModel
     var backdrop = false
     var showCodeEditCards = true
-
+    @State private var isFocused = false
+    
     var body: some View {
         switch model.content {
         case .userMessage(let string):
             Text(string)
+                .textSelection(.enabled)
                 .foregroundStyle(.white)
-                .modifier(CellBackdropModifier(enabled: true, blue: true))
+                .modifier(CellBackdropModifier(enabled: true, tint: Color.blue))
                 .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.leading)
 //            TextMessageBubble(Text(string), isFromUser: true)
         case .assistantMessage(let string):
             AssistantMessageView(text: string)
-                .modifier(CellBackdropModifier(enabled: backdrop, blue: false))
+                .modifier(CellBackdropModifier(enabled: backdrop))
                 .frame(maxWidth: .infinity, alignment: .leading)
 //            TextMessageBubble(Text(string), isFromUser: false)
         case .toolLog(let log):
             Group {
-                let (markdown, symbol) = log.asMarkdownAndSymbol
-                if case .terminal = log {
-                    Label(markdown, systemImage: symbol)
-                        .font(Font.body.monospaced())
-                        .foregroundStyle(.purple)
-                } else {
-                    LogView(markdown: markdown, symbol: symbol)
-                }
+                LogView(msgId: model.id, log: log, forceBackdrop: backdrop)
             }
-            .modifier(CellBackdropModifier(enabled: backdrop, blue: false))
+            .modifier(CellBackdropModifier(enabled: backdrop))
             .frame(maxWidth: .infinity, alignment: .leading)
         case .codeEdit(let edit):
             if showCodeEditCards {
-                CodeEditInlineView(edit: edit) // has cell BG already
+                CodeEditInlineView(edit: edit, msgId: model.id) // has cell BG already
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                LogView(markdown: "Proposed code edit", symbol: "keyboard")
-                    .modifier(CellBackdropModifier(enabled: backdrop, blue: false))
+                Label("Proposed code edit", systemImage: "keyboard")
+//                Label(markdown: "Proposed code edit", symbol: "keyboard")
+                    .modifier(CellBackdropModifier(enabled: backdrop))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         case .error(let string):
@@ -48,7 +45,7 @@ struct MessageCell: View {
                 .foregroundStyle(.red)
                 .lineLimit(nil)
                 .multilineTextAlignment(.center)
-                .modifier(CellBackdropModifier(enabled: backdrop, blue: false))
+                .modifier(CellBackdropModifier(enabled: backdrop))
                 .frame(maxWidth: .infinity)
         }
     }
@@ -57,6 +54,9 @@ struct MessageCell: View {
 
 private struct CodeEditInlineView: View {
     var edit: CodeEdit
+    var msgId: String
+    
+    @State private var focused = false
 
     var body: some View {
         let outline = RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -80,7 +80,8 @@ private struct CodeEditInlineView: View {
 //        .foregroundStyle(.primary)
         .frame(maxWidth: 300, alignment: .leading)
         .clipShape(outline)
-        .modifier(CellBackdropModifier(enabled: true, blue: false))
+        .modifier(CellBackdropModifier(enabled: true))
+        .modifier(FocusableCell(id: msgId, focused: $focused))
     }
 
     @ViewBuilder func body(lines: [String]) -> some View {
@@ -93,11 +94,24 @@ private struct CodeEditInlineView: View {
 }
 
 private struct LogView: View {
-    var markdown: String
-    var symbol: String
+    var msgId: String
+    var log: UserVisibleLog
+    var forceBackdrop: Bool
+    
+    @State private var focused = false
 
     var body: some View {
-        Label(LocalizedStringKey(markdown), systemImage: symbol)
+        let (markdown, symbol) = log.asMarkdownAndSymbol
+        
+        if log.hasFocusDetail {
+            Label(LocalizedStringKey(markdown), systemImage: symbol)
+                .modifier(FocusableCell(id: msgId, focused: $focused))
+                .modifier(CellBackdropModifier(enabled: true, tint: Color.purple))
+
+        } else {
+            Label(LocalizedStringKey(markdown), systemImage: symbol)
+                .modifier(CellBackdropModifier(enabled: forceBackdrop))
+        }
 //            .foregroundStyle(.purple)
 //            .frame(maxWidth: .infinity, alignment: .leading)
     }

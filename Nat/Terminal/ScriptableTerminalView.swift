@@ -220,3 +220,24 @@ struct TerminalThumbnail: View {
         .padding()
     }
 }
+
+struct TerminalPreview: View {
+    @Environment(\.document) private var document: Document
+    
+    var body: some View {
+        WithSnapshotMain(store: document.store, snapshot: { $0.terminalVisible }) { vis in
+            if vis, let term = document.terminal {
+                ScriptableTerminalViewRepresentable(terminal: term)
+            } else {
+                Color.black
+                    .overlay {
+                        Text("No terminal running")
+                            .fontDesign(.monospaced)
+                            .foregroundStyle(.white)
+                            .opacity(0.4)
+                    }
+            }
+        } // TODO: fixed size for terminal?
+
+    }
+}
