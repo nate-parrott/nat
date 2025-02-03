@@ -46,7 +46,11 @@ struct ChatInput: View {
         .onChange(of: text, perform: { newValue in
             if newValue != "" { document.pause() }
         })
-        .background(.thinMaterial)
+        .background {
+            if textFieldSize.height > 100 {
+                Color.clear.background(.thinMaterial)
+            }
+        }
         .onReceive(document.store.publisher.map(\.selectedFileInEditorRelativeToFolder).removeDuplicates(), perform: { self.currentFileOpenInXcode = $0 })
         .onReceive(document.store.publisher.map(\.folder?.lastPathComponent).removeDuplicates(), perform: { self.folderName = $0 })
     }

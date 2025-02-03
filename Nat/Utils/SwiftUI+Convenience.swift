@@ -102,8 +102,27 @@ extension View {
     }
 }
 
+private struct ContentFramePreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {}
+}
+
+extension View {
+    func measureFrame(coordinateSpace: CoordinateSpace, _ callback: @escaping (CGRect) -> Void) -> some View {
+        background(GeometryReader(content: { geo in
+            Color.clear
+                .preference(key: ContentFramePreferenceKey.self, value: geo.frame(in: coordinateSpace))
+        }))
+        .onPreferenceChange(ContentFramePreferenceKey.self) { frame in
+            callback(frame)
+        }
+    }
+}
+
+
 extension Text {
     init(markdown: String) {
         self = .init(LocalizedStringKey(markdown))
     }
 }
+

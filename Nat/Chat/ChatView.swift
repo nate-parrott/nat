@@ -7,6 +7,7 @@ struct ChatView: View {
     @Environment(\.document) private var document
     @State private var status = AgentStatus.none
     @State private var messageCellModels = [MessageCellModel]()
+    @State private var timelineItems = [TimelineItem]()
     @State private var debug = false
     @State private var height: CGFloat?
 
@@ -16,15 +17,16 @@ struct ChatView: View {
                 DebugThreadView()
             } else {
                 VStack(spacing: 0) {
-                    ScrollToBottomThreadView(data: messageCellModels) { message in
-                        MessageCell(model: message)
-                            .frame(maxWidth: 800, alignment: .leading)
-                    }
+//                    ScrollToBottomThreadView(data: messageCellModels) { message in
+//                        MessageCell(model: message)
+//                            .frame(maxWidth: 800, alignment: .leading)
+//                    }
+//                    .overlay(alignment: .bottomTrailing) {
+//                        TerminalThumbnail()
+//                    }
+                    ChatTimelineView(items: timelineItems)
                     .overlay {
                         ChatEmptyState()
-                    }
-                    .overlay(alignment: .bottomTrailing) {
-                        TerminalThumbnail()
                     }
                     ChatInput(maxHeight: inputMaxHeight, send: sendMessage(text:attachments:), onStop: stopAgent)
                 }
@@ -42,6 +44,7 @@ struct ChatView: View {
         }
         .onReceive(document.store.publisher.map(\.thread.status).removeDuplicates(), perform: { self.status = $0 })
         .onReceive(document.store.publisher.map(\.thread.cellModels).removeDuplicates(), perform: { self.messageCellModels = $0 })
+        .onReceive(document.store.publisher.map { $0.thread.timelineItems() }.removeDuplicates(), perform: { self.timelineItems = $0 })
         .contextMenu {
             Button(action: clear) {
                 Text("Clear")

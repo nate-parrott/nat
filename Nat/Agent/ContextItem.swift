@@ -75,6 +75,7 @@ struct TaggedLLMMessage: Equatable, Codable {
     // TODO: Remove `includeSystemMessages`??
     func asPlainText(includeSystemMessages includeSys: Bool) -> String {
         content.map({ $0.asPlainText() }).joined(separator: "\n\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

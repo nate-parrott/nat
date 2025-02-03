@@ -1,100 +1,77 @@
-//import Foundation
-//
-//struct TimelineItem: Equatable {
-//    var icon: String?
-//    
-//    var chats: [MessageCellModel] // shown as overlay, except when content is nil
-//    var background: Background?
-//    
-//    enum Background: Equatable {
-//        case edit(CodeEdit)
-//        case terminal
-//    }
-//    
-//    struct CodeSearchVis: Equatable {
-//        var queries: [String]
-//        var greps: [String]
-//        var files: [URL]
-//    }
-//}
-//
-//private extension TimelineItem {
-//    var bgCodeSearchViz: CodeSearchVis? {
-//        get {
-//            if let background, case .codeSearch(let codeSearchVis) = background {
-//                return codeSearchVis
-//            }
-//            return nil
-//        }
-//        set {
-//            if let newValue {
-//                background = .codeSearch(newValue)
-//            }
-//        }
-//    }
-//}
-//
-//extension ThreadModel {
-//    func timelineItems() -> [TimelineItem] {
-//        var items = [TimelineItem]()
-//        var currentItem = TimelineItem(id: "0", chats: [])
-//        
-//        func startNewItem() {
-//            if currentItem.chats.count > 0 || currentItem.background != nil {
-//                items.append(currentItem)
-//            }
-//            currentItem = .init(id: "\(items.count)", chats: [])
-//        }
-//        
-//        func modifyCodeSearchViz(_ block: (inout TimelineItem.CodeSearchVis) -> Void) {
-//            if currentItem.background != nil {
-//                startNewItem()
-//            }
-//            if currentItem.background == nil {
-//                currentItem.background = .codeSearch(.init(queries: [], greps: [], files: []))
-//            }
-//            // Will always be true:
-//            if var viz = currentItem.bgCodeSearchViz {
-//                block(&viz)
-//                currentItem.bgCodeSearchViz = viz
-//            }
-//        }
-//        
-//        for step in steps {
-//            startNewItem() // new page for each user message
-//            currentItem.icon = "text.bubble"
-//            // TODO: Show attachments in chat
-//            currentItem.chats.append(.init(id: step.id + "/initial", content: .userMessage(step.initialRequest.asPlainText(includeSystemMessages: false))))
-//            
-//            for (i, toolUseStep) in step.toolUseLoop.enumerated() {
-//                let idPrefix = step.id + "/step/\(i)/"
-//                
-//                // Is this a file edit?
-//                if toolUseStep.hasFileEdits, currentItem.background != .chatExclusive {
-//                    // Go straight to chat
-//                    startNewItem()
-//                    currentItem = .chatExclusive
-//                }
-//                
-//                currentItem.chats += toolUseStep.initialResponse.assistantCellModels(idPrefix: idPrefix)
-//                                
-//                for fnCall in toolUseStep.initialResponse.functionCalls {
-//                    
-//                }
-//            }
-//        }
-//    }
-//}
-//
-//
-//private extension ThreadModel.Step.ToolUseStep {
-//    var hasFileEdits: Bool {
-//        for log in psuedoFunctionLogs {
-//            switch log {
-//            case .edits: return true
-//            default: continue
-//            }
-//        }
-//        return false
-//    }
-//}
+import Foundation
+
+extension MessageCellModel {
+    var backdrop: TimelineBackdrop? {
+        switch content {
+        case .codeEdit(let edit): return .editFile(edit)
+        case .toolLog(.readFile(let url)): return .viewFile(url)
+        case .toolLog(.terminal): return .terminal
+        default: return nil
+        }
+    }
+    
+    var markerInTimeline: (name: String, icon: String)? {
+        if case .userMessage(let str) = content {
+            return (str.truncateHeadWithEllipsis(chars: 40), "bubble.fill")
+        }
+        if case .codeEdit(let edit) = content {
+            return (edit.url.lastPathComponent, "keyboard")
+        }
+        return nil
+    }
+}
+
+enum TimelineBackdrop: Equatable {
+    case terminal
+    case viewFile(URL)
+    case editFile(CodeEdit)
+}
+
+struct TimelineItem: Equatable, Identifiable {
+    var id: String
+    var backdrop: TimelineBackdrop?
+    var markerName: String?
+    var markerIcon: String?
+    var messages: [MessageCellModel]
+    
+    var isNotEmpty: Bool {
+        backdrop != nil || messages.count > 0
+    }
+}
+
+extension ThreadModel {
+    func timelineItems() -> [TimelineItem] {
+        var items = [TimelineItem]()
+        var currentItem = TimelineItem(id: "initial", messages: [])
+        func newItem(id: String) {
+            if currentItem.isNotEmpty{
+                items.append(currentItem)
+            }
+            currentItem = .init(id: id, messages: [])
+        }
+        let cellModels = self.cellModels
+        for (i, cell) in cellModels.enumerated() {
+            let blankPage = cell.backdrop != nil || cell.markerInTimeline != nil
+            if blankPage {
+                newItem(id: cell.id)
+            }
+            if let (name, icon) = cell.markerInTimeline {
+                currentItem.markerIcon = icon
+                currentItem.markerName = name
+            }
+            if let backdrop = cell.backdrop {
+                currentItem.backdrop = backdrop
+            }
+            currentItem.messages.append(cell)
+            if case .userMessage = cell.content, i > 0, case .assistantMessage = cellModels[i - 1].content, currentItem.messages.count == 1 {
+                // Show assistant message from past page on this page, too
+                currentItem.messages.insert(cellModels[i - 1], at: 0)
+            }
+        }
+        if currentItem.isNotEmpty {
+            items.append(currentItem)
+        }
+        return items
+    }
+}
+
