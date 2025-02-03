@@ -15,7 +15,6 @@ struct FileEditorTool: Tool {
     
     func handlePsuedoFunction(fromPlaintext response: String, context: ToolContext) async throws -> [ContextItem]? {
         let codeEdits = try EditParser.parseEditsOnly(from: response, toolContext: context)
-        let comments = try EditParser.parse(string: response, toolContext: context).compactMap(\.ifString).joined(separator: "\n\n")
 
         if codeEdits.isEmpty {
             return nil
@@ -28,14 +27,15 @@ struct FileEditorTool: Tool {
         // TODO: Concurrent
         for edit in unfixedFileEdits {
             do {
-//                if edit.canBeAppliedUsingApplierModel {
-//                    throw ApplyEditError.fakeError // For testing
-//                }
+                if edit.canBeAppliedUsingApplierModel {
+                    throw ApplyEditError.fakeError // For testing
+                }
                 _ = try edit.getBeforeAfter()
                 fixedFileEdits.append(edit)
             } catch {
                 if edit.canBeAppliedUsingApplierModel {
                     await context.log(.usingEditCleanupModel(edit.path))
+                    let comments = try EditParser.parse(string: response, toolContext: context).compactMap(\.ifString).joined(separator: "\n\n[Code Edit]\n\n")
                     let newFullFileContent = try await edit.applyUsingLLM(comments: comments)
                     fixedFileEdits.append(.init(path: edit.path, edits: [.write(path: edit.path, content: newFullFileContent)]))
                 } else {

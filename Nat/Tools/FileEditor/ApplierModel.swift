@@ -15,7 +15,6 @@ extension FileEdit {
     }
 
     func applyUsingLLM(comments: String) async throws -> String {
-        // TODO: Use comments
         let content = try String(contentsOf: path)
         let editDescriptions: [String] = edits.compactMap { edit -> String? in
             switch edit {
@@ -86,6 +85,8 @@ extension FileEdit {
                 return 'good afternoon'
         ```
         
+        # Your Task
+        
         Now, here is the file:
         [BEGIN FILE]
         \(content)
@@ -93,6 +94,11 @@ extension FileEdit {
         
         And here are the edits:
         \(editDescriptions.joined(separator: "\n"))
+        
+        Here is some additional context which may or may not be relevant:
+        [BEGIN CONTEXT]
+        \(comments)
+        [END CONTEXT]
         
         Now write your output within ``` fences, nothing else:
         """
