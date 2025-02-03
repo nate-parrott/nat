@@ -13,6 +13,9 @@ struct ChatTimelineView: View {
         VStack {
             if let itemId = hoveredItem ?? currentItem ?? items.last?.id, let item = items.first(where: { $0.id == itemId }) {
                 ChatTimelinePage(item: item)
+                    .id(itemId)
+                    .transition(.opacity)
+                    .animation(.niceDefault(duration: 0.12), value: currentItem)
             } else {
                 Color.clear
             }
@@ -84,10 +87,12 @@ private struct ChatTimelinePage: View {
                     VStack(alignment: .leading, spacing: 12) {
                         ForEach(item.messages) { msg in
                             MessageCell(model: msg, backdrop: false)
+                                .transition(.blurReplace)
                         }
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .animation(.bouncy, value: item.messages.count)
                 }
             }
         }
@@ -116,10 +121,12 @@ private struct FeatheredOverlayScrollView: View {
                     Spacer().frame(height: featherHeight)
                     ForEach(cells) { cell in
                         MessageCell(model: cell, backdrop: true, showCodeEditCards: false)
+                            .transition(.blurReplace)
                     }
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .animation(.bouncy, value: cells.count)
             }
             .mask {
                 LinearGradient(colors: [Color.white.opacity(0), Color.white], startPoint: .init(x: 0, y: 0), endPoint: .init(x: 0, y: featherHeight / scrollHeight))
