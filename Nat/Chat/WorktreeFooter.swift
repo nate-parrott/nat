@@ -18,21 +18,24 @@ struct WorktreeFooter: View {
             )
         }) { snapshot in
             if let worktreeFolder = snapshot.worktreeFolder {
-                VStack(spacing: 8) {
-                    Text("Making changes in a worktree on branch `\(snapshot.branch ?? "")`")
+                VStack(spacing: 4) {
+                    Text("Worktree `\(snapshot.branch ?? "")`")
+                        .font(.caption)
                         .foregroundColor(.white)
                     
                     HStack(spacing: 12) {
                         Button("Review and Merge") {
                             NSWorkspace.shared.open(worktreeFolder)
                         }
+                        .controlSize(.small)
                         
                         Button("View in Finder") {
                             NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: snapshot.folder?.path() ?? "")
                         }
+                        .controlSize(.small)
                     }
                 }
-                .padding(8)
+                .padding(6)
                 .frame(maxWidth: .infinity)
                 .background(Color.purple)
             }
