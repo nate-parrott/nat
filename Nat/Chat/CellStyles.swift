@@ -90,3 +90,38 @@ struct InsetCellModifier: ViewModifier {
     }
 }
 
+struct ClickableCellInteraction: ViewModifier {
+    var action: () -> Void
+    
+    func body(content: Content) -> some View {
+        Button(action: action) {
+            content
+        }
+        .buttonStyle(ClickableCellButtonStyle())
+    }
+}
+
+private struct ClickableCellButtonStyle: ButtonStyle {
+    @State private var hovered = false
+    
+    func makeBody(configuration: Configuration) -> some View {
+        let offset: CGFloat = configuration.isPressed ? 1 : (hovered ? -2 : 0)
+        
+        configuration.label
+            .onHover(perform: { self.hovered = $0 })
+            .background {
+                if !configuration.isPressed && hovered {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .foregroundStyle(Color.black)
+                        .reverseMask {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .offset(y: -max(0, -offset))
+                        }
+                        .opacity(0.1)
+                        .offset(y: max(0, -offset))
+                }
+            }
+            .offset(y: offset)
+            .animation(.spring(duration: 0.2, bounce: 0.5, blendDuration: 0.1), value: offset)
+    }
+}

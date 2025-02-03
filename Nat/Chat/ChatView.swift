@@ -9,6 +9,7 @@ struct ChatView: View {
     @State private var messageCellModels = [MessageCellModel]()
     @State private var debug = false
     @State private var height: CGFloat?
+    @StateObject private var detailCoord = DetailCoordinator()
 
     var body: some View {
         ZStack {
@@ -31,12 +32,16 @@ struct ChatView: View {
                     }
                 }
                 .overlay {
+                    DetailPresenter(cellModels: messageCellModels)
+                }
+                .overlay {
                     if status == .running {
                         ToolModalPresenter()
                     }
                 }
             }
         }
+        .environmentObject(detailCoord)
         .onReceive(document.store.publisher.map(\.thread.status).removeDuplicates(), perform: { self.status = $0 })
         .onReceive(document.store.publisher.map(\.thread.cellModels).removeDuplicates(), perform: { self.messageCellModels = $0 })
         .contextMenu {

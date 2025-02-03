@@ -1,5 +1,33 @@
 import SwiftUI
 
+class DetailCoordinator: ObservableObject {
+    @Published var clickedCellId: String?
+}
+
+struct DetailPresenter: View {
+    var cellModels: [MessageCellModel]
+    
+    @EnvironmentObject private var detail: DetailCoordinator
+    
+    var body: some View {
+        ZStack {
+            Color.black.opacity(detail.clickedCellId != nil ? 0.7 : 0)
+                .onTapGesture {
+                    detail.clickedCellId = nil
+                }
+            
+            if let clickedCellId = detail.clickedCellId, let cell = cellModels.first(where: { $0.id == clickedCellId }), let view = cell.detailView() {
+                view
+                    .background(.thickMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .transition(.opacity.combined(with: .scale(0.5)))
+                    .padding(50)
+            }
+        }
+        .animation(.niceDefault(duration: 0.3), value: detail.clickedCellId != nil)
+    }
+}
+
 extension MessageCellModel {
     func detailView() -> AnyView? {
         switch content {

@@ -4,6 +4,7 @@ import ChatToys
 
 struct MessageCell: View {
     var model: MessageCellModel
+    @EnvironmentObject private var detailCoord: DetailCoordinator
     
     var body: some View {
         switch model.content {
@@ -27,6 +28,9 @@ struct MessageCell: View {
                     if case .terminal = logs[0] {
                         LogView(log: logs[0])
                             .modifier(TerminalCellModifier())
+                            .modifier(ClickableCellInteraction {
+                                detailCoord.clickedCellId = model.id
+                            })
                     } else {
                         LogView(log: logs[0])
                     }
@@ -35,6 +39,9 @@ struct MessageCell: View {
             }
         case .codeEdit(let edit):
             CodeEditInlineView(edit: edit, msgId: model.id) // has cell BG already
+                .modifier(ClickableCellInteraction {
+                    detailCoord.clickedCellId = model.id
+                })
                 .frame(maxWidth: .infinity, alignment: .leading)
         case .error(let string):
             Text("\(string)")
