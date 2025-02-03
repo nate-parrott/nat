@@ -4,22 +4,26 @@ struct WorktreeFooter: View {
     @Environment(\.document) private var document
     
     private struct WorktreeFooterSnapshot: Equatable {
-        let worktreeFolder: URL?
+        let origFolder: URL?
         let branch: String?
         let folder: URL?
+        
+        var isWorktree: Bool {
+            origFolder != nil && branch != nil && folder != nil
+        }
     }
     
     var body: some View {
         WithSnapshotMain(store: document.store, snapshot: { 
             WorktreeFooterSnapshot(
-                worktreeFolder: $0.isWorktreeFromOriginalFolder,
+                origFolder: $0.isWorktreeFromOriginalFolder,
                 branch: $0.worktreeBranch,
                 folder: $0.folder
             )
         }) { snapshot in
-            if let worktreeFolder = snapshot.worktreeFolder {
+            if snapshot.isWorktree, let branch = snapshot.branch {
                 HStack(spacing: 12) {
-                    Text("Worktree `\(snapshot.branch ?? "")`")
+                    Text("Worktree `\(branch)`")
                         .font(.caption)
                         .foregroundColor(.white)
                     
@@ -39,6 +43,7 @@ struct WorktreeFooter: View {
                 .padding(6)
                 .frame(maxWidth: .infinity)
                 .background(Color.purple)
+                .background(.thinMaterial)
             }
         }
     }
