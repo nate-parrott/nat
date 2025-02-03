@@ -26,11 +26,11 @@ enum DocumentMode: String, Equatable, Codable, CaseIterable {
     var sfSymbolName: String {
         switch self {
         case .agent:
-            return "person.2.circle"
+            return "bubble"
         case .codeSearch:
             return "magnifyingglass"
         case .docs:
-            return "doc.text"
+            return "questionmark.app"
         }
     }
 }

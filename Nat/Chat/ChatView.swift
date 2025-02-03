@@ -17,14 +17,14 @@ struct ChatView: View {
                 DebugThreadView()
             } else {
                 VStack(spacing: 0) {
-//                    ScrollToBottomThreadView(data: messageCellModels) { message in
-//                        MessageCell(model: message)
-//                            .frame(maxWidth: 800, alignment: .leading)
-//                    }
-//                    .overlay(alignment: .bottomTrailing) {
-//                        TerminalThumbnail()
-//                    }
-                    ChatTimelineView(items: timelineItems)
+                    ScrollToBottomThreadView(data: messageCellModels) { message in
+                        MessageCell(model: message)
+                            .frame(maxWidth: 800, alignment: .leading)
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        TerminalThumbnail()
+                    }
+//                    ChatTimelineView(items: timelineItems)
                     .overlay {
                         ChatEmptyState()
                     }
@@ -35,11 +35,11 @@ struct ChatView: View {
                         Shimmer()
                     }
                 }
-//                .overlay {
-//                    if status == .running {
-//                        ToolModalPresenter()
-//                    }
-//                }
+                .overlay {
+                    if status == .running {
+                        ToolModalPresenter()
+                    }
+                }
             }
         }
         .onReceive(document.store.publisher.map(\.thread.status).removeDuplicates(), perform: { self.status = $0 })
@@ -139,15 +139,18 @@ private struct ScrollToBottomThreadView<Data: RandomAccessCollection, Content: V
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: spacing) {
+                VStack(spacing: spacing) {
                     ForEach(data) { item in
                         content(item)
+                            .transition(.blurReplace)
+
                     }
                 }
                 .padding()
                 .padding(.bottom, 400)
-                .frame(maxWidth: 700)
+                .frame(maxWidth: 800)
                 .frame(maxWidth: .infinity)
+                .animation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0.1), value: data.count)
             }
             .onChange(of: data.count) { oldCount, newCount in
                 withAnimation {
