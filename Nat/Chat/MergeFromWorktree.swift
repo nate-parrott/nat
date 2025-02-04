@@ -56,8 +56,34 @@ struct MergeFromWorktree: View {
         }
     }
     
+    @MainActor func commit() async {
+        let addProcess = Process()
+        addProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        addProcess.arguments = ["add", "."]
+        addProcess.currentDirectoryURL = worktreeDir
+        
+        do {
+            try addProcess.run()
+            addProcess.waitUntilExit()
+            
+            if addProcess.terminationStatus == 0 {
+                let commitProcess = Process()
+                commitProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+                commitProcess.arguments = ["commit", "-m", "Auto commit pending changes"]
+                commitProcess.currentDirectoryURL = worktreeDir
+                
+                try commitProcess.run()
+                commitProcess.waitUntilExit()
+            }
+        } catch {
+            errorMessage = "Failed to commit changes: \(error.localizedDescription)"
+        }
+    }
+    
     @MainActor
     private func loadDiff() async {
+        await commit()
+        
         let pipe = Pipe()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
@@ -105,18 +131,7 @@ struct MergeFromWorktree: View {
             if mergeProcess.terminationStatus == 0 {
                 // Success - send feedback if any
                 if !feedback.isEmpty {
-                    Task {
-                        let tools: [Tool] = [
-                            FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(),
-                            TerminalTool(), WebResearchTool(), DeleteFileTool(), GrepTool()
-                        ]
-                        await document.send(message: .init(role: .user, content: [.text(feedback)]), 
-                                         llm: try LLMs.smartAgentModel(), 
-                                         document: document,
-                                         tools: tools, 
-                                         folderURL: origBaseDir,
-                                         maxIterations: 1)
-                    }
+                    // TODO: Send FB
                 }
                 dismiss()
             } else {

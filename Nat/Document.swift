@@ -1,3 +1,4 @@
+
 //
 //  Document.swift
 //  Nat
@@ -61,6 +62,16 @@ extension DocumentState {
         }
         return nil
     }
+    
+    var nFileSnippetsInInitialResponses: Int {
+        thread.steps.filter { step in
+            guard let firstLoop = step.toolUseLoop.first else { return false }
+            return firstLoop.initialResponse.content.contains(where: { item in
+                if case .fileSnippet = item { return true }
+                return false
+            })
+        }.count
+    }
 }
 
 class DocDataStore: DataStore<DocumentState> {
@@ -76,6 +87,13 @@ class Document: NSDocument {
     override init() {
         super.init()
         // Add your subclass-specific initialization here.
+        
+        // Track down this pesky bug where file snippets end up in the initial response agent message (as if they came from the agent):
+        store.addChangeHook { oldState, newState in
+            if newState.nFileSnippetsInInitialResponses > oldState.nFileSnippetsInInitialResponses {
+                Swift.print("oops! found file snippet in initial response")
+            }
+        }
     }
     
     override func defaultDraftName() -> String {
@@ -117,4 +135,3 @@ class Document: NSDocument {
         return terminal!
     }
 }
-
