@@ -30,7 +30,12 @@ struct BasicContextTool: Tool {
     func contextToInsertAtBeginningOfThread(context: ToolContext) async throws -> String? {
         var lines = [String]()
         if context.document?.store.model.worktreeBranch != nil, context.document?.store.model.autorun ?? false {
-            lines.append("!!! You are in a self-contained worktree in Autopilot mode! Your job is to complete the user's task (or get as far as you can) and present them with code they can merge. Don't ask questions or ask for help unless COMPLETELY STUCK! If you think you are done, try building or running relevant tests to confirm.")
+            lines.append("""
+            !!! You are in a self-contained worktree in Autopilot mode! Your job is to complete the user's task (or get as far as you can) and present them with code they can merge. Don't ask questions or ask for help unless COMPLETELY STUCK!
+            When you think you are done, you should first:
+            - try building or running relevant tests to confirm
+            - run `git --no-pager diff` to see what you've written and find a way to improve it
+            """)
         }
         if let notes {
             lines.append("[USER'S NOTES ABOUT THIS REPO]\n\(notes)\n[END NOTES]")

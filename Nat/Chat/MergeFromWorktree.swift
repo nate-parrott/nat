@@ -8,7 +8,7 @@ private struct GitHelper {
         let message: String
     }
     
-    @discardableResult static func runGit(args: [String], dir: URL) throws -> String? {
+    @discardableResult static func runGit(args: [String], dir: URL, throwIfStatusNonzero: Bool) throws -> String? {
         let pipe = Pipe()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
@@ -20,15 +20,17 @@ private struct GitHelper {
         let data = try pipe.fileHandleForReading.readToEnd()
         process.waitUntilExit()
         
-        guard process.terminationStatus == 0 else {
-            throw GitError(message: "Git command failed")
+        if throwIfStatusNonzero {
+            guard process.terminationStatus == 0 else {
+                throw GitError(message: "Git command failed: git \(args.joined(separator: " "))")
+            }
         }
         
         return data.flatMap { String(data: $0, encoding: .utf8) }
     }
     
     static func getBaseHeadCommit(baseDir: URL) throws -> String {
-        guard let output = try runGit(args: ["rev-parse", "HEAD"], dir: baseDir)?
+        guard let output = try runGit(args: ["rev-parse", "HEAD"], dir: baseDir, throwIfStatusNonzero: true)?
             .trimmingCharacters(in: .whitespacesAndNewlines) else {
             throw GitError(message: "Could not get HEAD commit")
         }
@@ -36,13 +38,13 @@ private struct GitHelper {
     }
     
     static func commit(dir: URL, message: String) throws {
-        try runGit(args: ["add", "."], dir: dir)
-        try runGit(args: ["commit", "-m", message], dir: dir)
+        try runGit(args: ["add", "."], dir: dir, throwIfStatusNonzero: true)
+        try runGit(args: ["commit", "-m", message], dir: dir, throwIfStatusNonzero: false) // will be nonzero if nothing to commit
     }
     
     static func hasUncommittedChanges(dir: URL) throws -> Bool {
         do {
-            try runGit(args: ["diff", "--quiet"], dir: dir)
+            try runGit(args: ["diff", "--quiet"], dir: dir, throwIfStatusNonzero: true)
             return false
         } catch {
             return true
@@ -50,45 +52,46 @@ private struct GitHelper {
     }
     
     static func merge(dir: URL) throws {
-        try runGit(args: ["merge", "--no-pager", "--ff-only", "HEAD"], dir: dir)
+        try runGit(args: ["merge", "--no-pager", "--ff-only", "HEAD"], dir: dir, throwIfStatusNonzero: true)
     }
 }
 
-struct MergeFromWorktree: View {
+struct MergeFromWorktreeView: View {
     @Environment(\.document) private var document
     @Environment(\.dismiss) private var dismiss
     @State private var feedback = ""
     @State private var diffText = ""
-    @State private var errorMessage: String?
+    @State private var errorMessage: String? = "Test error oeirh oerh ore ugebr ugbheui fbheu re u"
     @FocusState private var isFeedbackFocused: Bool
     
+    let branch: String
     let origBaseDir: URL
     let worktreeDir: URL
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
             Text("Review Changes")
                 .font(.headline)
+                .padding(8)
+            
+            Divider()
             
             ScrollView {
-                DiffView(diff: Diff.from(before: [], 
-                                       after: diffText.components(separatedBy: "\n"), 
-                                       collapseSames: true))
-                    .lineLimit(nil)
-                    .font(.system(.body, design: .monospaced))
-            }
-            .frame(height: 300)
-            
-            if let error = errorMessage {
-                Text(error)
-                    .foregroundStyle(.red)
-                    .font(.callout)
+                VStack(alignment: .leading, spacing: 0) {
+                    DiffView(diff: Diff.from(before: [],
+                                           after: diffText.components(separatedBy: "\n"),
+                                           collapseSames: true))
+                        .lineLimit(nil)
+                        .font(.system(.body, design: .monospaced))
+                }
             }
             
-            TextField("Optional feedback for model...", text: $feedback, axis: .vertical)
-                .lineLimit(3)
-                .focused($isFeedbackFocused)
-                .textFieldStyle(.roundedBorder)
+            Divider()
+                        
+//            TextField("Optional feedback for model...", text: $feedback, axis: .vertical)
+//                .lineLimit(3)
+//                .focused($isFeedbackFocused)
+//                .textFieldStyle(.roundedBorder)
             
             HStack {
                 Button("Cancel", role: .cancel) {
@@ -99,6 +102,24 @@ struct MergeFromWorktree: View {
                     tryMerge()
                 }
                 .keyboardShortcut(.return, modifiers: .command)
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            
+            Text(markdown: "Run `git merge \(branch)` to merge manually")
+                .textSelection(.enabled)
+                .padding(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.primary.opacity(0.1))
+            
+            if let error = errorMessage {
+                Text(error)
+                    .foregroundStyle(.white)
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.red)
+                    .multilineTextAlignment(.leading)
+                    .font(.callout)
             }
         }
         .padding()
@@ -119,10 +140,12 @@ struct MergeFromWorktree: View {
             let baseHead = try GitHelper.getBaseHeadCommit(baseDir: origBaseDir)
             
             // Diff against base HEAD
-            if let diff = try GitHelper.runGit(args: ["diff", "--no-pager", baseHead], dir: worktreeDir) {
+            // git --no-pager diff 353a1c3b5d22fd01b0ae5209d4ffb1149f17359d...HEAD
+            if let diff = try GitHelper.runGit(args: ["--no-pager", "diff", baseHead + "...HEAD"], dir: worktreeDir, throwIfStatusNonzero: true) {
                 diffText = diff
             }
         } catch {
+            print("Failed to get diff: \(error)")
             errorMessage = "Failed to get diff: \(error.localizedDescription)"
         }
     }

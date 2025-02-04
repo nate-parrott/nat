@@ -30,27 +30,28 @@ struct WorktreeFooter: View {
                     
                     Spacer()
                     
-                    Button("Reveal") {
-                        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: snapshot.folder?.path() ?? "")
-                    }
-                    .controlSize(.small)
-
-                    
-                    Button("Review & Merge") {
-                        showingMergeSheet = true
-                    }
-                    .controlSize(.small)
-                    .sheet(isPresented: $showingMergeSheet) {
-                        if let origFolder = snapshot.origFolder {
-                            MergeFromWorktree(origBaseDir: origFolder, 
-                                            worktreeDir: snapshot.folder!)
+                    HStack {
+                        Button("Reveal") {
+                            NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: snapshot.folder?.path() ?? "")
+                        }
+                        
+                        Button("Review & Merge") {
+                            showingMergeSheet = true
                         }
                     }
+                    .controlSize(.small)
+                    .colorScheme(.dark)
                 }
                 .padding(6)
                 .frame(maxWidth: .infinity)
                 .background(Color.purple)
                 .background(.thinMaterial)
+                .sheet(isPresented: $showingMergeSheet) {
+                    if let origFolder = snapshot.origFolder, let worktree = snapshot.folder, let branch = snapshot.branch {
+                        MergeFromWorktreeView(branch: branch, origBaseDir: origFolder,
+                                        worktreeDir: worktree)
+                    }
+                }
             }
         }
     }
