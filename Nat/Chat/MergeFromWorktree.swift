@@ -43,12 +43,8 @@ private struct GitHelper {
     }
     
     static func hasUncommittedChanges(dir: URL) throws -> Bool {
-        do {
-            try runGit(args: ["diff", "--quiet"], dir: dir, throwIfStatusNonzero: true)
-            return false
-        } catch {
-            return true
-        }
+        let changes = try runGit(args: ["diff", "--quiet"], dir: dir, throwIfStatusNonzero: false)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return changes != ""
     }
     
     static func merge(dir: URL) throws {
@@ -61,7 +57,7 @@ struct MergeFromWorktreeView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var feedback = ""
     @State private var diffText = ""
-    @State private var errorMessage: String? = "Test error oeirh oerh ore ugebr ugbheui fbheu re u"
+    @State private var errorMessage: String?
     @FocusState private var isFeedbackFocused: Bool
     
     let branch: String
@@ -70,17 +66,22 @@ struct MergeFromWorktreeView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Review Changes")
-                .font(.headline)
-                .padding(8)
+            HStack {
+                Text("Merge")
+                    .font(.headline)
+                Spacer()
+                Text(markdown: "Run `git merge \(branch)` to merge manually")
+                    .textSelection(.enabled)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(12)
             
             Divider()
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    DiffView(diff: Diff.from(before: [],
-                                           after: diffText.components(separatedBy: "\n"),
-                                           collapseSames: true))
+                    DiffView(diff: Diff.fromGitOutput(diffText))
                         .lineLimit(nil)
                         .font(.system(.body, design: .monospaced))
                 }
@@ -103,27 +104,20 @@ struct MergeFromWorktreeView: View {
                 }
                 .keyboardShortcut(.return, modifiers: .command)
             }
-            .padding(8)
+            .padding(12)
             .frame(maxWidth: .infinity, alignment: .trailing)
-            
-            Text(markdown: "Run `git merge \(branch)` to merge manually")
-                .textSelection(.enabled)
-                .padding(8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.primary.opacity(0.1))
-            
+                        
             if let error = errorMessage {
                 Text(error)
                     .foregroundStyle(.white)
-                    .padding(8)
+                    .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.red)
                     .multilineTextAlignment(.leading)
                     .font(.callout)
             }
         }
-        .padding()
-        .frame(width: 600)
+        .frame(width: 800)
         .task {
             await loadDiff()
             isFeedbackFocused = true
@@ -170,5 +164,25 @@ struct MergeFromWorktreeView: View {
         } catch {
             errorMessage = "Failed to merge: \(error.localizedDescription)"
         }
+    }
+}
+
+extension Diff {
+    static func fromGitOutput(_ output: String) -> Diff {
+        // Parse git diff format, converting +/- prefixed lines to insert/delete cases
+        var lines: [Line] = []
+        for line in output.components(separatedBy: .newlines) {
+            if line.hasPrefix("+") && !line.hasPrefix("+++") {
+                // Added line (ignore +++ which indicates file name)
+                lines.append(.insert(String(line.dropFirst())))
+            } else if line.hasPrefix("-") && !line.hasPrefix("---") {
+                // Removed line (ignore --- which indicates file name)
+                lines.append(.delete(String(line.dropFirst())))
+            } else {
+                // Same or context line (including file headers etc)
+                lines.append(.same(line))
+            }
+        }
+        return Diff(lines: lines)
     }
 }
