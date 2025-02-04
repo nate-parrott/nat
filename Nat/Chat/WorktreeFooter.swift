@@ -2,6 +2,7 @@ import SwiftUI
 
 struct WorktreeFooter: View {
     @Environment(\.document) private var document
+    @State private var showingMergeSheet = false
     
     private struct WorktreeFooterSnapshot: Equatable {
         let origFolder: URL?
@@ -36,9 +37,15 @@ struct WorktreeFooter: View {
 
                     
                     Button("Review & Merge") {
-                        // TODO
+                        showingMergeSheet = true
                     }
                     .controlSize(.small)
+                    .sheet(isPresented: $showingMergeSheet) {
+                        if let origFolder = snapshot.origFolder {
+                            MergeFromWorktree(origBaseDir: origFolder, 
+                                            worktreeDir: snapshot.folder!)
+                        }
+                    }
                 }
                 .padding(6)
                 .frame(maxWidth: .infinity)
