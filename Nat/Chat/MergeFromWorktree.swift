@@ -1,5 +1,59 @@
 import SwiftUI
 
+// Helper for git operations
+private struct GitHelper {
+    let execPath = "/usr/bin/git"
+    
+    struct GitError: Error {
+        let message: String
+    }
+    
+    @discardableResult static func runGit(args: [String], dir: URL) throws -> String? {
+        let pipe = Pipe()
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = args
+        process.currentDirectoryURL = dir
+        process.standardOutput = pipe
+        
+        try process.run()
+        let data = try pipe.fileHandleForReading.readToEnd()
+        process.waitUntilExit()
+        
+        guard process.terminationStatus == 0 else {
+            throw GitError(message: "Git command failed")
+        }
+        
+        return data.flatMap { String(data: $0, encoding: .utf8) }
+    }
+    
+    static func getBaseHeadCommit(baseDir: URL) throws -> String {
+        guard let output = try runGit(args: ["rev-parse", "HEAD"], dir: baseDir)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) else {
+            throw GitError(message: "Could not get HEAD commit")
+        }
+        return output
+    }
+    
+    static func commit(dir: URL, message: String) throws {
+        try runGit(args: ["add", "."], dir: dir)
+        try runGit(args: ["commit", "-m", message], dir: dir)
+    }
+    
+    static func hasUncommittedChanges(dir: URL) throws -> Bool {
+        do {
+            try runGit(args: ["diff", "--quiet"], dir: dir)
+            return false
+        } catch {
+            return true
+        }
+    }
+    
+    static func merge(dir: URL) throws {
+        try runGit(args: ["merge", "--no-pager", "--ff-only", "HEAD"], dir: dir)
+    }
+}
+
 struct MergeFromWorktree: View {
     @Environment(\.document) private var document
     @Environment(\.dismiss) private var dismiss
@@ -50,93 +104,46 @@ struct MergeFromWorktree: View {
         .padding()
         .frame(width: 600)
         .task {
-            // Get initial diff on appear
             await loadDiff()
             isFeedbackFocused = true
         }
     }
     
-    @MainActor func commit() async {
-        let addProcess = Process()
-        addProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        addProcess.arguments = ["add", "."]
-        addProcess.currentDirectoryURL = worktreeDir
-        
-        do {
-            try addProcess.run()
-            addProcess.waitUntilExit()
-            
-            if addProcess.terminationStatus == 0 {
-                let commitProcess = Process()
-                commitProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-                commitProcess.arguments = ["commit", "-m", "Auto commit pending changes"]
-                commitProcess.currentDirectoryURL = worktreeDir
-                
-                try commitProcess.run()
-                commitProcess.waitUntilExit()
-            }
-        } catch {
-            errorMessage = "Failed to commit changes: \(error.localizedDescription)"
-        }
-    }
-    
     @MainActor
     private func loadDiff() async {
-        await commit()
-        
-        let pipe = Pipe()
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        process.arguments = ["diff", "--no-pager", "HEAD"]
-        process.currentDirectoryURL = worktreeDir
-        process.standardOutput = pipe
-        
         do {
-            try process.run()
-            if let data = try pipe.fileHandleForReading.readToEnd(),
-               let output = String(data: data, encoding: .utf8) {
-                diffText = output
+            // First commit any pending changes
+            try GitHelper.commit(dir: worktreeDir, message: "Auto commit pending changes")
+            
+            // Get base HEAD commit
+            let baseHead = try GitHelper.getBaseHeadCommit(baseDir: origBaseDir)
+            
+            // Diff against base HEAD
+            if let diff = try GitHelper.runGit(args: ["diff", "--no-pager", baseHead], dir: worktreeDir) {
+                diffText = diff
             }
-            process.waitUntilExit()
         } catch {
             errorMessage = "Failed to get diff: \(error.localizedDescription)"
         }
     }
     
     private func tryMerge() {
-        // First check if there are uncommitted changes in main repo
-        let checkProcess = Process()
-        checkProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        checkProcess.arguments = ["diff", "--quiet"]
-        checkProcess.currentDirectoryURL = origBaseDir
-        
         do {
-            try checkProcess.run()
-            checkProcess.waitUntilExit()
-            
-            if checkProcess.terminationStatus != 0 {
+            // Check for uncommitted changes
+            if try GitHelper.hasUncommittedChanges(dir: origBaseDir) {
                 errorMessage = "Cannot merge: Original repository has uncommitted changes"
                 return
             }
             
-            // Now try the actual merge
-            let mergeProcess = Process()
-            mergeProcess.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-            mergeProcess.arguments = ["merge", "--no-pager", "--ff-only", "HEAD"]
-            mergeProcess.currentDirectoryURL = origBaseDir
+            // Try merge
+            try GitHelper.merge(dir: origBaseDir)
             
-            try mergeProcess.run()
-            mergeProcess.waitUntilExit()
-            
-            if mergeProcess.terminationStatus == 0 {
-                // Success - send feedback if any
-                if !feedback.isEmpty {
-                    // TODO: Send FB
-                }
-                dismiss()
-            } else {
-                errorMessage = "Merge failed. Ensure you have no conflicts."
+            // Success - send feedback if any
+            if !feedback.isEmpty {
+                // TODO: Send FB
             }
+            dismiss()
+            
         } catch {
             errorMessage = "Failed to merge: \(error.localizedDescription)"
         }
