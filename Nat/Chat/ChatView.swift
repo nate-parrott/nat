@@ -92,39 +92,7 @@ struct ChatView: View {
     
     @MainActor
     private func sendMessage(text: String, attachments: [ContextItem]) async {
-        if wantsWorktree, document.store.model.thread.steps.isEmpty {
-            if !(await document.enterWorktreeModeOrShowError(initialPrompt: text)) {
-                return
-            }
-        }
-        
-        let msg = TaggedLLMMessage(role: .user, content: [.text(text)] + attachments)
-        let folderURL = document.store.model.folder
-        let curFile = document.store.model.selectedFileInEditorRelativeToFolder
-
-        document.stop()
- 
-
-        document.currentAgentTask = Task {
-            guard let llm = try? LLMs.smartAgentModel() else {
-                await Alerts.showAppAlert(title: "No API Key", message: "Add your API key in Nat → Settings")
-                return
-            }
-            do {
-                let tools: [Tool] = [
-                    FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(),
-                    TerminalTool(), WebResearchTool(), DeleteFileTool(), GrepTool(),
-                    BasicContextTool(document: document, currentFilenameFromXcode: curFile),
-                ]
-                try await document.send(message: msg, llm: llm, document: document, tools: tools, folderURL: folderURL, maxIterations: document.store.model.maxIterations)
-            } catch {
-                if Task.isCancelled { return }
-                // Do nothing (We already handle it)
-            }
-            if !Task.isCancelled {
-                document.currentAgentTask = nil
-            }
-        }
+        await document.send(text: text, attachments: attachments)
     }
     
     private func stopAgent() {

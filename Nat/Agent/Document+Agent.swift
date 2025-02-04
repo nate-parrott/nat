@@ -46,4 +46,40 @@ extension Document {
             state.thread.cancelCount += 1
         }
     }
+    
+    /// Sends a message to the agent and handles the response
+    func send(text: String, attachments: [ContextItem]) async {
+        if store.model.thread.steps.isEmpty, store.model.folder != nil {
+            if !(await enterWorktreeModeOrShowError(initialPrompt: text)) {
+                return
+            }
+        }
+        
+        let msg = TaggedLLMMessage(role: .user, content: [.text(text)] + attachments)
+        let folderURL = store.model.folder
+        let curFile = store.model.selectedFileInEditorRelativeToFolder
+
+        stop()
+ 
+        currentAgentTask = Task {
+            guard let llm = try? LLMs.smartAgentModel() else {
+                await Alerts.showAppAlert(title: "No API Key", message: "Add your API key in Nat → Settings")
+                return
+            }
+            do {
+                let tools: [Tool] = [
+                    FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(),
+                    TerminalTool(), WebResearchTool(), DeleteFileTool(), GrepTool(),
+                    BasicContextTool(document: self, currentFilenameFromXcode: curFile),
+                ]
+                try await send(message: msg, llm: llm, document: self, tools: tools, folderURL: folderURL, maxIterations: store.model.maxIterations)
+            } catch {
+                if Task.isCancelled { return }
+                // Do nothing (We already handle it)
+            }
+            if !Task.isCancelled {
+                currentAgentTask = nil
+            }
+        }
+    }
 }
