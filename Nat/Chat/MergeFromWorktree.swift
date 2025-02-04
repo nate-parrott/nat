@@ -43,12 +43,12 @@ private struct GitHelper {
     }
     
     static func hasUncommittedChanges(dir: URL) throws -> Bool {
-        let changes = try runGit(args: ["diff", "--quiet"], dir: dir, throwIfStatusNonzero: false)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let changes = (try runGit(args: ["diff", "--quiet"], dir: dir, throwIfStatusNonzero: false)?.trimmingCharacters(in: .whitespacesAndNewlines)) ?? ""
         return changes != ""
     }
     
-    static func merge(dir: URL) throws {
-        try runGit(args: ["merge", "--no-pager", "--ff-only", "HEAD"], dir: dir, throwIfStatusNonzero: true)
+    static func merge(dir: URL, branch: String) throws {
+        try runGit(args: ["merge", "--no-pager", "--ff-only", branch], dir: dir, throwIfStatusNonzero: true)
     }
 }
 
@@ -153,7 +153,7 @@ struct MergeFromWorktreeView: View {
             }
             
             // Try merge
-            try GitHelper.merge(dir: origBaseDir)
+            try GitHelper.merge(dir: origBaseDir, branch: branch)
             
             // Success - send feedback if any
             if !feedback.isEmpty {
