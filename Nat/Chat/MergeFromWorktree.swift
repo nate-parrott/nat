@@ -117,7 +117,7 @@ struct MergeFromWorktreeView: View {
                     .font(.callout)
             }
         }
-        .frame(width: 800)
+        .frame(width: 800, height: 700)
         .task {
             await loadDiff()
             isFeedbackFocused = true
