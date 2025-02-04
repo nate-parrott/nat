@@ -48,7 +48,7 @@ private struct GitHelper {
     }
     
     static func merge(dir: URL, branch: String) throws {
-        try runGit(args: ["merge", "--no-pager", "--ff-only", branch], dir: dir, throwIfStatusNonzero: true)
+        try runGit(args: ["merge", "--ff-only", branch], dir: dir, throwIfStatusNonzero: true)
     }
 }
 
