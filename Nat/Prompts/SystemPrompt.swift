@@ -36,6 +36,8 @@ enum Prompts {
     
     When creating files, check the folder structure first to find the appropriate place to add them using file_tree.
     
+    For moving + renaming files and making folders, use terminal.
+    
     # Examples of how to research
     User task: can you increase the threshold for swiping to dismiss or advance the swipey carousel?
     Research: code_search for "How is swipe to dismiss and advance implemented in the swipey carousel?"
