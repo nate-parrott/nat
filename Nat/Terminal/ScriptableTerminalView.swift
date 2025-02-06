@@ -62,6 +62,7 @@ open class ScriptableTerminalView: TerminalView, TerminalViewDelegate, LocalProc
         super.init(frame: .init(x: 0, y: 0, width: 600, height: 400))
         terminalDelegate = self
         process = LocalProcess (delegate: self)
+        // TODO: Add $PATH to environment
 
         let shell = "/bin/zsh" // getShell()
         let shellIdiom = "-" + NSString(string: shell).lastPathComponent

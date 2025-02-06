@@ -70,6 +70,9 @@ struct TerminalTool: Tool {
 
         do {
             let output = try await runCommand(command, in: activeDirectory, document: document)
+            print("<💻 TERMINAL OUTPUT command='\(command)'>")
+            print(output)
+            print("</TERMINAL OUTPUT>")
             return call.response(text: output.truncateHeadWithEllipsis(chars: 3000))
         } catch {
             return call.response(text: "Error running command: \(error)")

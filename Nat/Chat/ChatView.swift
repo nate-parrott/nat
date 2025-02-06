@@ -50,6 +50,8 @@ struct ChatView: View {
                 .overlay {
                     if canShowSplitDetail, !messageCellModels.isEmpty {
                         SideDetailPresenter(cellModels: messageCellModels)
+                            .padding([.horizontal, .top])
+                            .padding(.bottom, 60)
                             .frame(width: splitPaneWidth)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     } else {
@@ -82,16 +84,18 @@ struct ChatView: View {
     }
 
     private func clear() {
-        document.stop()
-        document.store.modify { state in
-            state.thread = .init(cancelCount: state.thread.cancelCount + 1)
-            state.terminalVisible = false
-        }
-        document.terminal = nil
+        document.clear()
     }
     
     @MainActor
     private func sendMessage(text: String, attachments: [ContextItem]) async {
+        // If empty thread and worktree enabled, activate worktree
+        if wantsWorktree, document.store.model.thread.steps.isEmpty, document.store.model.folder != nil {
+            if !(await document.enterWorktreeModeOrShowError(initialPrompt: text)) {
+                return
+            }
+            wantsWorktree = false
+        }
         await document.send(text: text, attachments: attachments)
     }
     

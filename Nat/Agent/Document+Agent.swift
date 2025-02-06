@@ -47,14 +47,18 @@ extension Document {
         }
     }
     
+    func clear() {
+        // TODO: Make sure this works when paused
+        stop()
+        store.modify { state in
+            state.thread = .init(cancelCount: state.thread.cancelCount + 1)
+            state.terminalVisible = false
+        }
+        terminal = nil
+    }
+    
     /// Sends a message to the agent and handles the response
     func send(text: String, attachments: [ContextItem]) async {
-        if store.model.thread.steps.isEmpty, store.model.folder != nil {
-            if !(await enterWorktreeModeOrShowError(initialPrompt: text)) {
-                return
-            }
-        }
-        
         let msg = TaggedLLMMessage(role: .user, content: [.text(text)] + attachments)
         let folderURL = store.model.folder
         let curFile = store.model.selectedFileInEditorRelativeToFolder

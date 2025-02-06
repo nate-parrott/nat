@@ -25,8 +25,6 @@ struct SideDetailPresenter: View {
                 shape.fill(Color.secondary).opacity(0.1)
             }
         }
-        .padding(40)
-        .padding(.bottom, 60)
     }
 }
 
@@ -146,6 +144,7 @@ struct ScrollableCodeView<C: View>: View {
                 Spacer().frame(height: (height ?? 200 - 100))
             }
             .fixedSize()
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .font(.system(size: 13, weight: .regular, design: .monospaced))
             .lineSpacing(4)
             .multilineTextAlignment(.leading)
