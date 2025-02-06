@@ -11,11 +11,9 @@ struct ChatView: View {
     @State private var size: CGSize?
     @StateObject private var detailCoord = DetailCoordinator()
     @State private var wantsWorktree = false
-
+    
     var body: some View {
-        let canShowSplitDetail = (size?.width ?? 100) >= 850
-        let splitPaneWidth = (size?.width ?? 100) * 0.5
-        ZStack {
+        VStack(spacing: 0) {
             if debug {
                 DebugThreadView()
             } else {
@@ -35,12 +33,12 @@ struct ChatView: View {
                     .overlay {
                         ChatEmptyState(wantsWorktree: $wantsWorktree)
                     }
+                    
                     ChatInput(maxHeight: inputMaxHeight, send: { text, attachments in
                         Task {
                             await self.sendMessage(text: text, attachments: attachments)
                         }
                     }, onStop: stopAgent)
-                    WorktreeFooter()
                 }
                 .overlay(alignment: .bottom) {
                     if status == .running {
@@ -49,15 +47,7 @@ struct ChatView: View {
                     }
                 }
                 .overlay {
-                    if canShowSplitDetail, !messageCellModels.isEmpty {
-                        SideDetailPresenter(cellModels: messageCellModels)
-                            .padding([.horizontal, .top])
-                            .padding(.bottom, 60)
-                            .frame(width: splitPaneWidth)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                    } else {
-                        ModalDetailPresenter(cellModels: messageCellModels)
-                    }
+                    detailOverlay
                 }
                 .overlay {
                     if status == .running {
@@ -65,6 +55,8 @@ struct ChatView: View {
                     }
                 }
             }
+
+            WorktreeFooter()
         }
         .environmentObject(detailCoord)
         .onReceive(document.store.publisher.map(\.thread.status).removeDuplicates(), perform: { self.status = $0 })
@@ -78,6 +70,26 @@ struct ChatView: View {
             }
         }
         .measureSize { self.size = $0 }
+    }
+    
+    @ViewBuilder private var detailOverlay: some View {
+        if canShowSplitDetail, !messageCellModels.isEmpty {
+            SideDetailPresenter(cellModels: messageCellModels)
+                .padding([.horizontal, .top])
+                .padding(.bottom, 60)
+                .frame(width: splitPaneWidth)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        } else {
+            ModalDetailPresenter(cellModels: messageCellModels)
+        }
+    }
+    
+    private var canShowSplitDetail: Bool {
+        (size?.width ?? 100) >= 850
+    }
+    
+    private var splitPaneWidth: CGFloat {
+        (size?.width ?? 100) * 0.5
     }
 
     private var inputMaxHeight: CGFloat? {
