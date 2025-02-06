@@ -13,16 +13,10 @@ enum LLMs {
     }
 
     static func quickModel() throws -> ChatGPT {
-//        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("google/gemini-flash-1.5", 1_000_000), baseURL: .openRouterOpenAIChatEndpoint))
-
         try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("openai/gpt-4o-mini", 1_000_000), baseURL: .openRouterOpenAIChatEndpoint))
-
-//        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("meta-llama/llama-3.3-70b-instruct", 1_000_000), baseURL: .openRouterOpenAIChatEndpoint))
     }
 
     static func applierModel() throws -> ChatGPT {
-//        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 0, model: .custom("amazon/nova-micro-v1", 128_000), baseURL: .openRouterOpenAIChatEndpoint))
-//        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 0, model: .custom("mistralai/mistral-small-24b-instruct-2501", 32_000), baseURL: .openRouterOpenAIChatEndpoint))
         try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 0, model: .custom("openai/gpt-4o-mini", 1_000_000), baseURL: .openRouterOpenAIChatEndpoint))
     }
 

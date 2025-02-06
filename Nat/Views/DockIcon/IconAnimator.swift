@@ -8,7 +8,7 @@ final class IconAnimator {
     private var angle: CGFloat = 0
     private var currentSpeed: CGFloat = 0
     private let targetSpeed: CGFloat = 360 // degrees per second
-    private let acceleration: CGFloat = 720 // degrees per second^2
+    private let acceleration: CGFloat = 720 / 4 // degrees per second^2
     private var lastUpdate = Date()
     
     private(set) var animRequestCount = 0 {
@@ -27,9 +27,9 @@ final class IconAnimator {
                     timer.invalidate()
                     self.timer = nil
                 }
-                // Reset app icon to default state
-                NSApplication.shared.dockTile.contentView = nil
-                NSApplication.shared.dockTile.display()
+//                // Reset app icon to default state
+//                NSApplication.shared.dockTile.contentView = nil
+//                NSApplication.shared.dockTile.display()
             }
         }
     }
