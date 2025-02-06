@@ -107,7 +107,6 @@ struct ChatView: View {
             if !(await document.enterWorktreeModeOrShowError(initialPrompt: text)) {
                 return
             }
-            wantsWorktree = false
         }
         await document.send(text: text, attachments: attachments)
     }
