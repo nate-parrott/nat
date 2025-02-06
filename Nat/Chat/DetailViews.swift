@@ -135,15 +135,17 @@ struct FileContentView: View {
 struct ScrollableCodeView<C: View>: View {
     @ViewBuilder var content: () -> C
     
-    @State private var height: CGFloat?
+//    @State private var height: CGFloat?
+    @State private var size: CGSize?
     
     var body: some View {
         ScrollView([.vertical, .horizontal]) {
             VStack(alignment: .leading, spacing: 12) {
                 content()
-                Spacer().frame(height: (height ?? 200 - 100))
+//                Spacer().frame(height: (height ?? 200 - 100))
             }
             .fixedSize()
+            .frame(minWidth: size?.width, minHeight: size?.height, alignment: .topLeading)
             .font(.system(size: 13, weight: .regular, design: .monospaced))
             .lineSpacing(4)
             .multilineTextAlignment(.leading)
@@ -151,6 +153,7 @@ struct ScrollableCodeView<C: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
         }
-        .measureSize { self.height = $0.height }
+//        .measureSize { self.height = $0.height }
+        .measureSize { self.size = $0 }
     }
 }
