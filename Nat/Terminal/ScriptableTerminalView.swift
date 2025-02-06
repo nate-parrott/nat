@@ -68,7 +68,8 @@ open class ScriptableTerminalView: TerminalView, TerminalViewDelegate, LocalProc
         let shellIdiom = "-" + NSString(string: shell).lastPathComponent
 
         FileManager.default.changeCurrentDirectoryPath(workingDir.path) //((FileManager.default.homeDirectoryForCurrentUser.path as NSString).appendingPathComponent("Documents"))
-        startProcess (executable: shell, execName: shellIdiom)
+        // execname not honored?
+        startProcess(executable: shell, args: ["-l"]) //  execName: shellIdiom)
         send(txt: "precmd() { echo -n \"\\a\"; }\n")
     }
 

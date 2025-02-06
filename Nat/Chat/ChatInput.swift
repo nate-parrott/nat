@@ -1,5 +1,10 @@
 import SwiftUI
 
+struct ChatAttachment: Identifiable, Equatable {
+    var id: String
+    var contextItem: ContextItem
+}
+
 struct ChatInput: View {
     var maxHeight: CGFloat?
     var send: (String, [ContextItem]) -> Void
@@ -11,7 +16,7 @@ struct ChatInput: View {
     @State private var textFieldSize: CGSize = .zero
     @State private var currentFileOpenInXcode: String?
     @State private var folderName: String?
-    @State private var attachments: [ContextItem] = []
+    @State private var attachments: [ChatAttachment] = []
     @State private var status = AgentStatus.none
     @State private var autorun = false
 
@@ -110,7 +115,7 @@ struct ChatInput: View {
         case .key(.enter):
             sendOrResume()
         case .paste(let text):
-            attachments.append(.largePaste(text))
+            attachments.append(ChatAttachment(id: UUID().description, contextItem: .largePaste(text)))
         default:
             break
         }
@@ -119,10 +124,10 @@ struct ChatInput: View {
     private func sendOrResume() {
         if text != "" || attachments.count > 0 {
             let text = self.text
-            let attachments = self.attachments
+            let attachmentItems = self.attachments.map(\.contextItem)
             self.text = ""
             self.attachments = []
-            send(text, attachments)
+            send(text, attachmentItems)
         } else if status == .paused {
             document.unpause()
         }
@@ -140,7 +145,7 @@ struct ChatInput: View {
         Task { @MainActor in
             for url in panel.urls {
                 if let item = try? await ContextItem.from(url: url, projectFolder: document.store.model.folder) {
-                    attachments.append(item)
+                    attachments.append(ChatAttachment(id: UUID().description, contextItem: item))
                 }
             }
         }
@@ -149,8 +154,8 @@ struct ChatInput: View {
     private var attachmentsView: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEachUnidentifiable(items: Array(attachments.enumerated())) { item in
-                    AttachmentPill(item: item.element, onRemove: { attachments.remove(at: item.offset) })
+                ForEach(attachments) { attachment in
+                    AttachmentPill(item: attachment.contextItem, onRemove: { attachments.removeAll(where: { $0.id == attachment.id }) })
                 }
             }
             .padding(12)
