@@ -1,5 +1,28 @@
 import SwiftUI
 
+extension Document {
+    @MainActor
+    func deleteWorktree(at url: URL) async {
+        let confirmed = await Alerts.showAppConfirmationDialog(
+            title: "Delete Worktree?",
+            message: "This will move the worktree folder to trash.",
+            yesTitle: "Delete",
+            noTitle: "Cancel"
+        )
+        
+        if confirmed {
+            // Move to trash
+            let appleScript = "tell application \"Finder\" to delete (POSIX file \"" + url.path() + "\")"
+            let script = NSAppleScript(source: appleScript)
+            var error: NSDictionary?
+            if script?.executeAndReturnError(&error) != nil {
+                // Close document window
+                NSApp.keyWindow?.close()
+            }
+        }
+    }
+}
+
 struct WorktreeFooter: View {
     @Environment(\.document) private var document
     @State private var showingMergeSheet = false
@@ -37,6 +60,16 @@ struct WorktreeFooter: View {
                         
                         Button("Review & Merge") {
                             showingMergeSheet = true
+                        }
+                        
+                        Button(role: .destructive, action: {
+                            if let url = snapshot.folder {
+                                Task {
+                                    await document.deleteWorktree(at: url)
+                                }
+                            }
+                        }) {
+                            Image(systemName: "trash")
                         }
                     }
                     .controlSize(.small)
