@@ -1,4 +1,5 @@
-https://github.com/nate-parrott/nat/assets/1151668/6a25892f-dd72-4fa5-8e97-40c2983a9eb9
+
+https://github.com/user-attachments/assets/d277496c-2d35-43ce-a354-e42fda0a47e8
 
 # A little guy who takes on simple coding tasks for you
 ## Built for iOS + Mac devs, but should work for anything
