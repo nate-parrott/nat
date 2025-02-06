@@ -1,3 +1,5 @@
+https://github.com/nate-parrott/nat/assets/1151668/6a25892f-dd72-4fa5-8e97-40c2983a9eb9
+
 # A little guy who takes on simple coding tasks for you
 ## Built for iOS + Mac devs, but should work for anything
 
@@ -49,6 +51,7 @@ Two modes:
 - Better quality + reliability!
 - Ability to enqueue a task from your phone and review the PR remotely
 - Let Nat handle its own releases (archive + notarization + uploading)
+- Whisper dictation for natural input
 
 ### Developing
 
