@@ -11,6 +11,12 @@ enum LLMs {
     static var fakeFunctions: Bool {
         false // set true for use with deepseek
     }
+    
+    static var additionalHeaders: [String: String] {
+        [
+            "HTTP-Referer": "https://github.com/nate-parrott/nat"
+        ]
+    }
 
     static func quickModel() throws -> ChatGPT {
         try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("openai/gpt-4o-mini", 1_000_000), baseURL: .openRouterOpenAIChatEndpoint))

@@ -47,17 +47,26 @@ struct CodeSearchTool: Tool {
             async let answers_: [ContextItem] = try await codeSearch2(queries: args.questions ?? [], folder: folderURL, context: context, effort: effort).snippets
                 .map({ ContextItem.fileSnippet($0) })
 
-            async let grepSnippets_: [[FileSnippet]] = try await args.regexes?.concurrentMapThrowing({ pattern in
-                try await grepToSnippets(pattern: pattern, folder: folderURL, linesAroundMatchToInclude: 3, limit: effort.grepLimit)
+            async let grepSnippets_: [(String, Result<[FileSnippet], Error>)] = try await args.regexes?.concurrentMap({ pattern in
+                do {
+                    let snippets = try await grepToSnippets(pattern: pattern, folder: folderURL, linesAroundMatchToInclude: 3, limit: effort.grepLimit)
+                    return (pattern, .success(snippets))
+                } catch {
+                    return (pattern, .failure(error))
+                }
             }) ?? []
 
             var output = [ContextItem]()
             output += try await answers_
-            for (regex, snippets) in try await zip(args.regexes ?? [], grepSnippets_) {
-                output.append(.text("# \(snippets.count) search results for \(regex) (limit \(effort.grepLimit)):"))
-                for snippet in snippets {
-                    output.append(.fileSnippet(snippet))
-//                    outputLines.append(snippet.asString(withLineNumbers: Constants.useLineNumbers))
+            for (regex, result) in try await grepSnippets_ {
+                switch result {
+                case .success(let snippets):
+                    output.append(.text("# \(snippets.count) search results for \(regex) (limit \(effort.grepLimit)):"))
+                    for snippet in snippets {
+                        output.append(.fileSnippet(snippet))
+                    }
+                case .failure(let error):
+                    output.append(.text("# Error searching for regex '\(regex)': \(error.localizedDescription)"))
                 }
             }
 
