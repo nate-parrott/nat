@@ -45,6 +45,7 @@ struct ChatView: View {
                 .overlay(alignment: .bottom) {
                     if status == .running {
                         Shimmer()
+                            .requestsDockSpin(true)
                     }
                 }
                 .overlay {
