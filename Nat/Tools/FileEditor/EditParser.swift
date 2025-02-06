@@ -59,7 +59,13 @@ enum EditParser {
             let content = currentContent.joined(separator: "\n")
 
             // Resolve the path relative to workspace
-            let resolvedPath = try toolContext?.resolvePath(cmd.path) ?? URL(fileURLWithPath: cmd.path)
+            // If we have a toolContext, try to resolve the path, otherwise use file URL directly
+            let resolvedPath: URL
+            if let context = toolContext {
+                resolvedPath = (try? context.resolvePath(cmd.path)) ?? URL(fileURLWithPath: cmd.path)
+            } else {
+                resolvedPath = URL(fileURLWithPath: cmd.path)
+            }
 
             if cmd.type == "FindReplace" {
                 if let (find, replace) = parseFindAndReplace(currentContent) {

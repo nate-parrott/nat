@@ -15,7 +15,7 @@ extension FileEdit {
     }
 
     func applyUsingLLM(comments: String) async throws -> String {
-        let content = try String(contentsOf: path)
+        let content = try String(contentsOf: path, encoding: .utf8)
         let editDescriptions: [String] = edits.compactMap { edit -> String? in
             switch edit {
             case .replace(_, let lineRangeStart, let lineRangeLen, let lines):
@@ -104,7 +104,7 @@ extension FileEdit {
         """
         let makesSenseToUsePredictedOutput = true // content.count > editDescriptions.joined(separator: "\n").count * 2
         print("<applier-input>\n\(prompt)\n</applier-input>")
-        let predictedOutput: String? = makesSenseToUsePredictedOutput ? "```\n\(content)\n```" : nil
+        let _: String? = makesSenseToUsePredictedOutput ? "```\n\(content)\n```" : nil
         let llm = try LLMs.applierModel()
         let start = CACurrentMediaTime()
 //        llm.prediction = predictedOutput
