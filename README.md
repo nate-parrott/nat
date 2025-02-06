@@ -15,33 +15,31 @@ Two modes:
 
 ### Features
 
-✅ Chats as documents that you can save, restore and share
-✅ Read active project + file from Xcode, if open
-✅ Worktree mode for doing long-running in a separate directory on its own, then presenting a PR for review
+- [x] Chats as documents that you can save, restore and share
+- [x] Read active project + file from Xcode, if open
+- [x] Worktree mode for doing long-running in a separate directory on its own, then presenting a PR for review
 - Models
-    ✅ Claude 3.5 Sonnet
-    ✅ Internal support for other models
-    ❎ UI for model selection
+    - [x] Claude 3.5 Sonnet
+    - [x] Internal support for other models
+    - [ ] UI for model selection
 - Agent tools
-  ✅ View files
-  ✅ Code search by secondary agents that explore codebase in parallel and provide relevant snippets to the main model
-  ✅ Code search via regex
-  ✅ Terminal tool for running `xcodebuild`, interacting w/ `git`, and anything else
-  ✅ File editing via full-file replacement, find/replace,
-    ✅ Syntax check post-apply (Swift only)
-    ✅ "Applier model" for using a faster model to apply edits via full file rewrite if find/replace fails
-  ✅ Web research via Perplexity
-  ❎ Code search via vector store + SQLite FTS index
-  ❎ Ability to test an app via Claude Computer Use (system wide or via `simctl`)
-  ❎ Tool to _find usages_ and _find definition_ via tree-sitter or SourceKit LSP
+  - [x] View files
+  - [x] Code search by secondary agents that explore codebase in parallel and provide relevant snippets to the main model
+  - [x] Code search via regex
+  - [x] Terminal tool for running `xcodebuild`, interacting w/ `git`, and anything else
+  - [x] File editing via full-file replacement, find/replace,
+    - [x] Syntax check post-apply (Swift only)
+    - [x] "Applier model" for using a faster model to apply edits via full file rewrite if find/replace fails
+  - [x] Web research via Perplexity
+  - [ ] Code search via vector store + SQLite FTS index
+  - [ ] Ability to test an app via Claude Computer Use (system wide or via `simctl`)
+  - [ ] Tool to _find usages_ and _find definition_ via tree-sitter or SourceKit LSP
 - Documentation Scratchpad
-    ✅ In-app ui for editing documentation that the model can use (in `nat_docs/`)
-    ❎ Tooling to allow model to automatically generate complex docs to improve
-✅ Code search UI (in toolbar)
-✅ Autopilot toggle (running person in bottom bar) to toggle autoconfirm for file edits + terminal (default on in Worktree mode)
+    - [x] In-app ui for editing documentation that the model can use (in `nat_docs/`)
+    - [ ] Tooling to allow model to automatically generate complex docs to improve
+- [x] Code search UI (in toolbar)
+- [x] Autopilot toggle (running person in bottom bar) to toggle autoconfirm for file edits + terminal (default on in Worktree mode)
 
 ### Developing
 
 Clone this repo, and also clone [chattoys](https://github.com/nate-parrott/chattoys). Place it in an adjacent folder (i.e. clone both this project and chattoys in the same folder). You may periodically need to pull changes from there, too.
-
-
