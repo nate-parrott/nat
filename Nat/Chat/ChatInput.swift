@@ -19,6 +19,7 @@ struct ChatInput: View {
     @State private var attachments: [ChatAttachment] = []
     @State private var status = AgentStatus.none
     @State private var autorun = false
+    @State private var dictationState: DictationClient.State = .none
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -52,9 +53,13 @@ struct ChatInput: View {
             if newValue != "" { document.pause() }
         })
         .background {
-            if textFieldSize.height > 100 {
-                Color.clear.background(.thinMaterial)
+            if textFieldSize.height > 100 || dictationState != .none {
+                (dictationState != .none ? Color.blue.opacity(0.1) : Color.clear)
+                    .background(.thinMaterial)
             }
+        }
+        .dictation(priority: 1, state: $dictationState) { text in
+            self.text = text
         }
         .onReceive(document.store.publisher.map(\.selectedFileInEditorRelativeToFolder).removeDuplicates(), perform: { self.currentFileOpenInXcode = $0 })
         .onReceive(document.store.publisher.map(\.folder?.lastPathComponent).removeDuplicates(), perform: { self.folderName = $0 })

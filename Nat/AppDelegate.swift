@@ -10,9 +10,8 @@ import Cocoa
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        // Insert code here to initialize your application
-//        let path = URL(fileURLWithPath: ("~/Desktop/test.txt" as NSString).expandingTildeInPath)
-//        try! "Hello world".write(to: path, atomically: true, encoding: .utf8)
+        // Initialize dictation
+        _ = DictationManager.shared
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {

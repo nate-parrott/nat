@@ -17,9 +17,14 @@ class SettingsViewController: NSViewController {
 
 struct SettingsContentView: View {
     @AppStorage(DefaultsKeys.openrouterKey.rawValue) private var openrouterKey = ""
+    @AppStorage(DefaultsKeys.openAIKey.rawValue) private var openAIKey = ""
+    
     var body: some View {
         Form {
-            TextField("OpenRouter Key", text: $openrouterKey)
+            Section("API Keys") {
+                TextField("OpenRouter Key", text: $openrouterKey)
+                TextField("OpenAI Key (required for dictation)", text: $openAIKey)
+            }
         }
         .formStyle(.grouped)
     }

@@ -2,6 +2,7 @@ import Foundation
 
 enum DefaultsKeys: String {
     case openrouterKey
+    case openAIKey
 }
 
 extension DefaultsKeys {

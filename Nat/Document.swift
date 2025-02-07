@@ -48,7 +48,7 @@ struct DocumentState: Equatable, Codable {
     var selectedFileInEditor: URL?
     var autorun = false
     var maxIterations = 20
-//    var todos = [String: Todo]()
+    var dictating = false
 }
 
 extension DocumentState {
