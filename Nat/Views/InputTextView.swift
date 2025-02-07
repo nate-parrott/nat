@@ -22,6 +22,7 @@ struct InputTextFieldOptions: Equatable {
     var insets = CGSize(width: 0, height: 0)
     var placeholderColor: NSColor? = nil
     var requireCmdEnter: Bool = false
+    var wantsUpDownArrowEvents: Bool = false
 
     var effectivePlaceholderColor: NSColor {
         return placeholderColor ?? color.withAlphaComponentSafe(0.5)
@@ -211,11 +212,17 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
             contentSizeMayHaveChanged()
             return true
         case #selector(NSResponder.moveUp(_:)):
-            onEvent?(.key(.upArrow))
-            return true
+            if !options.wantsUpDownArrowEvents {
+                onEvent?(.key(.upArrow))
+                return true
+            }
+            return false
         case #selector(NSResponder.moveDown(_:)):
-            onEvent?(.key(.downArrow))
-            return true
+            if !options.wantsUpDownArrowEvents {
+                onEvent?(.key(.downArrow))
+                return true
+            }
+            return false
         default:
             return false
         }

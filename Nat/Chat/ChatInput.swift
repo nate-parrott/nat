@@ -95,7 +95,8 @@ struct ChatInput: View {
             placeholder: placeholderText,
             font: .systemFont(ofSize: 14),
             insets: .init(width: 12, height: 21),
-            requireCmdEnter: true
+            requireCmdEnter: true,
+            wantsUpDownArrowEvents: true
         )
     }
 
