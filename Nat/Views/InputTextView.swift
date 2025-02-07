@@ -167,12 +167,6 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
                 }
             }
         }
-//        DispatchQueue.main.async {
-//            // HACK
-//            if let textContainer = self.textView.textContainer, let layoutMgr = self.textView.layoutManager {
-//                self.contentSize = layoutMgr.usedRect(for: textContainer).size
-//            }
-//        }
     }
 
     // MARK: - NSTextViewDelegate
@@ -213,16 +207,16 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
             return true
         case #selector(NSResponder.moveUp(_:)):
             if options.wantsUpDownArrowEvents {
-                return false
+                onEvent?(.key(.upArrow))
+                return true
             }
-            onEvent?(.key(.upArrow))
-            return true
+            return false
         case #selector(NSResponder.moveDown(_:)):
             if options.wantsUpDownArrowEvents {
-                return false
+                onEvent?(.key(.downArrow))
+                return true
             }
-            onEvent?(.key(.downArrow))
-            return true
+            return false
         default:
             return false
         }
