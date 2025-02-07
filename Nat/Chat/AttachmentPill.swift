@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AttachmentPill: View {
     let item: ContextItem
-    let onRemove: () -> Void
+    let onRemove: (() -> Void)?
     @State private var isHovering = false
     
     var body: some View {
@@ -24,34 +24,37 @@ struct AttachmentPill: View {
     }
 }
 
-// Written by Phil
 struct FloatingXModifier: ViewModifier {
-    let onClick: () -> Void
+    let onClick: (() -> Void)?
     
     func body(content: Content) -> some View {
-        content.overlay(alignment: .topTrailing) {
-            Button(action: onClick) {
-                Image(systemName: "xmark")
-                    .foregroundColor(.primary)
-                    .bold()
-                    .help(Text("Remove"))
-                    .font(.system(size: 14))
+        if let onClick {
+            content.overlay(alignment: .topTrailing) {
+                Button(action: onClick) {
+                    Image(systemName: "xmark")
+                        .foregroundColor(.primary)
+                        .bold()
+                        .help(Text("Remove"))
+                        .font(.system(size: 14))
+                }
+                .frame(both: 24)
+                .onHover { hovering in
+                    isHoveringOnButton = hovering
+                }
+                .buttonStyle(PlainButtonStyle())
+                .background(Material.thickMaterial)
+                .clipShape(Circle())
+                .shadow(color: Color.black.opacity(0.1), radius: 4)
+                .padding(.trailing, -8)
+                .padding(.top, -8)
+                .opacity(isHovering || isHoveringOnButton ? 1 : 0)
+                .animation(.easeInOut(duration: 0.1), value: isHovering)
             }
-            .frame(both: 24)
             .onHover { hovering in
-                isHoveringOnButton = hovering
+                isHovering = hovering
             }
-            .buttonStyle(PlainButtonStyle())
-            .background(Material.thickMaterial)
-            .clipShape(Circle())
-            .shadow(color: Color.black.opacity(0.1), radius: 4)
-            .padding(.trailing, -8)
-            .padding(.top, -8)
-            .opacity(isHovering || isHoveringOnButton ? 1 : 0)
-            .animation(.easeInOut(duration: 0.1), value: isHovering)
-        }
-        .onHover { hovering in
-            isHovering = hovering
+        } else {
+            content
         }
     }
     

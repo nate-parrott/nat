@@ -8,14 +8,24 @@ struct MessageCell: View {
     
     var body: some View {
         switch model.content {
-        case .userMessage(let string):
-            Text(string)
-                .textSelection(.enabled)
-                .foregroundStyle(.white)
-                .lineSpacing(3)
-                .modifier(TintedBackdropModifier(tint: .blue))
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.leading)
+        case .userMessage(let string, let attachments):
+            Group {
+                Text(string)
+                    .textSelection(.enabled)
+                    .foregroundStyle(.white)
+                    .lineSpacing(3)
+                    .modifier(TintedBackdropModifier(tint: .blue))
+                
+                if attachments.count > 0 {
+                    VStack(alignment: .trailing) {
+                        ForEachUnidentifiable(items: attachments) { attachment in
+                            AttachmentPill(item: attachment, onRemove: nil)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.leading)
         case .assistantMessage(let string):
             AssistantMessageView(text: string)
                 .frame(maxWidth: .infinity, alignment: .leading)

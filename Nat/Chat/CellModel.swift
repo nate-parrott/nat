@@ -6,7 +6,7 @@ struct MessageCellModel: Equatable, Identifiable {
     var content: Content
 
     enum Content: Equatable {
-        case userMessage(String)
+        case userMessage(text: String, attachments: [ContextItem])
         case assistantMessage(String)
         case logs([UserVisibleLog]) // Logs can be clustered together
         case codeEdit(CodeEdit)
@@ -18,7 +18,9 @@ extension ThreadModel {
     var cellModels: [MessageCellModel] {
         var cells = [MessageCellModel]()
         for step in steps {
-            cells.append(MessageCellModel(id: step.id + "/initial", content: .userMessage(step.initialRequest.asPlainText(includeSystemMessages: false))))
+            // Generate cells from initial user message:
+            let (initialText, initialAttachments) = step.initialRequest.spitPlaintextAndOtherContextItems
+            cells.append(.init(id: step.id + "/initial", content: .userMessage(text: initialText, attachments: initialAttachments)))
             for (i, loopItem) in step.toolUseLoop.enumerated() {
                 cells += loopItem.cellModels(idPrefix: step.id + "/toolUseLoop/\(i)/")
             }
@@ -31,6 +33,21 @@ extension ThreadModel {
         }
         cells = clusterLogs(cells)
         return cells
+    }
+}
+
+extension TaggedLLMMessage {
+    var spitPlaintextAndOtherContextItems: (String, [ContextItem]) {
+        var plain = [String]()
+        var other = [ContextItem]()
+        for item in content {
+            if case .text(let string) = item {
+                plain.append(string)
+            } else {
+                other.append(item)
+            }
+        }
+        return (plain.joined(separator: "\n\n"), other)
     }
 }
 

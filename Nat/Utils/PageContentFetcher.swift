@@ -28,11 +28,14 @@ class PageContentFetcher {
                         stepWhenLastStillLoading = step
                     }
                     
-                    let complete = step > stepWhenLastStillLoading + 3 || step == 20
+                    let complete = step > stepWhenLastStillLoading + 2 || step == 20
                     
                     // Get page text
                     if let text = try? await webView.markdown() {
-                        let truncated = String(text.prefix(20_000))
+                        let truncated = String(text.prefix(30_000))
+                        if complete {
+                            print("FETCHED: \(truncated)")
+                        }
                         continuation.yield(ContextItem.PageContent(text: truncated, loadComplete: complete))
                     }
                     
