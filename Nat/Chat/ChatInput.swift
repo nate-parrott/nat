@@ -96,7 +96,8 @@ struct ChatInput: View {
             font: .systemFont(ofSize: 14),
             insets: .init(width: 12, height: 21),
             requireCmdEnter: true,
-            wantsUpDownArrowEvents: false
+            wantsUpDownArrowEvents: false,
+            largePasteThreshold: 500
         )
     }
 

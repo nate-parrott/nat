@@ -23,7 +23,8 @@ struct InputTextFieldOptions: Equatable {
     var placeholderColor: NSColor? = nil
     var requireCmdEnter: Bool = false
     var wantsUpDownArrowEvents: Bool = true
-
+    var largePasteThreshold: Int? = nil
+    
     var effectivePlaceholderColor: NSColor {
         return placeholderColor ?? color.withAlphaComponentSafe(0.5)
     }
@@ -172,8 +173,11 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
     // MARK: - NSTextViewDelegate
 
     func textView(_ textView: NSTextView, shouldChangeTextIn range: NSRange, replacementString text: String?) -> Bool {
-        // Intercept long pastes from clipboard
-        if let text = text, text.count > 500 {
+        // Intercept long pastes from clipboard if threshold is set
+        if let text = text, 
+           let threshold = options.largePasteThreshold,
+           text.count > threshold,
+           !NSEvent.modifierFlags.contains(.command) {
             // Only check pasteboard for large text to avoid unnecessary slowdown
             if let pb = NSPasteboard.general.string(forType: .string), text == pb {
                 onEvent?(.paste(text))
