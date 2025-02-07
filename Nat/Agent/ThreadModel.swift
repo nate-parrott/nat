@@ -170,8 +170,8 @@ func truncateContent(_ items: [ContextItem]) -> [ContextItem] {
         case .textFile:
             // TODO: better
             return ContextItem.omission("[Old file content omitted; request again if you need]")
-        case .url(let url):
-            return .url(url)
+        case .url(let url, _):
+            return .url(url, pageContent: nil)
         case .largePaste(let string):
             return .largePaste(string.truncateMiddleWithEllipsis(chars: 200))
         case .omission(let string):

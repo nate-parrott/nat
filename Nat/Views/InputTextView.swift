@@ -13,6 +13,7 @@ enum TextFieldEvent {
     case focus
     case blur
     case largePaste(String)
+    case didPasteURL(URL)
 }
 
 struct InputTextFieldOptions: Equatable {
@@ -173,15 +174,24 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
     // MARK: - NSTextViewDelegate
 
     func textView(_ textView: NSTextView, shouldChangeTextIn range: NSRange, replacementString text: String?) -> Bool {
-        // Intercept long pastes from clipboard if threshold is set
-        if let text = text, 
-           let threshold = options.largePasteThreshold,
-           text.count > threshold,
-           !NSEvent.modifierFlags.contains(.shift) {
-            // Only check pasteboard for large text to avoid unnecessary slowdown
-            if let pb = NSPasteboard.general.string(forType: .string), text == pb {
-                onEvent?(.largePaste(text))
-                return false
+        // Check for paste operations
+        if let text = text {
+            // First check large pastes
+            if let threshold = options.largePasteThreshold,
+               text.count > threshold,
+               !NSEvent.modifierFlags.contains(.shift) {
+                if let pb = NSPasteboard.general.string(forType: .string), text == pb {
+                    onEvent?(.largePaste(text))
+                    return false
+                }
+            }
+            
+            // Then check for URLs in shorter pastes
+            if let pb = NSPasteboard.general.string(forType: .string),
+               text == pb,
+               isProbablyURL(text),
+               let url = URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)) {
+                onEvent?(.didPasteURL(url))
             }
         }
         return true
@@ -232,6 +242,13 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
     }
 
     override var mouseDownCanMoveWindow: Bool { true }
+    
+    private func isProbablyURL(_ string: String) -> Bool {
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        return (trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://")) &&
+               !trimmed.contains(" ") &&
+               trimmed.contains(".")
+    }
 
     // We need to provide our own undo mgr to avoid propagating undos to the document level and triggering "Edited" UI on the windows
     let undoMgr = UndoManager()

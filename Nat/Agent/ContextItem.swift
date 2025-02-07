@@ -86,7 +86,12 @@ enum ContextItem: Equatable, Codable {
     case image(LLMMessage.Image)
     case systemInstruction(String)
     case textFile(filename: String, content: String)
-    case url(URL)
+    struct PageContent: Equatable, Codable {
+        var text: String
+        var loadComplete: Bool
+    }
+    
+    case url(URL, pageContent: PageContent? = nil)
     case largePaste(String)
     case omission(String)
 
@@ -102,8 +107,12 @@ enum ContextItem: Equatable, Codable {
             return ("<s>\(str)</s>", nil)
         case .textFile(let filename, let content):
             return ("Attached file '\(filename)':\n\(content)", nil)
-        case .url(let url):
-            return ("URL: \(url.absoluteString)", nil)
+        case .url(let url, pageContent: let content):
+            var result = "URL: \(url.absoluteString)"
+            if let content {
+                result += "\n\n" + content.text
+            }
+            return (result, nil)
         case .largePaste(let content):
             return ("Pasted content:\n\(content)", nil)
         case .omission(let msg): return ("[\(msg)]", nil)
@@ -134,8 +143,10 @@ enum ContextItem: Equatable, Codable {
             return ("gearshape", "System Instruction")
         case .textFile(filename: let name, content: _):
             return ("doc", name)
-        case .url(let url):
-            return ("link", url.host() ?? "")
+        case .url(let url, pageContent: let content):
+            let suffix = content?.loadComplete == true ? "" : " ⏳"
+            let str = "\(url.host() ?? ""): \(content?.text.count ?? 0) chars \(content?.loadComplete == true ? "" : "⏳")"
+            return ("link", str)
         case .largePaste:
             return ("doc.on.clipboard", "Paste")
         case .omission:

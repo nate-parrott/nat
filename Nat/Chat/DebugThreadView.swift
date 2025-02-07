@@ -146,8 +146,8 @@ private struct ContextItemView: View {
                 Text("<system>\(sys)</system>")
             case .textFile(filename: let filename, content: let content):
                 Text("File:\n\(content)")
-            case .url(let url):
-                Text("URL:\n\(url.absoluteString)")
+            case .url(let url, pageContent: let content):
+                Text("URL:\n\(url.absoluteString)" + (content.map { "\n\n" + $0.text } ?? ""))
             case .largePaste(let text):
                 Text("Large paste:\n\(text)")
             case .omission(let msg):

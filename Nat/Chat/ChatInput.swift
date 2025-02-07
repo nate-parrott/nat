@@ -118,8 +118,32 @@ struct ChatInput: View {
             sendOrResume()
         case .largePaste(let text):
             attachments.append(ChatAttachment(id: UUID().description, contextItem: .largePaste(text)))
+        case .didPasteURL(let url):
+            Task {
+                await attachURLWithContent(url)
+            }
         default:
             break
+        }
+    }
+    
+    @MainActor
+    private func attachURLWithContent(_ url: URL) async {
+        // Add initial URL attachment
+        let attachmentId = UUID().description
+        attachments.append(ChatAttachment(id: attachmentId, contextItem: .url(url)))
+        
+        // Start fetching content
+        let fetcher = PageContentFetcher(url: url)
+        do {
+            for try await content in try await fetcher.fetch() {
+                // Update attachment with latest content
+                if let idx = attachments.firstIndex(where: { $0.id == attachmentId }) {
+                    attachments[idx].contextItem = .url(url, pageContent: content)
+                }
+            }
+        } catch {
+            print("Error fetching page content: \(error)")
         }
     }
     
