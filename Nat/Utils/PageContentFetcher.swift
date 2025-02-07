@@ -1,7 +1,9 @@
+import ChatToys
 import WebKit
 import SwiftUI
 
-actor PageContentFetcher {
+@MainActor
+class PageContentFetcher {
     private let url: URL
     private let webView: WKWebView
     
@@ -16,24 +18,27 @@ actor PageContentFetcher {
         webView.load(request)
         
         return AsyncThrowingStream { continuation in
-            Task {
-                let startTime = Date()
-                
+            Task { @MainActor in
                 // Poll content every second for 5s or until complete
-                while true {
-                    let timeElapsed = Date().timeIntervalSince(startTime)
-                    if timeElapsed > 5 { break }
-                    
+                var stepWhenLastStillLoading = 0
+                let maxSteps = 20
+                for step in 0...maxSteps {
                     // Check if navigation is complete
-                    let complete = await webView.isLoading == false
+                    if webView.isLoading {
+                        stepWhenLastStillLoading = step
+                    }
+                    
+                    let complete = step > stepWhenLastStillLoading + 3 || step == 20
                     
                     // Get page text
-                    if let text = try? await webView.evaluateJavaScript("document.body.innerText") as? String {
-                        let truncated = String(text.prefix(20000))
+                    if let text = try? await webView.markdown() {
+                        let truncated = String(text.prefix(20_000))
                         continuation.yield(ContextItem.PageContent(text: truncated, loadComplete: complete))
                     }
                     
-                    if complete { break }
+                    if complete {
+                        return
+                    }
                     try await Task.sleep(for: .seconds(1))
                 }
                 

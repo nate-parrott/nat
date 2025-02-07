@@ -144,14 +144,20 @@ enum ContextItem: Equatable, Codable {
         case .textFile(filename: let name, content: _):
             return ("doc", name)
         case .url(let url, pageContent: let content):
-            let suffix = content?.loadComplete == true ? "" : " ⏳"
-            let str = "\(url.host() ?? ""): \(content?.text.count ?? 0) chars \(content?.loadComplete == true ? "" : "⏳")"
+            let str = "\(url.host() ?? ""): \(content?.text.count ?? 0) chars"
             return ("link", str)
         case .largePaste:
             return ("doc.on.clipboard", "Paste")
         case .omission:
             return ("ellipsis", "Omission")
         }
+    }
+    
+    var loading: Bool {
+        if case .url(_, let pageContent) = self, let pageContent {
+            return !pageContent.loadComplete
+        }
+        return false
     }
 }
 

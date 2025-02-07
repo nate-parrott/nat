@@ -7,7 +7,15 @@ struct AttachmentPill: View {
     
     var body: some View {
         let (icon, summary) = item.summary
-        Label(summary, systemImage: icon)
+        
+        HStack {
+            Label(summary, systemImage: icon)
+            if item.loading {
+                ProgressView()
+                    .scaleEffect(0.5)
+                    .frame(both: 16)
+            }
+        }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(Color.secondary.opacity(0.1))
