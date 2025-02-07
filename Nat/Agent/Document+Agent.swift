@@ -20,16 +20,16 @@ extension Document: AgentThreadStore {
 extension Document {
     func pause() {
         store.modify { state in
-            if state.thread.status == .running {
-                state.thread.status = .paused
+            if case .running(let id) = state.thread.status {
+                state.thread.status = .paused(id)
             }
         }
     }
 
     func unpause() {
         store.modify { state in
-            if state.thread.status == .paused {
-                state.thread.status = .running // causes checkCancelOrPause to finish
+            if case .paused(let id) = state.thread.status {
+                state.thread.status = .running(id) // causes checkCancelOrPause to finish
             }
         }
     }
@@ -43,15 +43,13 @@ extension Document {
         // Reset typing state
         store.modify { state in
             state.thread.status = .none
-            state.thread.cancelCount += 1
         }
     }
     
     func clear() {
-        // TODO: Make sure this works when paused
         stop()
         store.modify { state in
-            state.thread = .init(cancelCount: state.thread.cancelCount + 1)
+            state.thread = .init()
             state.terminalVisible = false
         }
         terminal = nil

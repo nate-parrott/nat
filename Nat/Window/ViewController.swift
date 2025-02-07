@@ -113,13 +113,7 @@ class ViewController: NSViewController {
     }
     
     @IBAction func clearChat(_ sender: Any?) {
-        // Access ChatView's clear functionality via document store
-        document?.store.modify { state in
-            state.thread = .init()
-        }
-        // Cancel any running agent task
-        document?.currentAgentTask?.cancel()
-        document?.currentAgentTask = nil
+        document?.clear()
     }
 }
 

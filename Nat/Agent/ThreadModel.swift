@@ -3,15 +3,22 @@ import ChatToys
 
 enum AgentStatus: Equatable, Codable {
     case none
-    case running
-    case paused
+    case running(UUID)
+    case paused(UUID)
     case stoppedWithError(String)
+    
+    var currentRunId: UUID? {
+        switch self {
+        case .running(let uuid), .paused(let uuid):
+            return uuid
+        case .stoppedWithError, .none: return nil
+        }
+    }
 }
 
 struct ThreadModel: Equatable, Codable {
     var steps = [Step]()
     var status = AgentStatus.none
-    var cancelCount = 0 // HACK: to allow use to break out of the checkCancelOrPause loop when cancelling
 
     struct Step: Equatable, Codable, Identifiable {
         var id: String

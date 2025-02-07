@@ -25,17 +25,28 @@ extension AgentThreadStore {
         fakeFunctions: Bool = LLMs.fakeFunctions // Use XML syntax for models that don't support function calling
     ) async throws -> LLMMessage.FunctionCall? {
         // Safely see if thread is idle, and set ourselves as in-progress:
+        let runId = UUID()
         let alreadyRunning = await modifyThreadModel { state in
-            if state.status == .paused || state.status == .running {
-                return true
+            switch state.status {
+            case .running, .paused: return true
+            case .stoppedWithError, .none:
+                // Ready to start
+                // Start modifying thread
+                state.status = .running(runId)
+                state.fixIncompleteSteps()
+                return false
             }
-            // Start modifying thread
-            state.status = .running
-            state.fixIncompleteSteps()
-            return false
         }
         if alreadyRunning {
             throw AgentError.alreadyRunning
+        }
+        
+        func modifyThreadModelIfRunIdStillMatches(_ block: @escaping (inout ThreadModel) -> Void) async {
+            await modifyThreadModel { model in
+                if model.status.currentRunId == runId {
+                    block(&model)
+                }
+            }
         }
         
         let info = AgentInfo(name: agentName, folder: folderURL, tools: tools, document: document, autorun: { document?.store.model.autorun ?? false })
@@ -70,7 +81,7 @@ extension AgentThreadStore {
             }
             func saveStep() async throws { // causes ui to update
                 try await checkCancelOrPause()
-                await modifyThreadModel { state in
+                await modifyThreadModelIfRunIdStillMatches { state in
                     state.appendOrUpdate(step)
                 }
             }
@@ -131,7 +142,7 @@ extension AgentThreadStore {
             try await saveStep()
         } catch {
             // Add error to thread
-            await modifyThreadModel { state in
+            await modifyThreadModelIfRunIdStillMatches { state in
                 // Do not modify state if cancelled
                 if (error as? CancellationError) == nil {
                     state.status = .stoppedWithError("\(error)")
@@ -141,9 +152,9 @@ extension AgentThreadStore {
         }
         // Do not modify state if cancelled
         if !Task.isCancelled {
-            await modifyThreadModel { state in
+            await modifyThreadModelIfRunIdStillMatches { state in
                 // If not in error state, set state to none
-                if state.status == .running {
+                if case .running = state.status {
                     state.status = .none
                 }
             }

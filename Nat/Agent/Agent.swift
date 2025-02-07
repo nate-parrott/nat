@@ -11,17 +11,13 @@ extension AgentThreadStore {
     func checkCancelOrPause() async throws {
         try Task.checkCancellation()
 
-        // If cancelCount changes we must stop immediately (even though we should also get a cancellation call)
-        var lastCancelCount: Int?
         for await value in threadModelPublisher().removeDuplicates().values {
-            if value.status != .paused {
-                return // escape
-            }
             try Task.checkCancellation()
-            if let lastCancelCount, value.cancelCount != lastCancelCount {
-                throw CancellationError()
+            if case .paused = value.status {
+                continue
+            } else {
+                return
             }
-            lastCancelCount = value.cancelCount
         }
     }
 }

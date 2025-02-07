@@ -82,7 +82,7 @@ struct ChatInput: View {
 
             
             Group {
-                if status == .running {
+                if case .running = status {
                     PlayPauseButton(icon: "pause.circle.fill", label: "Pause", action: { document.pause() })
                 } else {
                     PlayPauseButton(icon: "play.circle.fill", label: "Start", action: { sendOrResume() })
@@ -159,7 +159,7 @@ struct ChatInput: View {
             self.text = ""
             self.attachments = []
             send(text, attachmentItems)
-        } else if status == .paused {
+        } else if case .paused = status {
             document.unpause()
         }
     }

@@ -41,7 +41,7 @@ struct ChatView: View {
                     }, onStop: stopAgent)
                 }
                 .overlay(alignment: .bottom) {
-                    if status == .running {
+                    if case .running = status {
                         Shimmer()
                             .requestsDockSpin(true)
                     }
@@ -50,7 +50,7 @@ struct ChatView: View {
                     detailOverlay
                 }
                 .overlay {
-                    if status == .running {
+                    if case .running = status {
                         ToolModalPresenter()
                     }
                 }
