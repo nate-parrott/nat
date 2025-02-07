@@ -10,6 +10,8 @@ You give it a prompt, it explores the codebase, makes edits, and builds + tests 
 
 ### Usage
 
+Download from [Releases](https://github.com/nate-parrott/nat/releases)
+
 Run the app, enter an [OpenRouter](https://openrouter.ai) key (this makes it easier to support many different AI models)
 
 Two modes:
