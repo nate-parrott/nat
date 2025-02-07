@@ -12,7 +12,7 @@ enum TextFieldEvent {
     case key(Key)
     case focus
     case blur
-    case paste(String)
+    case largePaste(String)
 }
 
 struct InputTextFieldOptions: Equatable {
@@ -180,7 +180,7 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
            !NSEvent.modifierFlags.contains(.shift) {
             // Only check pasteboard for large text to avoid unnecessary slowdown
             if let pb = NSPasteboard.general.string(forType: .string), text == pb {
-                onEvent?(.paste(text))
+                onEvent?(.largePaste(text))
                 return false
             }
         }

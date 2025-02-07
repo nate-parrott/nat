@@ -116,7 +116,7 @@ struct ChatInput: View {
         switch event {
         case .key(.enter):
             sendOrResume()
-        case .paste(let text):
+        case .largePaste(let text):
             attachments.append(ChatAttachment(id: UUID().description, contextItem: .largePaste(text)))
         default:
             break
