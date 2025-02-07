@@ -177,7 +177,7 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
         if let text = text, 
            let threshold = options.largePasteThreshold,
            text.count > threshold,
-           !NSEvent.modifierFlags.contains(.command) {
+           !NSEvent.modifierFlags.contains(.shift) {
             // Only check pasteboard for large text to avoid unnecessary slowdown
             if let pb = NSPasteboard.general.string(forType: .string), text == pb {
                 onEvent?(.paste(text))
