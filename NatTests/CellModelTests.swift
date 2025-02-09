@@ -10,7 +10,7 @@ final class CellModelTests: XCTestCase {
     func testClusterLogs() {
         // Test that non-log messages aren't clustered
         let messages = [
-            MessageCellModel(id: "1", content: .userMessage("Test")),
+            MessageCellModel(id: "1", content: .userMessage(text: "Test", attachments: [])),
             MessageCellModel(id: "2", content: .assistantMessage("Response")),
             MessageCellModel(id: "3", content: .error("Error"))
         ]
@@ -45,7 +45,7 @@ final class CellModelTests: XCTestCase {
         // Test that non-log messages break clusters
         let interleavedLogs = [
             logCell(.codeSearch("query1"), id: "1"),
-            MessageCellModel(id: "2", content: .userMessage("Test")),
+            MessageCellModel(id: "2", content: .userMessage(text: "Test", attachments: [])),
             logCell(.codeSearch("query2"), id: "3"),
         ]
         let clusteredInterleaved = clusterLogs(interleavedLogs)

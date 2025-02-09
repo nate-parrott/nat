@@ -66,10 +66,7 @@ extension DocumentState {
     var nFileSnippetsInInitialResponses: Int {
         thread.steps.filter { step in
             guard let firstLoop = step.toolUseLoop.first else { return false }
-            return firstLoop.initialResponse.content.contains(where: { item in
-                if case .fileSnippet = item { return true }
-                return false
-            })
+            return firstLoop.initialResponse.asPlainText.contains("%% BEGIN FILE SNIPPET")
         }.count
     }
 }

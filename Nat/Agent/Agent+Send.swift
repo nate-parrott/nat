@@ -192,7 +192,10 @@ extension AgentThreadStore {
         }
         
         if let finalMsg = step.wrappedValue.assistantMessageForUser {
-            print("[\(agent.name)] Received final response (no function calls): \(finalMsg.asPlainText)")
+//            if finalMsg.asPlainText.contains("%% BEGIN FILE SNIPPET") {
+//                print("UGH WTF!!!")
+//            }
+            print("[\(agent.name)] Received final response (no function calls): \(finalMsg)")
             // expect assistantMessageForUser has been set by appendOrUpdatePartialResponse
             return false // we're done!
         }

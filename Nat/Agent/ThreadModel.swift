@@ -98,7 +98,7 @@ extension ThreadModel.Step {
                 }
                 messages.append(respMsg)
             } else if let psuedoFunctionResponse = step.psuedoFunctionResponse {
-                messages.append(.init(role: .assistant, content: psuedoFunctionResponse))
+                messages.append(.init(role: .user, content: psuedoFunctionResponse))
             } else {
                 fatalError("Missing fn response for step \(step)")
             }

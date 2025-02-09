@@ -33,8 +33,22 @@ enum LLMs {
         }
         throw LLMError.noOpenRouterAPIKey
     }
+    
+    static func openaiKey() throws -> String {
+        if let key = DefaultsKeys.openAIKey.stringValue().nilIfEmpty {
+            return key
+        }
+        throw LLMError.noOpenAIKEy
+    }
+
+    
+    static func embedder(dims: Int = 1024) throws -> Embedder {
+        let key = try openaiKey()
+        return OpenAIEmbedder(credentials: .init(apiKey: key), options: .init(model: .textEmbedding3Small, dimensions: dims))
+    }
 }
 
 private enum LLMError: Error {
     case noOpenRouterAPIKey
+    case noOpenAIKEy
 }
