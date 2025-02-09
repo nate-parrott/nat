@@ -65,6 +65,7 @@ private struct ReviewActionBar: View {
     var onReject: (String) -> Void
     @State private var focusDate: Date?
     @State private var dictationState = DictationClient.State.none
+    @State private var inputSize = CGSize.zero
 
     var body: some View {
         HStack {
@@ -77,7 +78,7 @@ private struct ReviewActionBar: View {
                 ),
                 focusDate: focusDate,
                 onEvent: { _ in },
-                contentSize: .constant(.zero)
+                contentSize: $inputSize
             )
             .modifier(DictationModifier(priority: 2, state: $dictationState, onDictatedText: { text in
                 if self.commentText == "" {
@@ -86,28 +87,18 @@ private struct ReviewActionBar: View {
                     self.commentText += " " + text
                 }
             }))
-            .frame(height: 60)
+            .frame(height: max(60, inputSize.height))
             
             HStack {
                 Button(action: { onApprove(commentText) }) {
                     Text("Approve")
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.accentColor)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
                 }
-                .buttonStyle(PlainButtonStyle())
+                .buttonStyle(ShinyButtonStyle(tintColor: .green))
                 
                 Button(action: { onReject(commentText) }) {
                     Text("Reject")
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.red)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
                 }
-                .buttonStyle(PlainButtonStyle())
+                .buttonStyle(ShinyButtonStyle(tintColor: .red.opacity(0.8)))
             }
             .padding(6)
             .padding(.trailing, 8)

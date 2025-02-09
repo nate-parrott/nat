@@ -50,9 +50,9 @@ struct ChatInput: View {
         .onAppear {
             focusDate = Date()
         }
-        .onChange(of: text, perform: { newValue in
-            if newValue != "" { document.pause() }
-        })
+//        .onChange(of: text, perform: { newValue in
+//            if newValue != "" { document.pause() }
+//        })
         .background {
             if textFieldSize.height > 100 || dictationState != .none {
                 (dictationState != .none ? Color.blue.opacity(0.1) : Color.clear)

@@ -51,12 +51,17 @@ struct MessageCell: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         case .error(let string):
             Text("\(string)")
-                .font(.caption)
+                .font(.body)
                 .bold()
                 .foregroundStyle(.red)
                 .lineLimit(nil)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
+                .padding()
+                .background {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.red.opacity(0.1))
+                }
         }
     }
 }

@@ -145,7 +145,11 @@ extension AgentThreadStore {
             // Add error to thread
             await modifyThreadModelIfRunIdStillMatches { state in
                 // Do not modify state if cancelled
-                if (error as? CancellationError) == nil {
+                let isCancellation = (error as? CancellationError) != nil
+//                let isStop = (error as? StopAgentError) != nil
+                if isCancellation {
+                    // no op
+                } else {
                     state.status = .stoppedWithError("\(error)")
                 }
             }
