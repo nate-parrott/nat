@@ -54,22 +54,30 @@ struct WorktreeFooter: View {
                     Spacer()
                     
                     HStack {
-                        Button("Reveal") {
+                        Button(action: {
                             NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: snapshot.folder?.path() ?? "")
+                        }) {
+                            Image(systemName: "folder")
+                                .help("Reveal in Finder")
                         }
-                        
-                        Button("Review & Merge") {
-                            showingMergeSheet = true
-                        }
+                        .buttonStyle(.plain)
                         
                         Button(role: .destructive, action: {
                             if let url = snapshot.folder {
                                 Task {
-                                    await document.deleteWorktree(at: url)
+                                    if await Alerts.showAppConfirmationDialog(title: "Delete worktree and close chat?", message: "This will erase your progress.", yesTitle: "Delete", noTitle: "Cancel") {
+                                        await document.deleteWorktree(at: url)
+                                    }
                                 }
                             }
                         }) {
                             Image(systemName: "trash")
+                                .help(Text("Delete worktree and close chat"))
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Button("Review & Merge") {
+                            showingMergeSheet = true
                         }
                     }
                     .controlSize(.small)
