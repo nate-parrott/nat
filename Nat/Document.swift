@@ -55,6 +55,15 @@ extension DocumentState {
     var natDocsDir: URL? {
         folder?.appendingPathComponent("nat_docs", isDirectory: true)
     }
+    
+    var conversationCount: Int {
+        var steps = self.thread.steps
+        // Drop last incomplete message
+        if steps.count > 0, !steps.last!.isComplete && thread.status.currentRunId != nil {
+            steps.removeLast()
+        }
+        return steps.count
+    }
 
     var selectedFileInEditorRelativeToFolder: String? {
         if let selectedFileInEditor, let folder {
@@ -86,9 +95,9 @@ class Document: NSDocument {
         // Add your subclass-specific initialization here.
         
         // Track down this pesky bug where file snippets end up in the initial response agent message (as if they came from the agent):
-        store.addChangeHook { oldState, newState in
-            if newState.nFileSnippetsInInitialResponses > oldState.nFileSnippetsInInitialResponses {
-                Swift.print("oops! found file snippet in initial response")
+        store.addChangeHook { [weak self] oldState, newState in
+            if newState.conversationCount != oldState.conversationCount {
+                self?.updateChangeCount(.changeDone)
             }
         }
     }

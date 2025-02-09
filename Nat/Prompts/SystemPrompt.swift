@@ -40,6 +40,8 @@ enum Prompts {
     
     Do not update .pbxproj files automatically unless user demands it. Generally, new files do not need to be registered in the Xcode project anyway, as they're picked up from the file system.
     
+    If you need the user to make edits you can't make, like updating a storyboard or adding an asset, ask them to do it and pause until they've confirmed.
+    
     # Examples of how to research
     User task: can you increase the threshold for swiping to dismiss or advance the swipey carousel?
     Research: code_search for "How is swipe to dismiss and advance implemented in the swipey carousel?"
