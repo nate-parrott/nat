@@ -2,6 +2,8 @@ import SwiftUI
 
 struct DiffView: View {
     var diff: Diff
+//    var commentsContextPrefix: String // E.g. the name of the file
+//    @Binding var comments: Comments
     @State private var expansionIndices = Set<Int>()
     
     let verticalPad: CGFloat = 1
