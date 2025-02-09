@@ -22,16 +22,16 @@ struct DictationModifier: ViewModifier {
     }
 }
 
-extension View {
-    func dictation(
-        priority: Int,
-        state: Binding<DictationClient.State>,
-        onText: @escaping (String) -> Void
-    ) -> some View {
-        modifier(DictationModifier(
-            priority: priority,
-            state: state,
-            onDictatedText: onText
-        ))
-    }
-}
+//extension View {
+//    func dictation(
+//        priority: Int,
+//        state: Binding<DictationClient.State>,
+//        onText: @escaping (String) -> Void
+//    ) -> some View {
+//        modifier(DictationModifier(
+//            priority: priority,
+//            state: state,
+//            onDictatedText: onText
+//        ))
+//    }
+//}

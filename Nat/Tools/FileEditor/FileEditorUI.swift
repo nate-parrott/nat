@@ -64,6 +64,7 @@ private struct ReviewActionBar: View {
     var onApprove: (String) -> Void
     var onReject: (String) -> Void
     @State private var focusDate: Date?
+    @State private var dictationState = DictationClient.State.none
 
     var body: some View {
         HStack {
@@ -78,6 +79,13 @@ private struct ReviewActionBar: View {
                 onEvent: { _ in },
                 contentSize: .constant(.zero)
             )
+            .modifier(DictationModifier(priority: 2, state: $dictationState, onDictatedText: { text in
+                if self.commentText == "" {
+                    self.commentText = text
+                } else {
+                    self.commentText += " " + text
+                }
+            }))
             .frame(height: 60)
             
             HStack {
@@ -103,6 +111,11 @@ private struct ReviewActionBar: View {
             }
             .padding(6)
             .padding(.trailing, 8)
+            .background {
+                if dictationState != .none {
+                    Color.blue.opacity(0.1)
+                }
+            }
         }
         .onAppear {
             focusDate = Date()

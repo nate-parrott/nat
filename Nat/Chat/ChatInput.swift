@@ -58,9 +58,13 @@ struct ChatInput: View {
                     .background(.thinMaterial)
             }
         }
-        .dictation(priority: 1, state: $dictationState) { text in
-            self.text = text
-        }
+        .modifier(DictationModifier(priority: 1, state: $dictationState, onDictatedText: { text in
+            if self.text == "" {
+                self.text = text
+            } else {
+                self.text += " " + text
+            }
+        }))
         .onReceive(document.store.publisher.map(\.selectedFileInEditorRelativeToFolder).removeDuplicates(), perform: { self.currentFileOpenInXcode = $0 })
         .onReceive(document.store.publisher.map(\.folder?.lastPathComponent).removeDuplicates(), perform: { self.folderName = $0 })
         .onReceive(document.store.publisher.map(\.autorun).removeDuplicates(), perform: { self.autorun = $0 })
