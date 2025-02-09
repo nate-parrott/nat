@@ -100,7 +100,7 @@ struct ChatInput: View {
             placeholder: placeholderText,
             font: .systemFont(ofSize: 14),
             insets: .init(width: 12, height: 21),
-            requireCmdEnter: true,
+            requireCmdEnter: false,
             wantsUpDownArrowEvents: false,
             largePasteThreshold: 500
         )
@@ -127,9 +127,26 @@ struct ChatInput: View {
             Task {
                 await attachURLWithContent(url)
             }
+        case .backspaceOnEmptyField:
+            restoreLastUserMessageAndRevertState()
         default:
             break
         }
+    }
+    
+    private func restoreLastUserMessageAndRevertState() {
+        switch document.store.model.thread.status {
+        case .running, .paused: () // continue and delete last step
+        case .none, .stoppedWithError: return // dont do anything
+        }
+        
+        document.stop()
+        if let lastStop: MessageCellModel = document.store.model.thread.cellModels.last(where: { $0.content.isUserMsg }),
+           case .userMessage(text: let text, attachments: let attachments) = lastStop.content {
+            self.text = text + self.text
+            self.attachments = attachments.map({ ChatAttachment(id: UUID().uuidString, contextItem: $0) }) + self.attachments
+        }
+        document.store.model.thread.steps = document.store.model.thread.steps.dropLast()
     }
     
     @MainActor

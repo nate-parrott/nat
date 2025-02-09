@@ -14,6 +14,13 @@ struct MessageCellModel: Equatable, Identifiable {
     }
 }
 
+extension MessageCellModel.Content {
+    var isUserMsg: Bool {
+        if case .userMessage = self { return true }
+        return false
+    }
+}
+
 extension ThreadModel {
     var cellModels: [MessageCellModel] {
         var cells = [MessageCellModel]()

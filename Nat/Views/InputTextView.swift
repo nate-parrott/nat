@@ -14,6 +14,7 @@ enum TextFieldEvent {
     case blur
     case largePaste(String)
     case didPasteURL(URL)
+    case backspaceOnEmptyField
 }
 
 struct InputTextFieldOptions: Equatable {
@@ -228,6 +229,12 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
         case #selector(NSResponder.moveDown(_:)):
             if options.wantsUpDownArrowEvents {
                 onEvent?(.key(.downArrow))
+                return true
+            }
+            return false
+        case #selector(NSResponder.deleteBackward(_:)):
+            if textView.string.isEmpty || textView.selectedRange.location == 0 {
+                onEvent?(.backspaceOnEmptyField)
                 return true
             }
             return false

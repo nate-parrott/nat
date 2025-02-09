@@ -89,7 +89,6 @@ extension AgentThreadStore {
             var llm = try LLMs.smartAgentModel()
             llm.reportUsage = { usage in
                 print("[💰 Usage]: \(usage.prompt_tokens) prompt, \(usage.completion_tokens) completion for model \(llm.options.model.name)")
-//                collectedLogs.append(.tokenUsage(prompt: usage.prompt_tokens, completion: usage.completion_tokens, model: llm.options.model.name))
             }
             var i = 0
             while true {
@@ -117,6 +116,8 @@ extension AgentThreadStore {
                     finishResult = finish
                     break
                 }
+                
+                try Task.checkCancellation()
                 
                 // CALL
                 let shouldContinue = try await handleFunctionCalls(agent: info, step: .init(get: { step }, set: {
@@ -180,6 +181,7 @@ extension AgentThreadStore {
             }
             
         } else if let lastToolUseStep = step.wrappedValue.lastToolUseStep {
+            try Task.checkCancellation()
             assert(!lastToolUseStep.isComplete)
             let plaintext = lastToolUseStep.initialResponse.asPlainText
             psuedoFnTool = try await agent.tools.concurrentMapThrowing({ try await $0.canHandlePsuedoFunction(fromPlaintext: plaintext) ? $0 : nil }).compactMap(\.self).first
@@ -191,6 +193,7 @@ extension AgentThreadStore {
             return false // we're done!
         }
         
+        try Task.checkCancellation()
         // Let's assume we have an incomplete tool-use step
         assert(step.lastToolUseStep.wrappedValue != nil)
         assert(!step.wrappedValue.lastToolUseStep!.isComplete)
