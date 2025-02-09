@@ -71,7 +71,7 @@ extension Document {
             do {
                 let tools: [Tool] = [
                     FileReaderTool(), FileEditorTool(), CodeSearchTool(), FileTreeTool(),
-                    TerminalTool(), WebResearchTool(), DeleteFileTool(), GrepTool(),
+                    TerminalTool(), WebResearchTool(), DeleteFileTool(), GrepTool(), ReadURLsTool(),
                     BasicContextTool(document: self, currentFilenameFromXcode: curFile),
                     DocsTool(document: self),
                 ]

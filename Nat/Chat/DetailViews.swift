@@ -62,7 +62,7 @@ extension MessageCellModel {
                 switch log {
                 case .readFile(let url):
                     return FileContentView(url: url).asAny
-                case .grepped, .edits, .webSearch, .deletedFile, .codeSearch, .usingEditCleanupModel, .listedFiles, .tokenUsage, .effort, .toolWarning, .toolError: ()
+                case .grepped, .edits, .webSearch, .deletedFile, .codeSearch, .usingEditCleanupModel, .listedFiles, .tokenUsage, .effort, .toolWarning, .toolError, .readUrls: ()
                 case .terminal:
                     return TerminalPreview().asAny
                 }

@@ -71,6 +71,7 @@ enum UserVisibleLog: Equatable, Codable {
     case listedFiles
     case tokenUsage(prompt: Int, completion: Int, model: String)
     case effort(String)
+    case readUrls([String])
 
     case toolWarning(String)
     case toolError(String)

@@ -167,6 +167,8 @@ private struct LogView: View {
             Label("Effort: \(description)", systemImage: "person.fill")
         case .terminal(let command):
             Label("`\(command)`", systemImage: "terminal")
+        case .readUrls(let urls):
+            Label("Reading: \(urls.compactMap { URL(string: $0)?.host }.joined(separator: ", "))", systemImage: "link.circle")
         }
     }
 }
