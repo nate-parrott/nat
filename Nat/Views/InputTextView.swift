@@ -233,7 +233,8 @@ class _InputTextFieldView: NSView, NSTextViewDelegate {
             }
             return false
         case #selector(NSResponder.deleteBackward(_:)):
-            if textView.string.isEmpty || textView.selectedRange.location == 0 {
+            if textView.selectedRange.length == 0,
+                textView.string.isEmpty || textView.selectedRange.location == 0 {
                 onEvent?(.backspaceOnEmptyField)
                 return true
             }

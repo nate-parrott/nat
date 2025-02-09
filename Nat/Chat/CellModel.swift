@@ -12,6 +12,10 @@ struct MessageCellModel: Equatable, Identifiable {
         case codeEdit(CodeEdit)
         case error(String)
     }
+    
+    static func idForUserMessage(stepIndex: Int) -> String {
+        "\(stepIndex)/initialUserMsg"
+    }
 }
 
 extension MessageCellModel.Content {
@@ -24,10 +28,13 @@ extension MessageCellModel.Content {
 extension ThreadModel {
     var cellModels: [MessageCellModel] {
         var cells = [MessageCellModel]()
-        for step in steps {
+        for (i, step) in steps.enumerated() {
             // Generate cells from initial user message:
             let (initialText, initialAttachments) = step.initialRequest.spitPlaintextAndOtherContextItems
-            cells.append(.init(id: step.id + "/initial", content: .userMessage(text: initialText, attachments: initialAttachments)))
+            cells.append(MessageCellModel(
+                id: MessageCellModel.idForUserMessage(stepIndex: i),
+                content: .userMessage(text: initialText, attachments: initialAttachments))
+            )
             for (i, loopItem) in step.toolUseLoop.enumerated() {
                 cells += loopItem.cellModels(idPrefix: step.id + "/toolUseLoop/\(i)/")
             }

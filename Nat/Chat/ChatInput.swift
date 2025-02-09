@@ -20,6 +20,7 @@ struct ChatInput: View {
     @State private var status = AgentStatus.none
     @State private var autorun = false
     @State private var dictationState: DictationClient.State = .none
+    @State private var showingTempBackspaceEdu = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -111,6 +112,9 @@ struct ChatInput: View {
     }
 
     private var placeholderText: String {
+        if showingTempBackspaceEdu {
+            return "Backspace to edit last message"
+        }
         if let folderName {
             if let currentFileOpenInXcode {
                 let filename = (currentFileOpenInXcode as NSString).lastPathComponent
@@ -179,6 +183,12 @@ struct ChatInput: View {
             let attachmentItems = self.attachments.map(\.contextItem)
             self.text = ""
             self.attachments = []
+            DispatchQueue.main.async {
+                showingTempBackspaceEdu = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    self.showingTempBackspaceEdu = false
+                }
+            }
             send(text, attachmentItems)
         } else if case .paused = status {
             document.unpause()

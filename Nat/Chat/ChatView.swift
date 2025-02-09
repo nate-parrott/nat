@@ -7,10 +7,12 @@ struct ChatView: View {
     @Environment(\.document) private var document
     @State private var status = AgentStatus.none
     @State private var messageCellModels = [MessageCellModel]()
+    @State private var numberOfUserMessages = 0
     @State private var debug = false
     @State private var size: CGSize?
     @StateObject private var detailCoord = DetailCoordinator()
     @State private var wantsWorktree = false
+    @Namespace private var messageAnimNamespace
     
     var body: some View {
         VStack(spacing: 0) {
@@ -19,16 +21,19 @@ struct ChatView: View {
             } else {
                 VStack(spacing: 0) {
                     ScrollToBottomThreadView(data: messageCellModels) { message in
-                        if canShowSplitDetail {
-                            MessageCell(model: message)
-                                .padding(.horizontal)
-                                .frame(width: splitPaneWidth)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        } else {
-                            MessageCell(model: message)
-                                .padding(.horizontal)
-                                .frame(maxWidth: 800, alignment: .center)
+                        Group {
+                            if canShowSplitDetail {
+                                MessageCell(model: message)
+                                    .padding(.horizontal)
+                                    .frame(width: splitPaneWidth)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            } else {
+                                MessageCell(model: message)
+                                    .padding(.horizontal)
+                                    .frame(maxWidth: 800, alignment: .center)
+                            }
                         }
+                        .matchedGeometryEffect(id: message.id, in: messageAnimNamespace)
                     }
                     .overlay {
                         ChatEmptyState(wantsWorktree: $wantsWorktree)
@@ -39,7 +44,15 @@ struct ChatView: View {
                             await self.sendMessage(text: text, attachments: attachments)
                         }
                     }, onStop: stopAgent)
+                    .background {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.blue.opacity(0.01))
+                            .matchedGeometryEffect(id: MessageCellModel.idForUserMessage(stepIndex: numberOfUserMessages), in: messageAnimNamespace)
+                            .id(MessageCellModel.idForUserMessage(stepIndex: numberOfUserMessages))
+//                            .padding(.trailing, 100)
+                    }
                 }
+                .animation(.easeInOut, value: numberOfUserMessages)
                 .overlay(alignment: .bottom) {
                     if case .running = status {
                         Shimmer()
@@ -60,7 +73,10 @@ struct ChatView: View {
         }
         .environmentObject(detailCoord)
         .onReceive(document.store.publisher.map(\.thread.status).removeDuplicates(), perform: { self.status = $0 })
-        .onReceive(document.store.publisher.map(\.thread.cellModels).removeDuplicates(), perform: { self.messageCellModels = $0 })
+        .onReceive(document.store.publisher.map(\.thread.cellModels).removeDuplicates(), perform: { models in
+            self.messageCellModels = models
+            self.numberOfUserMessages = models.count(where: { $0.content.isUserMsg })
+        })
         .contextMenu {
             Button(action: clear) {
                 Text("Clear")
