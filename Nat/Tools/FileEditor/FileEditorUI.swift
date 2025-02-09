@@ -93,7 +93,7 @@ private struct ReviewActionBar: View {
                 Button(action: { onApprove(commentText) }) {
                     Text("Approve")
                 }
-                .buttonStyle(ShinyButtonStyle(tintColor: .green))
+                .buttonStyle(ShinyButtonStyle(tintColor: .approveGreen))
                 
                 Button(action: { onReject(commentText) }) {
                     Text("Reject")

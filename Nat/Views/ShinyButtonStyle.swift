@@ -8,7 +8,13 @@ struct ShinyButtonStyle: ButtonStyle {
         configuration.label
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(tintColor)
+            .background {
+                ZStack {
+                    tintColor
+                    LinearGradient(colors: [Color.white.opacity(0.2), Color.black.opacity(0.1)], startPoint: .top, endPoint: .bottom)
+                        .blendMode(.overlay)
+                }
+            }
             .foregroundColor(.white)
             .cornerRadius(6)
             .scaleEffect(configuration.isPressed ? 0.95 : (isHovered ? 1.05 : 1.0))
