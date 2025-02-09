@@ -40,7 +40,7 @@ struct FileEditorTool: Tool {
                     fixedFileEdits.append(.init(path: edit.path, edits: [.write(path: edit.path, content: newFullFileContent)]))
                 } else {
                     await context.log(.toolError("Failed to apply edits"))
-                    return [.text("Your edits were not applied because of an error:\n\(error)\nPlease try again or try a different approach.")]
+                    return [.text("Your edits were not applied because of an error:\n\(error)\nPlease try again or try a different approach, like rewriting a larger portion or the whole file.")]
                 }
             }
         }

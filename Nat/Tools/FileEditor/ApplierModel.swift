@@ -4,14 +4,16 @@ import ChatToys
 
 extension FileEdit {
     var canBeAppliedUsingApplierModel: Bool {
-        if edits.isEmpty { return false }
-        for edit in edits {
-            switch edit {
-            case .write: return false
-            case .replace, .findReplace, .append: return true
-            }
-        }
-        return false
+        return false // Disabled for now
+        
+//        if edits.isEmpty { return false }
+//        for edit in edits {
+//            switch edit {
+//            case .write: return false
+//            case .replace, .findReplace, .append: return true
+//            }
+//        }
+//        return false
     }
 
     func applyUsingLLM(comments: String) async throws -> String {
