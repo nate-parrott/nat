@@ -64,7 +64,7 @@ extension Document {
         // Generate title if this is the first message
         if store.model.thread.steps.isEmpty {
             Task {
-                try? await generateAndApplyAutoTitle()
+                try? await generateAndApplyAutoTitle(firstMessage: text)
             }
         }
         
