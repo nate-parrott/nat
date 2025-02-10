@@ -3,7 +3,8 @@ import AppKit
 enum Alerts {
     // TODO: associate with the particular doc
     private static var windowForAlerts: NSWindow? {
-        NSApplication.shared.mainWindow ?? NSApplication.shared.windows.last
+        let allWindows: [NSWindow?] = [NSApplication.shared.mainWindow] + NSApplication.shared.windows.reversed().asArray
+        return allWindows.compactMap({ $0 as? DocWindow }).last
     }
 
     @MainActor

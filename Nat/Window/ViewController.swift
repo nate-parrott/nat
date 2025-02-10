@@ -2,6 +2,8 @@ import Combine
 import SwiftUI
 import Cocoa
 
+class DocWindow: NSWindow {}
+
 struct ContentViewWrapper: View {
     var document: Document?
     
