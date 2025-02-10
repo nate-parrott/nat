@@ -42,6 +42,7 @@ struct DocumentState: Equatable, Codable {
     var folder: URL?
     var isWorktreeFromOriginalFolder: URL?
     var worktreeBranch: String?
+    var inspectionDirectory: URL?
     
     var terminalVisible = false
     var mode = DocumentMode.agent

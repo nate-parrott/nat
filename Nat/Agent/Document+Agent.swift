@@ -74,6 +74,7 @@ extension Document {
                     TerminalTool(), WebResearchTool(), DeleteFileTool(), GrepTool(), ReadURLsTool(),
                     BasicContextTool(document: self, currentFilenameFromXcode: curFile),
                     DocsTool(document: self),
+                    InspectTool(document: self),
                 ]
                 try await send(message: msg, llm: llm, document: self, tools: tools, folderURL: folderURL, maxIterations: store.model.maxIterations)
             } catch {
