@@ -1,23 +1,50 @@
 import Foundation
 import ChatToys
 
+struct CleanThreadResponse: Codable {
+    var summary: String
+    var relevantFiles: [String]
+    var status: String
+}
+
 extension Document {
-    struct CleanThreadResponse: Codable {
-        var summary: String
-        var relevantFiles: [String]
-        var status: String
-    }
-    
-    @MainActor
-    func cleanThread(reason: String) async throws -> CleanThreadResponse {
-        guard let thread = store.model.thread else {
-            throw DocumentError.noThread
+    func cleanThread() async throws {
+        stop()
+        store.model.cleaning = true
+        do {
+            let summary = try await self.getThreadSummary()
+            Swift.print("Summary:\n\(summary)")
+            store.modify { state in
+                state.cleaning = nil
+                state.thread = ThreadModel(steps: [
+                    ThreadModel.Step(
+                        id: UUID().uuidString,
+                        initialRequest: TaggedLLMMessage(role: .user, content: [
+                            .text("Let me catch you up on what we're doing with a summary:"),
+                            .largePaste(summary.jsonString)
+                        ]),
+                        toolUseLoop: [],
+                        assistantMessageForUser: TaggedLLMMessage(role: .assistant, content: [.text("OK, let's continue.")]))
+                ], status: .none)
+            }
+        } catch {
+            // TODO: alert
+            Swift.print("Error cleaning thread: \(error)")
+            store.model.cleaning = nil
         }
-        
-        // Convert to LLM messages, filtering out incompletes
+    }
+}
+
+extension AgentThreadStore {
+    @MainActor
+    func getThreadSummary() async throws -> CleanThreadResponse {
+        var thread = await readThreadModel()
+        thread.fixIncompleteSteps()
         let llmMessages = thread.steps
             .filter { $0.isComplete }
             .flatMap(\.asTaggedLLMMessages)
+            .truncateOldMessages()
+            .byDroppingRedundantContext()
         
         // Create prompt for summarization
         let prompt = """
@@ -26,7 +53,6 @@ extension Document {
         2. Code changes made - include specific functions/methods/files
         3. Important decisions and approaches taken
         4. What is DONE vs NOT DONE YET
-        \(reason)
         
         Output ONLY a JSON object with these fields:
         {
@@ -36,9 +62,9 @@ extension Document {
         }
         """
         
-        var messages = llmMessages.map(\.asLLMMessage)
+        var messages = llmMessages.map { $0.asLLMMessage().byConvertingFunctionsToFakeFunctions }
         messages.append(LLMMessage(role: .user, content: prompt))
-        let llm = try LLMs.quickModel()
+        let llm = try LLMs.smartAgentModel()
         return try await llm.completeJSONObject(prompt: messages, type: CleanThreadResponse.self)
     }
 }

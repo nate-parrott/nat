@@ -102,12 +102,8 @@ private struct ReviewActionBar: View {
             }
             .padding(6)
             .padding(.trailing, 8)
-            .background {
-                if dictationState != .none {
-                    Color.blue.opacity(0.1)
-                }
-            }
         }
+        .dictationUI(state: dictationState)
         .onAppear {
             focusDate = Date()
         }

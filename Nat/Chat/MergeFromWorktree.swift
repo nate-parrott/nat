@@ -159,6 +159,9 @@ struct MergeFromWorktreeView: View {
             if !feedback.isEmpty {
                 // TODO: Send FB
             }
+            Task {
+                await document.deleteWorktree(at: worktreeDir)
+            }
             dismiss()
             
         } catch {

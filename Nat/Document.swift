@@ -50,6 +50,7 @@ struct DocumentState: Equatable, Codable {
     var autorun = false
     var maxIterations = 20
     var dictating = false
+    var cleaning: Bool?
 }
 
 extension DocumentState {

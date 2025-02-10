@@ -4,17 +4,16 @@ import Cocoa
 
 struct ContentViewWrapper: View {
     var document: Document?
-
+    
     var body: some View {
         if let document = document {
-            WithSnapshotMain(store: document.store, snapshot: { $0.mode }) { mode in
-                switch mode {
-                case .agent:
-                    ChatView()
-                case .codeSearch:
-                    SearchView()
-                case .docs:
-                    DocsView()
+            WithSnapshotMain(store: document.store, snapshot: { $0.cleaning }) { cleaning in
+                if cleaning == true {
+                    ProgressView()
+                        .scaleEffect(2)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    mainContent
                 }
             }
             .environment(\.document, document)
@@ -23,6 +22,20 @@ struct ContentViewWrapper: View {
 //            }
         } else {
             Color.clear
+        }
+    }
+    
+    @ViewBuilder
+    private var mainContent: some View {
+        WithSnapshotMain(store: document!.store, snapshot: { $0.mode }) { mode in
+            switch mode {
+            case .agent:
+                ChatView()
+            case .codeSearch:
+                SearchView()
+            case .docs:
+                DocsView()
+            }
         }
     }
 }
@@ -114,6 +127,13 @@ class ViewController: NSViewController {
     
     @IBAction func clearChat(_ sender: Any?) {
         document?.clear()
+    }
+    
+    @IBAction func cleanThread(_ sender: Any?) {
+        guard let document = document else { return }
+        Task {
+            try? await document.cleanThread()
+        }
     }
 }
 

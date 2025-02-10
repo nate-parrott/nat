@@ -9,7 +9,7 @@ struct DictationModifier: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .onChange(of: controlActiveState) { newValue in 
+            .onChange(of: controlActiveState) { newValue in
                 dictationClient.priority = newValue == .key ? priority : nil
             }
             .onAppear {
@@ -22,16 +22,63 @@ struct DictationModifier: ViewModifier {
     }
 }
 
-//extension View {
-//    func dictation(
-//        priority: Int,
-//        state: Binding<DictationClient.State>,
-//        onText: @escaping (String) -> Void
-//    ) -> some View {
-//        modifier(DictationModifier(
-//            priority: priority,
-//            state: state,
-//            onDictatedText: onText
-//        ))
-//    }
-//}
+extension View {
+    func dictationUI(state: DictationClient.State) -> some View {
+        self.opacity(state == .none ? 1 : 0.05)
+            .background {
+                if state != .none {
+                    Color.blue.opacity(0.05)
+                    Color.blue.opacity(0.1)
+                        .modifier(PulseAnimationModifier())
+                }
+            }
+            .overlay(alignment: .leading) {
+                Group {
+                    switch state {
+                    case .none, .startingToRecord: EmptyView()
+                    case .recording:
+                        Text("Listening...")
+//                            .modifier(PulseAnimationModifier())
+                            .transition(.upDown())
+                    case .recognizingSpeech:
+                        Text("Transcribing...")
+//                            .modifier(PulseAnimationModifier())
+                            .transition(.upDown())
+                    }
+                }
+                .foregroundStyle(Color.blue)
+                .bold()
+                .padding(.horizontal)
+            }
+            .animation(.niceDefault, value: state)
+    }
+}
+
+extension AnyTransition {
+    static func upDown(dist: CGFloat = 10) -> AnyTransition {
+        self.opacity.combined(with: .asymmetric(insertion: .offset(y: dist), removal: .offset(y: -dist)))
+    }
+}
+
+struct PulseAnimationModifier: ViewModifier {
+    var duration: TimeInterval = 1
+    var active = true
+    
+    @State private var onState = false
+    
+    func body(content: Content) -> some View {
+        content
+        // Written by Phil
+//        .scaleEffect(onState ? 1.1 : 1.0)
+        .opacity(onState ? 0.5 : 1.0)
+        .onAppearOrChange(of: active) {
+            if $0 {
+                withAnimation(Animation.easeInOut(duration: duration).repeatForever(autoreverses: true)) {
+                    onState = true
+                }
+            } else {
+                onState = false
+            }
+        }
+    }
+}

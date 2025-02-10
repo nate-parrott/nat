@@ -53,10 +53,10 @@ struct ChatInput: View {
 //        .onChange(of: text, perform: { newValue in
 //            if newValue != "" { document.pause() }
 //        })
+        .dictationUI(state: dictationState)
         .background {
             if textFieldSize.height > 100 || dictationState != .none {
-                (dictationState != .none ? Color.blue.opacity(0.1) : Color.clear)
-                    .background(.thinMaterial)
+                Color.clear.background(.thinMaterial)
             }
         }
         .modifier(DictationModifier(priority: 1, state: $dictationState, onDictatedText: { text in
