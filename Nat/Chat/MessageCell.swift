@@ -169,6 +169,8 @@ private struct LogView: View {
             Label("`\(command)`", systemImage: "terminal")
         case .readUrls(let urls):
             Label("Reading: \(urls.compactMap { URL(string: $0)?.host }.joined(separator: ", "))", systemImage: "link.circle")
+        case .retrievedLogs(let count):
+            Label("Retrieved \(count) log item\(count == 1 ? "" : "s")", systemImage: "eyes")
         }
     }
 }

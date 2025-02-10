@@ -84,6 +84,7 @@ extension DocumentState {
 class DocDataStore: DataStore<DocumentState> {
     override func processModelAfterLoad(model: inout DocumentState) {
         model.thread.status = .none
+        model.inspectionDirectory = nil
     }
 }
 

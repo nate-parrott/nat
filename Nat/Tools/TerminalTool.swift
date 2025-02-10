@@ -83,69 +83,7 @@ struct TerminalTool: Tool {
     private func runCommand(_ command: String, in directory: URL, document: Document) async throws -> String {
 //        let finalCmd = "cd \(directory.filePathEscapedForTerminal) && \(command)"
         let output = try await document.getOrCreateTerminal().runAndWaitForOutput(command: command)
-        return output.truncateMiddle(firstNLines: 4, lastNLines: 20)
-
-//        let process = Process()
-//        process.executableURL = URL(fileURLWithPath: "/bin/bash")
-//        process.arguments = ["-c", command]
-//        process.currentDirectoryURL = directory
-//
-//        let outputPipe = Pipe()
-//        let errorPipe = Pipe()
-//        process.standardOutput = outputPipe
-//        process.standardError = errorPipe
-//
-//        var outputData = Data()
-//        var errorData = Data()
-//
-//        // Set up async reading of the output pipe
-//        outputPipe.fileHandleForReading.readabilityHandler = { handle in
-//            let data = handle.availableData
-//            if data.count > 0 {
-//                DispatchQueue.main.async {
-//                    outputData.append(data)
-//                }
-//            }
-//        }
-//
-//        // Set up async reading of the error pipe
-//        errorPipe.fileHandleForReading.readabilityHandler = { handle in
-//            let data = handle.availableData
-//            if data.count > 0 {
-//                DispatchQueue.main.async {
-//                    errorData.append(data)
-//                }
-//            }
-//        }
-//
-//        try process.run()
-//
-//        // Set up timeout and cancellation checking
-//        let monitorTask = Task {
-//            while true {
-//                try await Task.sleep(nanoseconds: 2_000_000_000)
-//                if Task.isCancelled {
-//                    process.terminate()
-//                    throw CancellationError()
-//                }
-//            }
-//        }
-//
-//        let timeoutTask = Task {
-//            try await Task.sleep(nanoseconds: 600_000_000_000)
-//            process.terminate()
-//        }
-//
-//        await process.waitUntilExitAsync()
-//        try await Task.sleep(seconds: 0.1) // HACK to wait for reads to finish
-//
-//        // Clean up all monitoring tasks
-//        monitorTask.cancel()
-//        timeoutTask.cancel()
-////        outputTask.cancel()
-////        errorTask.cancel()
-//
-//        return String(data: outputData, encoding: .utf8) ?? ""
+        return output.truncateMiddle(firstNLines: 8, lastNLines: 30)
     }
 }
 

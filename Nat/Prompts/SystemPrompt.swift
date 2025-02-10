@@ -24,11 +24,12 @@ enum Prompts {
     Speed is important so do multiple function calls concurrently whenever possible, EXCEPT when applying edits. Always wait to see if an edit will be confirmed before continuing to research or perform other tasks.
     Comment code well.
     Obey KISS, YAGNI and SOLID principles.
+    Avoid writing functions / classes that are too big; write self-contained logic in helpers and break up large functions.
     
     # iOS Development Tips
     When building, use xcodebuild. List schemes first, then build the relevant scheme.
     Use the -quiet option.
-    Unless specified, run unit tests only, not UI tests. 
+    Unless specified, run unit tests only, not UI tests.
     
     When searching for definitions, keep in mind that symbols are typically defined as enums, structs or classes, and that you can search for all at once using a regex.
     

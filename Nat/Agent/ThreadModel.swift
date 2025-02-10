@@ -43,7 +43,10 @@ struct ThreadModel: Equatable, Codable {
             }
             
             var isComplete: Bool {
-                computerResponse.count > 0 || psuedoFunctionResponse != nil
+                if initialResponse.functionCalls.count == 0 {
+                    return psuedoFunctionResponse != nil
+                }
+                return computerResponse.count == initialResponse.functionCalls.count
             }
         }
     }
@@ -76,6 +79,7 @@ enum UserVisibleLog: Equatable, Codable {
     case toolWarning(String)
     case toolError(String)
     case terminal(command: String)
+    case retrievedLogs(Int)
 }
 
 extension ThreadModel.Step {
