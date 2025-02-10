@@ -61,6 +61,13 @@ extension Document {
         let folderURL = store.model.folder
         let curFile = store.model.selectedFileInEditorRelativeToFolder
 
+        // Generate title if this is the first message
+        if store.model.thread.steps.isEmpty {
+            Task {
+                try? await generateAndApplyAutoTitle()
+            }
+        }
+        
         stop()
  
         currentAgentTask = Task {

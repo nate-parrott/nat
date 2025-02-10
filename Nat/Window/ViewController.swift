@@ -10,7 +10,6 @@ struct ContentViewWrapper: View {
             WithSnapshotMain(store: document.store, snapshot: { $0.cleaning }) { cleaning in
                 if cleaning == true {
                     ProgressView()
-                        .scaleEffect(2)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     mainContent
