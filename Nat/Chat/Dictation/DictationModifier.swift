@@ -37,17 +37,21 @@ extension View {
                     switch state {
                     case .none, .startingToRecord: EmptyView()
                     case .recording:
-                        Text("Listening...")
+                        HStack {
+                            Text("Listening...")
+                                .bold()
+                            Text(markdown: "Press _Caps Lock_ again to stop")
+                        }
 //                            .modifier(PulseAnimationModifier())
                             .transition(.upDown())
                     case .recognizingSpeech:
                         Text("Transcribing...")
+                            .bold()
 //                            .modifier(PulseAnimationModifier())
                             .transition(.upDown())
                     }
                 }
                 .foregroundStyle(Color.blue)
-                .bold()
                 .padding(.horizontal)
             }
             .animation(.niceDefault, value: state)
