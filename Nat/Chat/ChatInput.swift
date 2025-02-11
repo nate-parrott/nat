@@ -6,6 +6,7 @@ struct ChatAttachment: Identifiable, Equatable {
 }
 
 struct ChatInput: View {
+    @Binding var attachments: [ChatAttachment]
     var maxHeight: CGFloat?
     var send: (String, [ContextItem]) -> Void
     var onStop: () -> Void
@@ -16,7 +17,6 @@ struct ChatInput: View {
     @State private var textFieldSize: CGSize = .zero
     @State private var currentFileOpenInXcode: String?
     @State private var folderName: String?
-    @State private var attachments: [ChatAttachment] = []
     @State private var status = AgentStatus.none
     @State private var autorun = false
     @State private var dictationState: DictationClient.State = .none
@@ -50,9 +50,6 @@ struct ChatInput: View {
         .onAppear {
             focusDate = Date()
         }
-//        .onChange(of: text, perform: { newValue in
-//            if newValue != "" { document.pause() }
-//        })
         .dictationUI(state: dictationState)
         .background {
             if textFieldSize.height > 100 || dictationState != .none {

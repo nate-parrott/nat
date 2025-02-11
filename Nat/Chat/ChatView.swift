@@ -12,6 +12,7 @@ struct ChatView: View {
     @State private var size: CGSize?
     @StateObject private var detailCoord = DetailCoordinator()
     @State private var wantsWorktree = false
+    @State private var pendingAttachments: [ChatAttachment] = []
     @Namespace private var messageAnimNamespace
     
     var body: some View {
@@ -39,7 +40,7 @@ struct ChatView: View {
                         ChatEmptyState(wantsWorktree: $wantsWorktree)
                     }
                     
-                    ChatInput(maxHeight: inputMaxHeight, send: { text, attachments in
+                    ChatInput(attachments: $pendingAttachments, maxHeight: inputMaxHeight, send: { text, attachments in
                         Task {
                             await self.sendMessage(text: text, attachments: attachments)
                         }
@@ -72,6 +73,7 @@ struct ChatView: View {
             WorktreeFooter()
         }
         .environmentObject(detailCoord)
+        .fileDropTarget(projectFolder: document.store.model.folder, attachments: $pendingAttachments)
         .onReceive(document.store.publisher.map(\.thread.status).removeDuplicates(), perform: { self.status = $0 })
         .onReceive(document.store.publisher.map(\.thread.cellModels).removeDuplicates(), perform: { models in
             self.messageCellModels = models

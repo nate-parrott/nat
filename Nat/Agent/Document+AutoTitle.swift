@@ -76,7 +76,7 @@ extension URL {
         
         // Build candidate URL
         func nextCandidate() -> URL {
-            let suffix = attempts == 0 ? "" : "_\(attempts)"
+            let suffix = attempts == 0 ? "" : " \(attempts)"
             let finalComponent = component + suffix
             return url.appendingPathComponent(finalComponent)
                 .appendingPathExtension(ext ?? "")

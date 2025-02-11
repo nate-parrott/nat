@@ -183,7 +183,6 @@ extension AgentThreadStore {
                 step.wrappedValue.assistantMessageForUser = nil // Remove final assistant msg, since we handled this as a fn call.
                 step.wrappedValue.toolUseLoop.append(.init(initialResponse: msg, computerResponse: []))
             }
-            
         } else if let lastToolUseStep = step.wrappedValue.lastToolUseStep {
             try Task.checkCancellation()
             assert(!lastToolUseStep.isComplete)
@@ -192,9 +191,6 @@ extension AgentThreadStore {
         }
         
         if let finalMsg = step.wrappedValue.assistantMessageForUser {
-//            if finalMsg.asPlainText.contains("%% BEGIN FILE SNIPPET") {
-//                print("UGH WTF!!!")
-//            }
             print("[\(agent.name)] Received final response (no function calls): \(finalMsg)")
             // expect assistantMessageForUser has been set by appendOrUpdatePartialResponse
             return false // we're done!
@@ -217,13 +213,19 @@ extension AgentThreadStore {
         
         // Now, handle all fn calls:
         for fnCall in step.wrappedValue.lastToolUseStep!.initialResponse.functionCalls {
-            let toolCtx = ToolContext(
-                activeDirectory: agent.folder,
-                log: { step.wrappedValue.lastToolUseStep?.functionCallLogs[fnCall.id ?? "", default: []].append($0) },
-                document: agent.document,
-                autorun: agent.autorun)
-            let resp = try await handleFunctionCall(fnCall, tools: agent.tools, toolCtx: toolCtx)
-            step.wrappedValue.lastToolUseStep!.computerResponse.append(resp)
+            // If there was a psuedo-fn call AND it's not from the psuedo-function's relevant tool (ie fileeditor's apply_edits) then tell the agent it shouldn't call it yet!
+            if psuedoFnTool != nil, !psuedoFnTool!.functions.map(\.name).contains(fnCall.name) {
+                step.wrappedValue.lastToolUseStep!.computerResponse.append(fnCall.response(text: "Error: cannot use other tools concurrently with file editing. You can try again now that the edits are done."))
+            } else {
+                // Do the main function call:
+                let toolCtx = ToolContext(
+                    activeDirectory: agent.folder,
+                    log: { step.wrappedValue.lastToolUseStep?.functionCallLogs[fnCall.id ?? "", default: []].append($0) },
+                    document: agent.document,
+                    autorun: agent.autorun)
+                let resp = try await handleFunctionCall(fnCall, tools: agent.tools, toolCtx: toolCtx)
+                step.wrappedValue.lastToolUseStep!.computerResponse.append(resp)
+            }
         }
         
         return true // Continue

@@ -24,7 +24,7 @@ class DictationClient: ObservableObject {
     static func highestPriorityClient() -> DictationClient? {
         clients.allObjects
             .filter { $0.priority != nil }
-            .min { $0.priority! < $1.priority! }
+            .max { $0.priority! < $1.priority! }
     }
 }
 

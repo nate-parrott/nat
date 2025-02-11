@@ -179,7 +179,7 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
                     ))
                 } catch {
                     print("[_CodeSearch2] ⚠️ Error creating final snippet ranges: \(error)")
-                    await context.log(.toolWarning("Failed to read file \(path)"))
+                    await context.log(.toolWarning("Failed to read file \(path.path(percentEncoded: false))"))
                 }
             }
         }
