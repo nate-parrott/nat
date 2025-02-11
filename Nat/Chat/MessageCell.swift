@@ -9,7 +9,7 @@ struct MessageCell: View {
     var body: some View {
         switch model.content {
         case .userMessage(let string, let attachments):
-            Group {
+            VStack(alignment: .trailing) {
                 Text(string)
                     .textSelection(.enabled)
                     .foregroundStyle(.white)
