@@ -4,6 +4,11 @@ Run tests using scheme Nat
 
 In UI code, use things like onReceive or WithSnapshotMain to observe the document store reactively, rather than just viewing the document store’s model once.
 
+I hate double-negative guard statements like:
+guard !xyz.failed else { return nil }
+Instead, just do:
+if xyz.failed { return nil }
+
 Tools for the main agent are registered in Document+Agent.swift
 
 When calling external processes, make sure to read the file data BEFORE calling waitUntilExit:
