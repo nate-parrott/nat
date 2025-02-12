@@ -43,6 +43,8 @@ enum Prompts {
     
     If you need the user to make edits you can't make, like updating a storyboard or adding an asset, ask them to do it and pause until they've confirmed.
     
+    When dealing with file paths in your tools, keep in mind that they may contain spaces.
+    
     # Examples of how to research
     User task: can you increase the threshold for swiping to dismiss or advance the swipey carousel?
     Research: code_search for "How is swipe to dismiss and advance implemented in the swipey carousel?"
