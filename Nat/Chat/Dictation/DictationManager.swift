@@ -10,11 +10,33 @@ class DictationClient: ObservableObject {
     enum State: Equatable {
         case none
         case startingToRecord
-        case recording 
+        case recording(previewText: String)
         case recognizingSpeech
+        
+        var isRecordingOrStarting: Bool {
+            // Written by Phil
+            switch self {
+            case .startingToRecord, .recording:
+                return true
+            case .none, .recognizingSpeech:
+                return false
+            }
+        }
     }
     @Published fileprivate(set) var state: State = .none
     var onDictatedText: ((String) -> Void)?
+    
+    var registered = true {
+        didSet {
+            if registered != oldValue {
+                if registered {
+                    DictationClient.clients.add(self)
+                } else {
+                    DictationClient.clients.remove(self)
+                }
+            }
+        }
+    }
     
     init(priority: Int? = nil) {
         self.priority = priority
@@ -34,7 +56,7 @@ class DictationManager {
     
     private enum State {
         case idle
-        case recording(client: DictationClient, recorder: AudioRecorder)
+        case recording(client: DictationClient, recorder: AudioRecorder, liveRecognizer: LiveSpeechRecognizer)
     }
     
     private var lastFlags: NSEvent.ModifierFlags?
@@ -81,8 +103,18 @@ class DictationManager {
         
         do {
             try await recorder.startRecording()
-            client.state = .recording
-            state = .recording(client: client, recorder: recorder)
+            
+            // Start live preview recognition
+            let liveRecognizer = LiveSpeechRecognizer()
+            try await liveRecognizer.startRecognition { previewText in
+                // Ensure we're on main queue and still in recording state
+                Task { @MainActor in
+                    if client.state.isRecordingOrStarting {
+                        client.state = .recording(previewText: previewText)
+                    }
+                }
+            }
+            state = .recording(client: client, recorder: recorder, liveRecognizer: liveRecognizer)
         } catch {
             await Alerts.showAppAlert(title: "Recording Error", message: error.localizedDescription)
             client.state = .none
@@ -90,7 +122,8 @@ class DictationManager {
     }
     
     private func stopDictation() async {
-        guard case .recording(let client, let recorder) = state else { return }
+        guard case .recording(let client, let recorder, let liveRecognizer) = state else { return }
+        liveRecognizer.stopRecognition()
         client.state = .recognizingSpeech
         
         do {
