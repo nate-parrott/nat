@@ -10,11 +10,13 @@ struct MessageCell: View {
         switch model.content {
         case .userMessage(let string, let attachments):
             VStack(alignment: .trailing) {
-                Text(string)
-                    .textSelection(.enabled)
-                    .foregroundStyle(.white)
-                    .lineSpacing(3)
-                    .modifier(TintedBackdropModifier(tint: .blue))
+                if string.nilIfEmpty != nil {
+                    Text(string)
+                        .textSelection(.enabled)
+                        .foregroundStyle(.white)
+                        .lineSpacing(3)
+                        .modifier(TintedBackdropModifier(tint: .blue))
+                }
                 
                 if attachments.count > 0 {
                     VStack(alignment: .trailing) {

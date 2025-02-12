@@ -4,6 +4,7 @@ import Foundation
 enum LLMs {
     static func smartAgentModel() throws -> ChatGPT {
         try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("anthropic/claude-3.5-sonnet:beta", 200_000), baseURL: .openRouterOpenAIChatEndpoint, headers: additionalHeaders))
+//        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("openai/o3-mini-high", 200_000), baseURL: .openRouterOpenAIChatEndpoint, headers: additionalHeaders))
     }
 
     static var fakeFunctions: Bool {
