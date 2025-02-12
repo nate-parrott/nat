@@ -13,25 +13,37 @@ enum EditParser {
         }
     }
 
-    static func parse(string: String, toolContext: ToolContext) throws -> [Part] {
-        try _parse(string: string, toolContext: toolContext, partial: false)
+    static func parse(string: String, toolContext: ToolContext, parseErrors: inout [String]) throws -> [Part] {
+        return try _parse(string: string, toolContext: toolContext, partial: false, parseErrors: &parseErrors)
     }
 
     static func parsePartial(string: String) throws -> [Part] {
-        try _parse(string: string, toolContext: nil, partial: true)
+        var errs = [String]()
+        return try _parse(string: string, toolContext: nil, partial: true, parseErrors: &errs)
     }
     
     static func containsEdits(string: String) throws -> Bool {
-        for part in try _parse(string: string, toolContext: nil, partial: false) {
+        var errs = [String]()
+        for part in try _parse(string: string, toolContext: nil, partial: false, parseErrors: &errs) {
             if case .codeEdit = part {
                 return true
             }
         }
         return false
     }
+    
+    static func containsEditsOrMalformedEdits(string: String) throws -> Bool {
+        var errs = [String]()
+        for part in try _parse(string: string, toolContext: nil, partial: false, parseErrors: &errs) {
+            if case .codeEdit = part {
+                return true
+            }
+        }
+        return errs.count > 0
+    }
 
     // `toolContext` can be nil for pure parsing, but needs to be set when generating code edits for application
-    private static func _parse(string: String, toolContext: ToolContext?, partial: Bool) throws -> [Part] {
+    private static func _parse(string: String, toolContext: ToolContext?, partial: Bool, parseErrors: inout [String]) throws -> [Part] {
         var parts = [Part]()
 
         func appendLine(_ str: String) {
@@ -69,7 +81,7 @@ enum EditParser {
             }
 
             if cmd.type == "FindReplace" {
-                if let (find, replace) = parseFindAndReplace(currentContent) {
+                if let (find, replace) = parseFindAndReplace(currentContent, errors: &parseErrors) {
                     parts.append(.codeEdit(.findReplace(path: resolvedPath, find: find, replace: replace)))
                 } else if partial {
                     parts.append(.codeEdit(.findReplace(path: resolvedPath, find: currentContent, replace: [])))
@@ -165,7 +177,12 @@ enum EditParser {
     }
 
     static func parseEditsOnly(from string: String, toolContext: ToolContext) throws -> [CodeEdit] {
-        try parse(string: string, toolContext: toolContext).compactMap { x in
+        var errs = [String]()
+        return try parseEditsOnly(from: string, toolContext: toolContext, parseErrors: &errs)
+    }
+    
+    static func parseEditsOnly(from string: String, toolContext: ToolContext, parseErrors: inout [String]) throws -> [CodeEdit] {
+        try parse(string: string, toolContext: toolContext, parseErrors: &parseErrors).compactMap { x in
             if case .codeEdit(let codeEdit) = x {
                 return codeEdit
             }
@@ -174,10 +191,12 @@ enum EditParser {
     }
 }
 
-private func parseFindAndReplace(_ content: [String]) -> (find: [String], replace: [String])? {
+private func parseFindAndReplace(_ content: [String], errors: inout [String]) -> (find: [String], replace: [String])? {
     let split = content.split(separator: FileEditorTool.findReplaceDivider, omittingEmptySubsequences: false)
     if split.count == 2 {
         return (split[0].asArray, split[1].asArray)
+    } else {
+        errors.append("Expected 1 line containing the \(FileEditorTool.findReplaceDivider) divider per find/replace block, but got \(split.count - 1)")
     }
     return nil
 }

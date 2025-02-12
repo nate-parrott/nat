@@ -335,12 +335,81 @@ final class FileEditorTests: XCTestCase {
         let y = 2
         %%%
         """
-        let parts = try EditParser.parse(string: input, toolContext: .stub())
+        var errs = [String]()
+        let parts = try EditParser.parse(string: input, toolContext: .stub(), parseErrors: &errs)
         XCTAssertEqual(parts.count, 2)
         for part in parts {
             if case .textLines = part {
                 XCTFail("Should not have any text parts")
             }
         }
+    }
+    
+    func testMalformedEditsDetected() throws {
+        let inputEmpty = """
+        no edits here!
+        I'll add a new row to the table with another fruit.
+
+        %whee
+        // hey!
+        ===WITH===!!
+        
+        hey!
+        
+        """
+        
+        try XCTAssertTrue(!EditParser.containsEditsOrMalformedEdits(string: inputEmpty))
+        
+        let inputMalformed = """
+        I'll add a new row to the table with another fruit.
+
+        %%%
+        > FindReplace banana.html
+                    <tr>
+                        <td>Orange!</td>
+                    </tr>
+                </table>
+        ===WITH===
+                    <tr>
+                        <td>Orange!</td>
+                    </tr>
+                    <tr>
+                        <td>Apple</td>
+                    </tr>
+                </table>
+        ===WITH===
+        hehehe
+        %%%
+        """
+
+        try XCTAssertTrue(EditParser.containsEditsOrMalformedEdits(string: inputMalformed))
+    }
+    
+    func testMultipleWithsGenerateError() throws {
+        let input = """
+        I'll add a new row to the table with another fruit.
+
+        %%%
+        > FindReplace banana.html
+                    <tr>
+                        <td>Orange!</td>
+                    </tr>
+                </table>
+        ===WITH===
+                    <tr>
+                        <td>Orange!</td>
+                    </tr>
+                    <tr>
+                        <td>Apple</td>
+                    </tr>
+                </table>
+        ===WITH===
+        hehehe
+        %%%
+        """
+        var errs = [String]()
+        let resp =  try EditParser.parseEditsOnly(from: input, toolContext: .stub(), parseErrors: &errs)
+        XCTAssertEqual(resp.count, 0)
+        XCTAssert(errs.count > 0)
     }
 }

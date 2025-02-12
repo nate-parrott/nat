@@ -63,7 +63,7 @@ extension AgentThreadStore {
             try await tool.contextToInsertAtBeginningOfThread(context: toolCtx)
         }.compactMap({ $0 })
         if let folderURL {
-            initialCtx.append("The your tools' base directory is \(folderURL.absoluteString). When using tools to edit or read files, use paths RELATIVE to this. You cannot operate outside of this directory.")
+            initialCtx.append("Your tools' base directory is \(folderURL.absoluteString). When using tools to edit or read files, use paths RELATIVE to this. You cannot operate outside of this directory.")
         }
         var systemPrompt = systemPrompt.replacingOccurrences(of: "[[CONTEXT]]", with: initialCtx.joined(separator: "\n\n"))
         if fakeFunctions, allFunctions.count > 0 {

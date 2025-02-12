@@ -10,11 +10,23 @@ struct FileEditorTool: Tool {
     }
     
     func canHandlePsuedoFunction(fromPlaintext response: String) async throws -> Bool {
-        return try EditParser.containsEdits(string: response)
+        return try EditParser.containsEditsOrMalformedEdits(string: response)
     }
     
     func handlePsuedoFunction(fromPlaintext response: String, context: ToolContext) async throws -> [ContextItem]? {
-        let codeEdits = try EditParser.parseEditsOnly(from: response, toolContext: context)
+        var parseErrors = [String]()
+        let codeEdits = try EditParser.parseEditsOnly(from: response, toolContext: context, parseErrors: &parseErrors)
+        if parseErrors.count > 0 {
+            await context.log(.toolError("Invalid edits"))
+            return [.text("Your edits were not applied because of an error:\n\(parseErrors.joined(separator: ", "))")]
+        }
+        
+        let validationErrors = codeEdits.compactMap { $0.validationError(context) }
+        if validationErrors.count > 0 {
+            await context.log(.toolError("Invalid edits"))
+            return [.text("Your edits were not applied because of an error:\n\(parseErrors.joined(separator: ", "))")]
+            
+        }
 
         if codeEdits.isEmpty {
             return nil
@@ -35,7 +47,8 @@ struct FileEditorTool: Tool {
             } catch {
                 if edit.canBeAppliedUsingApplierModel {
                     await context.log(.usingEditCleanupModel(edit.path))
-                    let comments = try EditParser.parse(string: response, toolContext: context).compactMap(\.ifString).joined(separator: "\n\n[Code Edit]\n\n")
+                    var errs = [String]()
+                    let comments = try EditParser.parse(string: response, toolContext: context, parseErrors: &errs).compactMap(\.ifString).joined(separator: "\n\n[Code Edit]\n\n")
                     let newFullFileContent = try await edit.applyUsingLLM(comments: comments)
                     fixedFileEdits.append(.init(path: edit.path, edits: [.write(path: edit.path, content: newFullFileContent)]))
                 } else {
@@ -168,7 +181,11 @@ extension FileEdit {
         var before = ""
         // Always read from disk even when overwriting
 //        if requiresReadFromDisk {
-        before = (try? String(contentsOf: path, encoding: .utf8)) ?? ""
+        if requiresReadFromDisk {
+            before = try String(contentsOf: path, encoding: .utf8)
+        } else {
+            before = (try? String(contentsOf: path, encoding: .utf8)) ?? ""
+        }
 //        }
         let after = try applyToExisting(content: before)
         return (before, after)
@@ -331,4 +348,13 @@ private enum ApplyEditError: Error {
     case noMatch(String)
     case moreThanOneMatch(String)
     case fakeError
+}
+
+extension CodeEdit {
+    func validationError(_ ctx: ToolContext) -> String? {
+        if url.path().hasPrefix("/Users/") {
+            return "You passed an absolute path to be edited, but you can only pass paths relative to the project root dir."
+        }
+        return nil
+    }
 }
