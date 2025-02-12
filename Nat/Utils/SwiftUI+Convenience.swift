@@ -56,6 +56,21 @@ struct ForEachUnidentifiable<Element, Content: View>: View {
     }
 }
 
+struct ForEachUnidentifiableWithIndices<Element, Content: View>: View {
+    var items: [Element]
+    @ViewBuilder var content: (Int, Element) -> Content
+
+    var body: some View {
+        ForEach(itemsAsIdentifiable) {
+            content($0.id, $0.element)
+        }
+    }
+
+    private var itemsAsIdentifiable: [CustomIdentifiable<Element>] {
+        items.enumerated().map { CustomIdentifiable(id: $0.offset, element: $0.element) }
+    }
+}
+
 private struct CustomIdentifiable<Element>: Identifiable {
     var id: Int
     var element: Element

@@ -8,9 +8,12 @@ private struct FileResultsFetcher {
     func fetchAllFiles() throws -> [AttachmentSearchResult] {
         let allFiles = try FileTree.allFileURLs(folder: baseURL)
         
-        return allFiles.map { url in
+        return allFiles.compactMap { url in
             let filename = url.lastPathComponent
-            let relativePath = url.path.replacingOccurrences(of: baseURL.path + "/", with: "")
+            if filename.hasPrefix(".") { return nil }
+            guard let relativePath = url.asPathRelativeTo(base: baseURL) else {
+                return nil
+            }
             
             return AttachmentSearchResult(
                 title: filename,
@@ -22,7 +25,7 @@ private struct FileResultsFetcher {
                         path: url,
                         projectRelativePath: relativePath,
                         lineStart: 0,
-                        linesCount: 20
+                        linesCount: 5000
                     ))
                 }
             )
@@ -67,7 +70,7 @@ class AttachmentSearchProvider: ObservableObject {
     }
     
     private func filterResults(_ query: String) -> [AttachmentSearchResult] {
-        guard query.count >= 3 else { return [] }
+        if query == "" { return [] }
         let filtered = filePool.filter { $0.matches(query: query) }
         return Array(filtered.prefix(20))
     }
@@ -82,7 +85,8 @@ class AttachmentSearchProvider: ObservableObject {
                 return self.filterResults(query)
             }
             .receive(on: DispatchQueue.main)
-            .assign(to: &$results)
+            .sink(receiveValue: { [weak self] in self?.results = $0 })
+            .store(in: &subscriptions)
     }
     
     func search(query: String) {

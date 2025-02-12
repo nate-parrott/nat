@@ -21,6 +21,7 @@ struct ChatInput: View {
     @State private var autorun = false
     @State private var dictationState: DictationClient.State = .none
     @State private var showingTempBackspaceEdu = false
+    @State private var attachmentPickerPresented = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -69,9 +70,17 @@ struct ChatInput: View {
     }
 
     @ViewBuilder var buttons: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: -4) {
+            Button(action: { attachmentPickerPresented = true }) {
+                Image(systemName: "at.circle")
+                    .help(Text("Mention File"))
+            }
+            .buttonStyle(InputGlyphButtonStyle(color: .secondary, small: true))
+            .modifier(AttachmentSearchModifier(presented: $attachmentPickerPresented, attachments: $attachments))
+
+            
             Button(action: pickFile) {
-                Image(systemName: "rectangle.dashed.and.paperclip")
+                Image(systemName: "folder.circle")
                     .help(Text("Attach File"))
             }
             .buttonStyle(InputGlyphButtonStyle(color: .secondary, small: true))
