@@ -288,6 +288,40 @@ final class FileEditorTests: XCTestCase {
         // Test invalid range throws
         XCTAssertThrowsError(try applyReplacement(existing: original, lineRangeStart: 10, len: 1, lines: ["invalid"]))
     }
+    
+    func testPathsWithSpaces() throws {
+        let input = """
+        %%%
+        > Write /test/my file.swift
+        let x = 1
+        %%%
+        """
+        
+        let edits = try EditParser.parseEditsOnly(from: input, toolContext: .stub())
+        XCTAssertEqual(edits.count, 1)
+        if case .write(let path, _) = edits[0] {
+            XCTAssertEqual(path.lastPathComponent, "my file.swift")
+        } else {
+            XCTFail("Expected write edit")
+        }
+        
+        let input2 = """
+        %%%
+        > FindReplace /test/my file with spaces.swift
+        let x = 1
+        ===WITH===
+        let y = 2
+        %%%
+        """
+        
+        let edits2 = try EditParser.parseEditsOnly(from: input2, toolContext: .stub())
+        XCTAssertEqual(edits2.count, 1)
+        if case .findReplace(let path, _, _) = edits2[0] {
+            XCTAssertEqual(path.lastPathComponent, "my file with spaces.swift")
+        } else {
+            XCTFail("Expected findreplace edit")
+        }
+    }
 
     func testEmptyPartsBetweenEditsOmitted() throws {
         let input = """

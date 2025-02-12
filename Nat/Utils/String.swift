@@ -51,7 +51,7 @@ extension URL {
         let selfStr = standardizedFileURL.absoluteString
         if selfStr.hasPrefix(baseStr) {
             let relativePath = selfStr.dropFirst(baseStr.count)
-            return String(relativePath)
+            return String(relativePath).removingPercentEncoding
         } else {
             return nil
         }

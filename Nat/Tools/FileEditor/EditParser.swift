@@ -49,11 +49,12 @@ enum EditParser {
         var currentCommand: Command?
 
         // Command patterns
-        let writePattern = try NSRegularExpression(pattern: #"^>\s*Write\s+([^\s:]+)\s*$"#)
+        // Capture anything that's not a colon (for non-Replace/Insert) or up to a colon (for Replace/Insert)
+        let writePattern = try NSRegularExpression(pattern: #"^>\s*Write\s+([^:]+?)\s*$"#)
         let replacePattern = try NSRegularExpression(pattern: #"^>\s*Replace\s+([^:]+):(\d+(?:-\d+)?)\s*$"#)
         let insertPattern = try NSRegularExpression(pattern: #"^>\s*Insert\s+([^:]+):(\d+)\s*$"#)
-        let findReplacePattern = try NSRegularExpression(pattern: #"^>\s*FindReplace\s+([^\s:]+)\s*$"#)
-        let appendPattern = try NSRegularExpression(pattern: #"^>\s*Append\s+([^\s:]+)\s*$"#)
+        let findReplacePattern = try NSRegularExpression(pattern: #"^>\s*FindReplace\s+([^:]+?)\s*$"#)
+        let appendPattern = try NSRegularExpression(pattern: #"^>\s*Append\s+([^:]+?)\s*$"#)
 
         func appendEdit(cmd: Command) throws {
             let content = currentContent.joined(separator: "\n")
