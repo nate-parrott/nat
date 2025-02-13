@@ -25,6 +25,8 @@ struct SettingsContentView: View {
                 TextField("OpenRouter Key", text: $openrouterKey)
                 TextField("OpenAI Key (required for dictation)", text: $openAIKey)
             }
+            
+            RemotelyTriggeredTasksSettingsSection()
         }
         .formStyle(.grouped)
     }

@@ -24,6 +24,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Please</string>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict>
