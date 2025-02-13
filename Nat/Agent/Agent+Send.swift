@@ -245,13 +245,15 @@ extension AgentThreadStore {
                 return resp
             }
         }
-        throw AgentError.unknownToolName(call.name)
+        await toolCtx.log(.toolError("Invalid tool call \(call.name)(\(call.arguments))"))
+        return call.response(text: "Error: the tool call you provided, or its arguments, was incorrect. Did you make a mistake? Refer to the proper format and try again. If you try a few times and it still doesn't work, ask user for help.")
+//        throw AgentError.invalidToolCall(call.name, call.arguments)
     }
 }
 
 enum AgentError: Error {
     case alreadyRunning
-    case unknownToolName(String)
+    case invalidToolCall(String, String)
 }
 
 extension ThreadModel {
