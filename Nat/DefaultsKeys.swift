@@ -4,6 +4,7 @@ enum DefaultsKeys: String {
     case openrouterKey
     case openAIKey
     case pollRemotelyTriggeredTasks // bool
+    case hasSeenRemindersExplanation // bool
 }
 
 extension DefaultsKeys {

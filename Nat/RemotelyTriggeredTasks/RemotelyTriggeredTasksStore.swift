@@ -88,6 +88,15 @@ class RemotelyTriggeredTasksStore: DataStore<RemotelyTriggeredTasksState> {
         try await store.requestFullAccessToReminders()
         let id = UUID().uuidString
         
+        // Show first-time explanation
+        if !DefaultsKeys.hasSeenRemindersExplanation.boolValue() {
+            UserDefaults.standard.set(true, forKey: DefaultsKeys.hasSeenRemindersExplanation.rawValue)
+            await Alerts.showAppAlert(
+                title: "Reminders Integration",
+                message: "A new list will be created in your Reminders app. Add tasks to this list from your phone or other devices, and Nat will automatically start working on them."
+            )
+        }
+        
         // Create a new list for this folder
         let list = EKCalendar(for: .reminder, eventStore: store)
         list.title = name
