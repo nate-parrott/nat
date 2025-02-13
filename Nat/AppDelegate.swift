@@ -12,6 +12,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Initialize dictation
         _ = DictationManager.shared
+        _ = RemotelyTriggeredTasksStore.shared
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {

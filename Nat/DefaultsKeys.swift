@@ -3,6 +3,7 @@ import Foundation
 enum DefaultsKeys: String {
     case openrouterKey
     case openAIKey
+    case pollRemotelyTriggeredTasks // bool
 }
 
 extension DefaultsKeys {
