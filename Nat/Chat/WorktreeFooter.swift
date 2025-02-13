@@ -11,6 +11,7 @@ extension Document {
         )
         
         if confirmed {
+            stop()
             // Move to trash
             let appleScript = "tell application \"Finder\" to delete (POSIX file \"" + url.path() + "\")"
             let script = NSAppleScript(source: appleScript)

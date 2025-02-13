@@ -24,6 +24,7 @@ extension Document {
         return false
     }
     
+    @discardableResult
     func tryEnterWorktreeMode(initialPrompt: String) async throws -> (branch: String, folder: URL) {
         guard let origBaseDir = store.model.isWorktreeFromOriginalFolder ?? store.model.folder else {
             throw WorktreeError.noDocDirectory

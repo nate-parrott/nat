@@ -147,6 +147,7 @@ struct MergeFromWorktreeView: View {
     private func tryMerge() {
         do {
             // Check for uncommitted changes
+            document.stop()
             if try GitHelper.hasUncommittedChanges(dir: origBaseDir) {
                 errorMessage = "Cannot merge: Original repository has uncommitted changes"
                 return
