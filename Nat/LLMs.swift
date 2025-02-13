@@ -4,7 +4,7 @@ import Foundation
 enum LLMs {
     static func smartAgentModel() throws -> ChatGPT {
         try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("anthropic/claude-3.5-sonnet:beta", 200_000), baseURL: .openRouterOpenAIChatEndpoint, headers: additionalHeaders))
-//        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("openai/o3-mini-high", 200_000), baseURL: .openRouterOpenAIChatEndpoint, headers: additionalHeaders))
+//        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("deepseek/deepseek-r1-distill-llama-70b", 200_000), baseURL: .openRouterOpenAIChatEndpoint, headers: additionalHeaders, openRouterOptions: .init(sort: .throughput)))
     }
 
     static var fakeFunctions: Bool {
@@ -19,8 +19,8 @@ enum LLMs {
     }
 
     static func quickModel() throws -> ChatGPT {
+//        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("meta-llama/llama-3.3-70b-instruct", 131_000), baseURL: .openRouterOpenAIChatEndpoint, headers: additionalHeaders, openRouterOptions: .init(sort: .throughput)))
         try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("google/gemini-2.0-flash-001", 1_000_000), baseURL: .openRouterOpenAIChatEndpoint, headers: additionalHeaders))
-//        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("openai/gpt-4o-mini", 1_000_000), baseURL: .openRouterOpenAIChatEndpoint, headers: additionalHeaders))
     }
 
     static func applierModel() throws -> ChatGPT {
