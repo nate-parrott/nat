@@ -69,7 +69,7 @@ struct TerminalTool: Tool {
         }
 
         do {
-            let output = try await runCommand(command, in: activeDirectory, document: document)
+            let output = try await runCommand(command, in: activeDirectory, document: document, context: context)
             print("<💻 TERMINAL OUTPUT command='\(command)'>")
             print(output)
             print("</TERMINAL OUTPUT>")
@@ -80,9 +80,15 @@ struct TerminalTool: Tool {
     }
 
     @MainActor
-    private func runCommand(_ command: String, in directory: URL, document: Document) async throws -> String {
+    private func runCommand(_ command: String, in directory: URL, document: Document, context: ToolContext) async throws -> String {
 //        let finalCmd = "cd \(directory.filePathEscapedForTerminal) && \(command)"
-        let output = try await document.getOrCreateTerminal().runAndWaitForOutput(command: command)
+        var nSnapshotsShown = 0
+        let output = try await document.getOrCreateTerminal().runAndWaitForOutput(command: command, onSnapshot: { snapshot in
+            if nSnapshotsShown < 20 {
+                context.log(.terminalSnapshot(snapshot))
+            }
+            nSnapshotsShown += 1
+        })
         return output.truncateMiddle(firstNLines: 8, lastNLines: 30)
     }
 }

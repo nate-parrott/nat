@@ -4,6 +4,7 @@ import ChatToys
 
 struct MessageCell: View {
     var model: MessageCellModel
+    var isLast: Bool
     @EnvironmentObject private var detailCoord: DetailCoordinator
     
     var body: some View {
@@ -32,19 +33,14 @@ struct MessageCell: View {
             AssistantMessageView(text: string)
                 .frame(maxWidth: .infinity, alignment: .leading)
         case .logs(let logs):
-            if logs.count > 1 {
-                CyclingLogsView(logs: logs)
+            if let vm = TerminalCellView.Model(logs: logs) {
+                TerminalCellView(model: vm, cellId: model.id)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else if logs.count > 1 {
+                CyclingLogsView(logs: logs, animate: isLast)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else if logs.count == 1 {
-                Group {
-                    if case .terminal = logs[0] {
-                        LogView(log: logs[0])
-                            .modifier(TerminalCellModifier())
-                            .modifier(ClickForDetailModifier(id: model.id))
-                    } else {
-                        LogView(log: logs[0])
-                    }
-                }
+                LogView(log: logs[0])
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         case .codeEdit(let edit):
@@ -107,21 +103,26 @@ private struct CodeEditInlineView: View {
 
 private struct CyclingLogsView: View {
     var logs: [UserVisibleLog]
+    var animate: Bool
     
     @StateObject private var array = ProgressiveRevealedArray<UserVisibleLog>()
     
     var body: some View {
         ZStack(alignment: .leading) {
-            if let cur = array.current.last {
+            if let cur = curLogToDisplay {
                 LogView(log: cur)
                     .lineLimit(1)
-                    .id(array.current.count)
+                    .id(animate ? array.current.count : logs.count)
                     .transition(.asymmetric(insertion: .offset(y: 10), removal: .offset(y: -10)).combined(with: .opacity))
             }
         }
         .modifier(InsetCellModifier())
-        .animation(.niceDefault, value: array.current)
+        .animation(.niceDefault, value: curLogToDisplay)
         .onAppearOrChange(of: logs, perform: { array.target = $0 })
+    }
+    
+    var curLogToDisplay: UserVisibleLog? {
+        return animate ? array.current.last : logs.last
     }
 }
 
@@ -169,11 +170,85 @@ private struct LogView: View {
             Label("Effort: \(description)", systemImage: "person.fill")
         case .terminal(let command):
             Label("`\(command)`", systemImage: "terminal")
+        case .terminalSnapshot:
+            EmptyView()
+//            Label("` \(op)`", systemImage: "terminal")
+//                .italic()
         case .readUrls(let urls):
             Label("Reading: \(urls.compactMap { URL(string: $0)?.host }.joined(separator: ", "))", systemImage: "link.circle")
         case .retrievedLogs(let count):
             Label("Retrieved \(count) log item\(count == 1 ? "" : "s")", systemImage: "eyes")
         }
+    }
+}
+
+private struct TerminalCellView: View {
+    struct Model: Equatable {
+        init?(logs: [UserVisibleLog]) {
+            guard let first = logs.first else {
+                return nil
+            }
+            guard case .terminal(let command) = first else {
+                return nil
+            }
+            self.command = command
+            for item in logs.dropFirst() {
+                if case .terminalSnapshot(let string) = item {
+                    snapshot = string
+                } else {
+                    return nil
+                }
+            }
+        }
+        
+        var command: String
+        var snapshot: String?
+    }
+    
+    var model: Model
+    var cellId: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(model.command)
+                .fixedSize()
+                .lineLimit(1)
+//            Divider()
+            Group {
+                if let snapshot = model.snapshot?.truncateMiddleWithEllipsis(chars: 300) {
+                    Text(snapshot)
+                        .fixedSize()
+                } else {
+                    Text("Lorem ipsum")
+                        .redacted(reason: .placeholder)
+                        .modifier(PulseAnimationModifier())
+                }
+            }
+            .transition(.upDown())
+            .opacity(0.3)
+        }
+        .lineSpacing(4)
+        .padding(4)
+        .animation(.niceDefault(duration: 0.1), value: model.snapshot)
+        .font(.system(size: 12, design: .monospaced))
+        .foregroundStyle(.white)
+        .frame(maxWidth: 300, alignment: .leading)
+        .modifier(TintedBackdropModifier(tint: Color(hex: 0x101020)))
+        .modifier(ClickForDetailModifier(id: cellId))
+        /*
+         LogView(log: logs[0])
+             .modifier(TerminalCellModifier())
+             .modifier(ClickForDetailModifier(id: model.id))
+
+         
+         struct TerminalCellModifier: ViewModifier {
+             func body(content: Content) -> some View {
+                 content.fontDesign(.monospaced)
+                     .foregroundStyle(.white)
+                     .modifier(TintedBackdropModifier(tint: Color(hex: 0x101020)))
+             }
+         }
+         */
     }
 }
 
@@ -204,3 +279,4 @@ private struct AssistantMessageView: View {
         .multilineTextAlignment(.leading)
     }
 }
+

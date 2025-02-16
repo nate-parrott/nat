@@ -78,7 +78,10 @@ enum UserVisibleLog: Equatable, Codable {
 
     case toolWarning(String)
     case toolError(String)
+    
     case terminal(command: String)
+    case terminalSnapshot(String) // a snapshot of the terminal at a certain time after performing a command
+    
     case retrievedLogs(Int)
 }
 
@@ -146,14 +149,6 @@ extension Array where Element == TaggedLLMMessage {
         for i in keepFirstN..<cutoff {
             truncated[i].shorten()
         }
-//        var remaining = Array(self[..<keepFirstN] + [TaggedLLMMessage(role: .system, content: [.text("[Old messages omitted]")])] + self[cutoff...])
-//        remaining[keepFirstN - 1].functionCalls = [] // Cannot be any function calls b/c we won't be responding to them
-//
-//        // Modify the first item after the cut
-//        remaining[keepFirstN + 1].functionResponses = [] // Cannot be any function responses b/c there was nothing to respond to
-//        if remaining[keepFirstN + 1].content.isEmpty {
-//            remaining[keepFirstN + 1].content = [.text("[Omitted]")]
-//        }
         return truncated
     }
 }

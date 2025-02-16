@@ -22,14 +22,15 @@ struct ChatView: View {
             } else {
                 VStack(spacing: 0) {
                     ScrollToBottomThreadView(data: messageCellModels) { message in
+                        let isLast = message.id == messageCellModels.last?.id
                         Group {
                             if canShowSplitDetail {
-                                MessageCell(model: message)
+                                MessageCell(model: message, isLast: isLast)
                                     .padding(.horizontal)
                                     .frame(width: splitPaneWidth)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             } else {
-                                MessageCell(model: message)
+                                MessageCell(model: message, isLast: isLast)
                                     .padding(.horizontal)
                                     .frame(maxWidth: 800, alignment: .center)
                             }

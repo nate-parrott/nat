@@ -19,8 +19,12 @@ open class ScriptableTerminalView: TerminalView, TerminalViewDelegate, LocalProc
             .replacingOccurrences(of: "\0", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
+    
+    private var snapshotTimer: Timer?
 
-    func runAndWaitForOutput(command: String, timeout: TimeInterval = 10 * 60) async throws -> String {
+    // The return string and snapshot may not match, because the terminal's content is not append-only. Use `snapshot` for visualization / loading states; use the returned string for actual output.
+    @MainActor
+    func runAndWaitForOutput(command: String, timeout: TimeInterval = 10 * 60, onSnapshot: ((String) -> Void)? = nil) async throws -> String {
         try await withCheckedThrowingContinuation { cont in
             DispatchQueue.main.async {
                 if self.onNextBell != nil {
@@ -30,10 +34,35 @@ open class ScriptableTerminalView: TerminalView, TerminalViewDelegate, LocalProc
                 let existingLines = self.textContent.components(separatedBy: .newlines)
 
                 var finished = false
+                
+                var lastSnapshot = self.snapshotOfLatestLines
+                let emitSnapshot = { [weak self] in
+                    assert(Thread.isMainThread)
+                    guard let onSnapshot, let self else { return }
+                    let snapshot = self.snapshotOfLatestLines
+                    if snapshot != lastSnapshot {
+                        if snapshot != "" {
+                            onSnapshot(snapshot)
+                        }
+                        lastSnapshot = snapshot
+                    }
+                }
+                
+                self.snapshotTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true, block: { timer in
+                    emitSnapshot()
+                })
 
-                self.onNextBell = {
+                self.onNextBell = { [weak self] in
+                    guard let self else { return }
+                    if let snapshotTimer = self.snapshotTimer {
+                        snapshotTimer.invalidate()
+                        self.snapshotTimer = nil
+                    }
+                                        
                     if finished { return }
                     finished = true
+                    
+                    emitSnapshot()
 
                     let newLines = self.textContent.components(separatedBy: .newlines)
                     if newLines.hasPrefix(existingLines) {
@@ -44,6 +73,7 @@ open class ScriptableTerminalView: TerminalView, TerminalViewDelegate, LocalProc
                         cont.resume(returning: output)
                     }
                 }
+                                
                 self.send(txt: command + "\n")
                 // Timeout
                 DispatchQueue.main.asyncAfter(deadline: .now() + timeout) {
@@ -54,6 +84,13 @@ open class ScriptableTerminalView: TerminalView, TerminalViewDelegate, LocalProc
                 }
             }
         }
+    }
+    
+    var snapshotOfLatestLines: String {
+        self.textContent.components(separatedBy: .newlines)
+            .filter({ $0.trimmingCharacters(in: .whitespacesAndNewlines) != "" })
+            .suffix(3)
+            .joined(separator: "\n")
     }
 
     private var process: LocalProcess!

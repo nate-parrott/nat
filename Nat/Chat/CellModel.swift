@@ -124,6 +124,11 @@ extension UserVisibleLog {
             if case .codeSearch = first {
                 return true
             }
+        case .terminalSnapshot:
+            // Allow merging terminal snapshots into a cluster where the first item is a terminal call
+            if case .terminal = first {
+                return true
+            }
         default: ()
         }
         return false

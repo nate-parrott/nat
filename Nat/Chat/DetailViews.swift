@@ -63,7 +63,7 @@ extension MessageCellModel {
                 case .readFile(let url):
                     return FileContentView(url: url).asAny
                 case .grepped, .edits, .webSearch, .deletedFile, .codeSearch, .usingEditCleanupModel, .listedFiles, .tokenUsage, .effort, .toolWarning, .toolError, .readUrls, .retrievedLogs: ()
-                case .terminal:
+                case .terminal, .terminalSnapshot:
                     return TerminalPreview().asAny
                 }
             }

@@ -61,13 +61,13 @@ struct TintedBackdropModifier: ViewModifier {
     }
 }
 
-struct TerminalCellModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content.fontDesign(.monospaced)
-            .foregroundStyle(.white)
-            .modifier(TintedBackdropModifier(tint: Color(hex: 0x101020)))
-    }
-}
+//struct TerminalCellModifier: ViewModifier {
+//    func body(content: Content) -> some View {
+//        content.fontDesign(.monospaced)
+//            .foregroundStyle(.white)
+//            .modifier(TintedBackdropModifier(tint: Color(hex: 0x101020)))
+//    }
+//}
 
 struct InsetCellModifier: ViewModifier {
     func body(content: Content) -> some View {
