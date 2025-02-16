@@ -21,19 +21,28 @@ private struct AgentSettings: View {
     @Environment(\.document) private var document
     @State private var folderURL: URL?
     @State private var pickingFolder = false
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        let tintColor: Color = folderURL == nil ? Color.red : Color.blue
+        
         VStack(alignment: .leading, spacing: 0) {
             selectFolderRow
             Divider()
+//            tintColor.frame(height: 1).opacity(0.3)
             worktreeRow
         }
         .frame(maxWidth: .infinity)
         .foregroundStyle(folderURL == nil ? Color.red : Color.blue)
         .background {
-            RoundedRectangle(cornerRadius: 10, style: .continuous).fill(folderURL == nil ? Color.red : Color.blue)
-                .brightness(-0.2)
-                .opacity(0.07)
+            shape
+                .fill(tintColor)
+                .brightness(colorScheme == .dark ? 0 : -0.2)
+                .opacity(colorScheme == .dark ? 0.1 : 0.07)
+        }
+        .overlay {
+            shape.stroke(tintColor).opacity(0.3)
         }
         .onReceive(document.store.publisher.map(\.folder).removeDuplicates(), perform: { self.folderURL = $0 })
     }
