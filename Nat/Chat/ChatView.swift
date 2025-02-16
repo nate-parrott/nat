@@ -53,7 +53,7 @@ struct ChatView: View {
 //                            .padding(.trailing, 100)
                     }
                 }
-                .animation(.easeInOut, value: numberOfUserMessages)
+                .animation(.niceDefault, value: numberOfUserMessages)
                 .overlay(alignment: .bottom) {
                     if case .running = status {
                         Shimmer()
@@ -180,7 +180,7 @@ private struct ScrollToBottomThreadView<Data: RandomAccessCollection, Content: V
                 .padding(.bottom, 400)
                 .padding(.vertical)
                 .frame(maxWidth: .infinity)
-                .animation(.spring(response: 0.3, dampingFraction: 0.85, blendDuration: 0.1), value: data.count)
+//                .animation(.spring(response: 0.3, dampingFraction: 0.85, blendDuration: 0.1), value: data.count)
             }
             .onChange(of: data.count) { oldCount, newCount in
                 withAnimation {
