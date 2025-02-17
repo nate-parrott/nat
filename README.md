@@ -44,17 +44,20 @@ Two modes:
     - [ ] Tooling to allow model to automatically generate complex docs to improve
 - [x] Code search UI (in toolbar)
 - [x] Autopilot toggle (running person in bottom bar) to toggle autoconfirm for file edits + terminal (default on in Worktree mode)
+- [x] Press _Caps Lock_ to toggle Whisper dictation (requires OpenAI key)
 
 **Future Ideas**
 
 - Beyond chat: what the interface for requesting changes was a rich _design doc_ for features you want implemented, with lists of reference materials, tasks, images and diagrams, which updated live as the agent performed various tasks?
 - Complex batch workflows: for example, can I have several LLMs traverse my entire codebase to perform a large refactor in parallel, like making my app internationalized? 
+- Better integration with the Xcode editor (e.g. CMD+L to chat about a particular line of code, ability for the model to see your most recent file changes and be notified when you edit a file in-between calls, etc)
+- Ability to create and save 'skills' to teach the model how to do a particular task in the codebase
 - Claude Computer Use for running + testing apps
 - Integration with [42pag.es](https://42pag.es) to let you sketch visual designs and turn them into pixel-perfect code
 - Better quality + reliability!
 - Ability to enqueue a task from your phone and review the PR remotely
 - Let Nat handle its own releases (archive + notarization + uploading)
-- Whisper dictation for natural input
+- ~Whisper dictation for natural input~
 
 ### Developing
 
