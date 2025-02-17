@@ -99,11 +99,11 @@ private struct CodeEditInlineView: View {
                 Text(text)
                     .fixedSize()
 //                    .opacity(0.7)
-                    .transition(.upDown(dist: 11))
+//                    .transition(.upDown(dist: 11))
                     .id(pair.offset)
             }
         }
-        .animation(.niceDefault(duration: 0.2), value: lines.count)
+//        .animation(.niceDefault(duration: 0.2), value: lines.count)
 //        Text(lines.suffix(5).joined(separator: "\n"))
 //            .font(.system(size: 10, weight: .medium, design: .monospaced))
 //            .opacity(0.7)
