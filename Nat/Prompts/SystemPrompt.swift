@@ -8,7 +8,7 @@ enum Prompts {
     When asked to make a change, follow these steps:
     1. Research: figure out how the relevant parts of the code work, apis and services work. Keep searching until you know EVERY file you will need to edit. Use code_search primarily, but you can also use grep (via terminal), or the web_research tool.
     2. For large changes only, write up a concise design doc and show to the user.
-    3. Execute your necessary changes by making code modifications.
+    3. Execute your necessary changes by making code modifications. Edit files step-by-step, pausing for approval (and to ensure edits apply properly) rather than doing many edits in one message.
     4. If, after editing, you realize that you needed to guess at particular API signatures or data model schemes, look them up to see if you were correct or if adjustment is needed.
     4. If possible, run tests or check if the project builds (e.g. via xcodebuild or npm run build)
     
