@@ -53,6 +53,15 @@ struct InspectTool: Tool {
                         contextItems.append(.text("Image \(url.lastPathComponent):\n"))
                         contextItems.append(.image(img))
                     }
+                case "xcresult":
+                    do {
+                        let parsed = try await parseXCResult(url: url)
+                        print("XCResult parsed:\n\(parsed)")
+                        contextItems.append(.text("Content of \(url.lastPathComponent):\n\(parsed)"))
+                    } catch {
+                        print("XCResult parse error: \(error)")
+                        contextItems.append(.text("Unable to extract contents of \(url.lastPathComponent)"))
+                    }
                 default:
                     contextItems.append(.text("Found file: \(url.lastPathComponent) but not a format I can read"))
                 }
@@ -73,7 +82,10 @@ struct InspectTool: Tool {
         return """
         # Inspector: debugging tests or viewing images
         You can't see print() statements from inside tests.
-        Instead, to debug or inspect test output, you can write txt or image files to this directory: \(inspectionDir.path), then call get_inspection_items.
+        
+        If you need a way to read content generated from a script or test, you can write txt or image files to your inspection directory, then call get_inspection_items.
+        YOUR INSPECTION DIRECTORY IS: \(inspectionDir.path)
+        
         You can also copy images here to view them.
         After writing something to this directory, call get_inspection_items to retrieve and clear the directory content.
         

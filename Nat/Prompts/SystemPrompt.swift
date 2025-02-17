@@ -45,6 +45,16 @@ enum Prompts {
     
     When dealing with file paths in your tools, keep in mind that they may contain spaces.
     
+    # Running tests
+    
+    Run tests like this:
+    
+    xcodebuild test \
+      -scheme "MY_SCHEME" \
+      -quiet \
+      -only-testing "MyTestsDir/SomeTestClass/testSpecificFunction" // When appropriate
+      -resultBundlePath "/my/inspect/dir" // Write the result bundle to your inspection directory so you can see the test summary
+    
     # Examples of how to research
     User task: can you increase the threshold for swiping to dismiss or advance the swipey carousel?
     Research: code_search for "How is swipe to dismiss and advance implemented in the swipey carousel?"
