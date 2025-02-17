@@ -35,3 +35,54 @@ extension Array where Element == TokenRun {
         self.map { $0.toAttributedString() }.reduce(AttributedString()) { $0 + $1 }
     }
 }
+
+struct WithSyntaxHighlightedLines<V: View>: View {
+    var text: String
+    var fileExtension: String?
+    var font: Font
+    @ViewBuilder var content: ([AttributedString]) -> V
+    
+    var body: some View {
+        WithCacheSync(input: SyntaxHighlightInputs(text: text, fileExtension: fileExtension, font: font), compute: { $0.highlightedLines }) { lines in
+            content(lines)
+        }
+    }
+}
+
+private struct SyntaxHighlightInputs: Equatable {
+    var text: String
+    var fileExtension: String?
+    var font: Font
+    
+    var highlightedLines: [AttributedString] {
+        var attributed = LanguagePack.fromFileExtension(fileExtension).tokenize(text).toAttributedString()
+        attributed.font = font
+        return attributed.lines
+    }
+}
+
+extension AttributedString {
+    var lines: [AttributedString] {
+        split(separator: "\n")
+    }
+    
+    func split(separator: Character) -> [AttributedString] {
+        var results: [AttributedString] = []
+        var currentString = self
+        
+        while let newlineRange = currentString.range(of: String(separator)) {
+            // Add everything before the newline
+            results.append(AttributedString(currentString[..<newlineRange.lowerBound]))
+            
+            // Move past the newline
+            currentString.removeSubrange(..<newlineRange.upperBound)
+        }
+        
+        // Add the remaining text
+        if currentString.characters.count > 0 {
+            results.append(currentString)
+        }
+        
+        return results
+    }
+}

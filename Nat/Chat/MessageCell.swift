@@ -33,7 +33,7 @@ struct MessageCell: View {
             AssistantMessageView(text: string)
                 .frame(maxWidth: .infinity, alignment: .leading)
         case .logs(let logs):
-            if let vm = TerminalCellView.Model(logs: logs) {
+            if let vm = TerminalCellView.Model(logs: logs, isLast: isLast) {
                 TerminalCellView(model: vm, cellId: model.id)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else if logs.count > 1 {
@@ -74,16 +74,16 @@ private struct CodeEditInlineView: View {
             switch edit {
             case .replace(let path, _, _, let lines):
                 Text("Edit " + path.lastPathComponent).bold()
-                body(lines: lines)
+                body(lines: lines, fileExt: path.pathExtension)
             case .write(let path, let content):
                 Text("Write to " + path.lastPathComponent).bold()
-                body(lines: content.lines)
+                body(lines: content.lines, fileExt: path.pathExtension)
             case .append(let path, let content):
                 Text("Append to " + path.lastPathComponent).bold()
-                body(lines: content.lines)
+                body(lines: content.lines, fileExt: path.pathExtension)
             case .findReplace(let path, _, let replace):
                 Text("Edit " + path.lastPathComponent).bold()
-                body(lines: replace)
+                body(lines: replace, fileExt: path.pathExtension)
             }
         }
         .font(Font.system(size: 12, weight: .bold))
@@ -92,12 +92,23 @@ private struct CodeEditInlineView: View {
 //        .modifier(CellBackdropModifier(enabled: true))
     }
     
-    @ViewBuilder func body(lines: [String]) -> some View {
-        Text(lines.suffix(5).joined(separator: "\n"))
-            .font(.system(size: 10, weight: .medium, design: .monospaced))
-            .opacity(0.7)
-            .lineLimit(5)
-            .fixedSize(horizontal: true, vertical: true)
+    @ViewBuilder func body(lines: [String], fileExt: String?) -> some View {
+        WithSyntaxHighlightedLines(text: lines.joined(separator: "\n"), fileExtension: fileExt, font: Font.system(size: 12, weight: .medium, design: .monospaced)) { lines in
+            ForEach(lines.enumerated().asArray.filter({ $0.element.characters.count > 0 }).suffix(4), id: \.offset) { pair in
+                let text = pair.element
+                Text(text)
+                    .fixedSize()
+//                    .opacity(0.7)
+                    .transition(.upDown(dist: 11))
+                    .id(pair.offset)
+            }
+        }
+        .animation(.niceDefault(duration: 0.2), value: lines.count)
+//        Text(lines.suffix(5).joined(separator: "\n"))
+//            .font(.system(size: 10, weight: .medium, design: .monospaced))
+//            .opacity(0.7)
+//            .lineLimit(5)
+//            .fixedSize(horizontal: true, vertical: true)
     }
 }
 
@@ -184,7 +195,8 @@ private struct LogView: View {
 
 private struct TerminalCellView: View {
     struct Model: Equatable {
-        init?(logs: [UserVisibleLog]) {
+        init?(logs: [UserVisibleLog], isLast: Bool) {
+            self.isLast = isLast
             guard let first = logs.first else {
                 return nil
             }
@@ -203,6 +215,7 @@ private struct TerminalCellView: View {
         
         var command: String
         var snapshot: String?
+        var isLast: Bool
     }
     
     var model: Model
@@ -218,7 +231,8 @@ private struct TerminalCellView: View {
                 if let snapshot = model.snapshot?.truncateMiddleWithEllipsis(chars: 300) {
                     Text(snapshot)
                         .fixedSize()
-                } else {
+                } else if model.isLast {
+                    // Show loader
                     Text("Lorem ipsum")
                         .redacted(reason: .placeholder)
                         .modifier(PulseAnimationModifier())

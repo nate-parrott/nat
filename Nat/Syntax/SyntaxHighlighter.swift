@@ -138,4 +138,18 @@ public extension LanguagePack {
             fatalError("Failed to create Swift language pack: \(error)")
         }
     }
+    
+    static var empty: LanguagePack {
+        .init(patterns: [])
+    }
+    
+    static func fromFileExtension(_ ext: String?) -> LanguagePack {
+        if let ext {
+            switch ext.lowercased() {
+            case "swift": return .swift
+            default: return .empty
+            }
+        }
+        return .empty
+    }
 }
