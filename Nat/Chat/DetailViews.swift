@@ -62,7 +62,7 @@ extension MessageCellModel {
                 switch log {
                 case .readFile(let url):
                     return FileContentView(url: url).asAny
-                case .grepped, .edits, .webSearch, .deletedFile, .codeSearch, .usingEditCleanupModel, .listedFiles, .tokenUsage, .effort, .toolWarning, .toolError, .readUrls, .retrievedLogs: ()
+                case .grepped, .edits, .webSearch, .deletedFile, .codeSearch, .usingEditCleanupModel, .listedFiles, .tokenUsage, .effort, .toolWarning, .toolError, .readUrls, .retrievedLogs, .usedWebview: ()
                 case .terminal, .terminalSnapshot:
                     return TerminalPreview().asAny
                 }
@@ -70,7 +70,7 @@ extension MessageCellModel {
             return nil
         case .codeEdit(let codeEdit):
             return CodeEditView(edit: codeEdit).asAny
-        case .error:
+        case .error, .reasoning:
             return nil
         }
     }

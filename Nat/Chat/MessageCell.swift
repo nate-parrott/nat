@@ -29,6 +29,18 @@ struct MessageCell: View {
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.leading)
+        case .reasoning(let str):
+            Text(str)
+                .multilineTextAlignment(.leading)
+                .lineLimit(nil)
+                .padding(.trailing)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .foregroundStyle(.tertiary)
+                .font(.caption.weight(.medium))
+                .italic()
+//                .blur(radius: 2)
+//                .opacity(0.5)
+//                .italic()
         case .assistantMessage(let string):
             AssistantMessageView(text: string)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -169,6 +181,8 @@ private struct LogView: View {
             Label("Searched code for: `\(query)`", systemImage: "magnifyingglass")
         case .listedFiles:
             Label("Listed files", systemImage: "folder")
+        case .usedWebview:
+            Label("Ran JS", systemImage: "safari")
         case .toolError(let error):
             Label("Error: \(error)", systemImage: "exclamationmark.triangle")
         case .toolWarning(let warning):

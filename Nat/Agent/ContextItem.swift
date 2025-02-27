@@ -5,6 +5,7 @@ import ChatToys
 struct TaggedLLMMessage: Equatable, Codable {
     var role: LLMMessage.Role
     var content: [ContextItem]
+    var reasoning: String?
     var functionCalls: [LLMMessage.FunctionCall]
     var functionResponses: [FunctionResponse]
 
@@ -29,6 +30,7 @@ struct TaggedLLMMessage: Equatable, Codable {
     init(message: LLMMessage) {
         role = message.role
         content = [.text(message.content)] + message.images.map({ ContextItem.image($0) })
+        reasoning = message.reasoning
         functionCalls = message.functionCalls
         functionResponses = message.functionResponses.map({ resp in
             FunctionResponse(functionId: resp.id, functionName: resp.functionName, content: [.text(resp.text)])
@@ -54,6 +56,7 @@ struct TaggedLLMMessage: Equatable, Codable {
         var msg = LLMMessage(role: role, content: "")
         msg.functionCalls = self.functionCalls
         msg.functionResponses = self.functionResponses.map(\.asLLMResponse)
+        msg.reasoning = reasoning
         var contentLines = [String]()
         for content in content {
             let (str, img) = content.asStringOrImage

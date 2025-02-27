@@ -83,6 +83,8 @@ enum UserVisibleLog: Equatable, Codable {
     case terminalSnapshot(String) // a snapshot of the terminal at a certain time after performing a command
     
     case retrievedLogs(Int)
+    
+    case usedWebview
 }
 
 extension ThreadModel.Step {

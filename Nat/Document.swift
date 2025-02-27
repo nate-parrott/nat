@@ -133,6 +133,7 @@ class Document: NSDocument {
     var currentAgentTask: Task<Void, Error>?
     
     var terminal: ScriptableTerminalView?
+    var webSession: WebSession?
 
     @MainActor
     func getOrCreateTerminal() -> ScriptableTerminalView {
@@ -142,5 +143,14 @@ class Document: NSDocument {
         terminal = ScriptableTerminalView(workingDir: store.model.folder ?? .homeDirectory)
         store.model.terminalVisible = true
         return terminal!
+    }
+    
+    @MainActor
+    func getOrCreateWebSession() -> WebSession {
+        if let webSession {
+            return webSession
+        }
+        webSession = .init(document: self)
+        return webSession!
     }
 }

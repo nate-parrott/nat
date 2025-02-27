@@ -82,6 +82,7 @@ extension Document {
                     BasicContextTool(document: self, currentFilenameFromXcode: curFile),
                     DocsTool(document: self),
                     InspectTool(document: self),
+//                    WebkitTool(),
                 ]
                 try await send(message: msg, llm: llm, document: self, tools: tools, folderURL: folderURL, maxIterations: store.model.maxIterations)
             } catch {

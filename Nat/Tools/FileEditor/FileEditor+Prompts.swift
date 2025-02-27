@@ -36,7 +36,7 @@ extension FileEditorTool {
     
     # Rules
     
-    You can use multiple separate code fences in a single response.
+    You can use multiple separate code fences in a single response. But it's generally better to make changes one-by-one so that you can see if they were accepted (or if they need feedback) before moving on. One edit per response except for refactors and when told not to.
             
     Your edits will be applied directly to the file, and your code may be linted or syntax-checked, so never say things like "...existing unchanged..." etc. Do not include comments explaining what you changed IN the code, but do include helpful comments for future readers, as an expert engineer would.
             

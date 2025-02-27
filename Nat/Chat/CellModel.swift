@@ -7,6 +7,7 @@ struct MessageCellModel: Equatable, Identifiable {
 
     enum Content: Equatable {
         case userMessage(text: String, attachments: [ContextItem])
+        case reasoning(String)
         case assistantMessage(String)
         case logs([UserVisibleLog]) // Logs can be clustered together
         case codeEdit(CodeEdit)
@@ -78,8 +79,12 @@ private extension ThreadModel.Step.ToolUseStep {
 
 extension TaggedLLMMessage {
     func assistantCellModels(idPrefix: String) -> [MessageCellModel] {
+        var cells = [MessageCellModel]()
         if content.count == 1, let item = content.first, case .text(let string) = item, let parsed = try? EditParser.parsePartial(string: string) {
-            return parsed.enumerated().map { (i, item) in
+            if let r = reasoning?.nilIfEmpty {
+                cells.append(MessageCellModel(id: idPrefix + "reasoning", content: .reasoning(r)))
+            }
+            cells += parsed.enumerated().map { (i, item) in
                 switch item {
                 case .codeEdit(let edit):
                     return MessageCellModel(id: idPrefix + "\(i)", content: .codeEdit(edit))
@@ -87,8 +92,11 @@ extension TaggedLLMMessage {
                     return MessageCellModel(id: idPrefix + "\(i)", content: .assistantMessage(lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)))
                 }
             }
+            return cells
         }
-        return [MessageCellModel(id: idPrefix + "text", content: .assistantMessage(asPlainText))]
+        // Plaintext
+        cells.append(MessageCellModel(id: idPrefix + "text", content: .assistantMessage(asPlainText)))
+        return cells
     }
 }
 
