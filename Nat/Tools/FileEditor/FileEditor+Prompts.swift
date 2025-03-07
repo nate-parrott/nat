@@ -5,9 +5,11 @@ extension FileEditorTool {
     """
     # Editing files
     Use editing commands to edit files.
+    You must remember that editing files is NOT a traditional function call; it uses a special syntax I will describe. You would never called edit_file or write_file or anything like that.
+    
     Editing commands begin and end with \(Self.codeFence),
     then a 'command line', then a portion of code.
-    
+        
     After using editing commands within your response, call apply_edits with no args to apply them and see if they are accepted. Do not run tests or perform other research immediately after editing, until you see whether the edit is confirmed.
     
     # Edit commands
@@ -40,7 +42,7 @@ extension FileEditorTool {
             
     Your edits will be applied directly to the file, and your code may be linted or syntax-checked, so never say things like "...existing unchanged..." etc. Do not include comments explaining what you changed IN the code, but do include helpful comments for future readers, as an expert engineer would.
             
-    Before editing existing files, you MUST read the file first using read_file. After editing a file, I'll echo back the new version on disk post-edit.
+    If you have not seen the content of a file yet in this session, you must call read_file to read it before editing. (code_search results are incomplete so insufficient). (How can you edit a file without seeing it?) After editing a file, I'll echo back the new version on disk post-edit, so you don't need to edit again unless you edited it via a shell command.
     
     Before writing a FindReplace code fence, discuss briefly exactly WHERE you will be inserting/replacing code.
     

@@ -3,7 +3,8 @@ import Foundation
 
 enum LLMs {
     static func smartAgentModel() throws -> ChatGPT {
-        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom2(.init(name: "anthropic/claude-3.7-sonnet:thinking", tokenLimit: 200_000, openrouter_reasoning: true)), baseURL: .openRouterOpenAIChatEndpoint, headers: additionalHeaders))
+        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom2(.init(name: "anthropic/claude-3.7-sonnet", tokenLimit: 200_000, openrouter_reasoning: false)), baseURL: .openRouterOpenAIChatEndpoint, headers: additionalHeaders))
+//        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom2(.init(name: "anthropic/claude-3.7-sonnet:thinking", tokenLimit: 200_000, openrouter_reasoning: true)), baseURL: .openRouterOpenAIChatEndpoint, headers: additionalHeaders))
 //        try ChatGPT(credentials: .init(apiKey: openrouterKey()), options: .init(temp: 1, model: .custom("deepseek/deepseek-r1-distill-llama-70b", 200_000), baseURL: .openRouterOpenAIChatEndpoint, headers: additionalHeaders, openRouterOptions: .init(sort: .throughput)))
     }
 

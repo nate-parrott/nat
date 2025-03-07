@@ -106,7 +106,7 @@ extension AgentThreadStore {
                 // If we're at the last step of the run, and there's a finish function, ONLY allow the finish function
                 // TODO: implement this logic when using fake functions, which are passed as part of system prompt constructed above
                 let allowedFns = i > 0 && i + 1 == maxIterations && finishFunction != nil ? [finishFunction!] : allFunctions
-                for try await partial in llm.completeStreaming(prompt: llmMessages, functions: fakeFunctions ? [] : allowedFns) {
+                for try await partial in llm.completeStreaming(prompt: llmMessages, functions: fakeFunctions ? [] : allowedFns).throttle(for: 0.5) {
                     step.appendOrUpdatePartialResponse(partial.byConvertingFakeFunctionCallsToRealOnes)
                     try await saveStep()
                 }

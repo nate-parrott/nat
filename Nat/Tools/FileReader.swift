@@ -50,7 +50,7 @@ extension LLMMessage.FunctionCall {
     }
 }
 
-private func generateReadFileString(path: String, context: ToolContext, offset: Int = 0, nLines: Int = 2000) async throws -> FileSnippet {
+private func generateReadFileString(path: String, context: ToolContext, offset: Int = 0) async throws -> FileSnippet {
     let absoluteURL = try context.resolvePath(path)
     await context.log(.readFile(absoluteURL))
     var encoding: String.Encoding = .utf8
@@ -58,10 +58,24 @@ private func generateReadFileString(path: String, context: ToolContext, offset: 
         throw FileReaderError.fileNotFound(absoluteURL.path(percentEncoded: false))
     }
     
+    let charLimit = 1500 * 40
+    var chars = 0
+    
     let lines = contents.lines
     let totalLines = lines.count
     let startLine = min(offset, totalLines)
-    let endLine = min(startLine + nLines, totalLines)
+    var linesCount = 0
+    for line in lines.dropFirst(offset) {
+        let newCt = chars + lines.count
+        if chars > 0 && newCt > charLimit {
+            break
+        } else {
+            chars += line.count + 1
+            linesCount += 1
+        }
+    }
+    
+//    let endLine = min(startLine + nLines, totalLines)
 
-    return try FileSnippet(path: absoluteURL, projectRelativePath: path, lineStart: startLine, linesCount: endLine - startLine)
+    return try FileSnippet(path: absoluteURL, projectRelativePath: path, lineStart: startLine, linesCount: linesCount)
 }

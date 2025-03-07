@@ -6,7 +6,7 @@ struct CodeSearchTool: Tool {
         [Self.fn.asLLMFunction]
     }
 
-    static let fn = TypedFunction<Args>(name: "code_search", description: "Searches codebase using agentic AI search _and_ regex search, and returns relevant snippets.", type: Args.self)
+    static let fn = TypedFunction<Args>(name: "code_search", description: "Searches codebase using agentic AI search _and_ regex search, and returns relevant snippets. More efficient than calling read_file several times.", type: Args.self)
 
     struct Args: FunctionArgs {
         var questions: [String]?

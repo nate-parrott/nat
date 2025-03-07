@@ -53,7 +53,7 @@ struct FileEditorTool: Tool {
                     fixedFileEdits.append(.init(path: edit.path, edits: [.write(path: edit.path, content: newFullFileContent)]))
                 } else {
                     await context.log(.toolError("Failed to apply edits"))
-                    return [.text("Your edits were not applied because of an error:\n\(error)\nPlease try again or try a different approach, like rewriting a larger portion or the whole file.")]
+                    return [.text("Your edits were not applied because of an error:\n\(error)\nIt's OK, sometimes the partial edit format is hard to get right.\nPlease try again or try a different approach, like rewriting a larger portion or the whole file.")]
                 }
             }
         }
@@ -64,7 +64,7 @@ struct FileEditorTool: Tool {
             for fileEdit in fixedFileEdits {
                 if let syntaxError = await fileEdit.checkSyntax() {
                     await context.log(.toolError("Syntax error in `\(fileEdit.path.lastPathComponent)`"))
-                    let response: [ContextItem] = [.text("Your edits were not applied because the Swift code has syntax errors:\n\n\(syntaxError)\n\nPlease fix and try again. Consider rewriting the entire file rather than doing targeted edits.")]
+                    let response: [ContextItem] = [.text("Your edits were not applied because the Swift code has syntax errors:\n\n\(syntaxError)\n\nPlease fix and try again. Consider rewriting the entire file rather than doing targeted edits; sometimes finding/replacing makes it tricky to get the file right.")]
                     return response + (try showLatestFileVersions(fileEdits: fixedFileEdits, context: context))
                 }
             }
@@ -85,6 +85,8 @@ struct FileEditorTool: Tool {
                 output += try await apply(fileEdits: fixedFileEdits, context: context)
                 if case .acceptWithComment(let comment) = confirmation {
                     output.append(.text("[User approved the change above, but left this comment:]\n\(comment)"))
+                } else {
+                    output.append(.text("[User approved the change above]"))
                 }
             case .reject:
                 output.append(.text("User rejected your latest message's edits. They were rolled back. Take a beat and let the user tell you more about what they wanted."))

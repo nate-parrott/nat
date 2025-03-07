@@ -26,6 +26,7 @@ func codeSearch2(queries: [String], folder: URL, context: ToolContext, effort: C
     let topResults: [FileSnippet] = results
         .sorted(by: { $0.0 > $1.0 })
         .prefix(effort.maxSnippetsToReturn).map({ $0.1 })
+        .map({ $0.truncatingContent(maxLen: 6000) })
         .asArray
         
     let stats = SearchStats(

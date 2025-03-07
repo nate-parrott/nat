@@ -212,6 +212,15 @@ struct FileSnippet: Equatable, Codable {
         output.append("\n%% END FILE SNIPPET [\(lastPathComponent)]; there are \(remainingLines) more lines available to read %%")
         return output.joined(separator: "\n")
     }
+    
+    func truncatingContent(maxLen: Int) -> FileSnippet {
+        if content.count > maxLen {
+            var s = self
+            s.content = s.content.truncateHeadWithEllipsis(chars: maxLen) + "[Max chars reached for this snippet]"
+            return s
+        }
+        return self
+    }
 }
 
 extension Array where Element == TaggedLLMMessage {
