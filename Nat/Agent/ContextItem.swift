@@ -97,6 +97,7 @@ enum ContextItem: Equatable, Codable {
     case url(URL, pageContent: PageContent? = nil)
     case largePaste(String)
     case omission(String)
+    case proactiveContext(title: String, content: String)
 
     var asStringOrImage: (String?, LLMMessage.Image?) {
         switch self {
@@ -116,6 +117,8 @@ enum ContextItem: Equatable, Codable {
                 result += "\n\n" + content.text
             }
             return (result, nil)
+        case .proactiveContext(let title, let text):
+            return ("<additional-context note='may or may not be relevant; use if helpful'>\n\(text)\n</additional-context>", nil)
         case .largePaste(let content):
             return ("Pasted content:\n\(content)", nil)
         case .omission(let msg): return ("[\(msg)]", nil)
@@ -149,6 +152,8 @@ enum ContextItem: Equatable, Codable {
         case .url(let url, pageContent: let content):
             let str = "\(url.host() ?? ""): \(content?.text.count ?? 0) chars"
             return ("link", str)
+        case .proactiveContext(let title, let text):
+            return ("arrow.trianglehead.2.clockwise.rotate.90.page.on.clipboard", title)
         case .largePaste:
             return ("doc.on.clipboard", "Paste")
         case .omission:

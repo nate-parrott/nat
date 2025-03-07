@@ -57,14 +57,23 @@ extension Document {
     
     /// Sends a message to the agent and handles the response
     func send(text: String, attachments: [ContextItem]) async {
-        let msg = TaggedLLMMessage(role: .user, content: [.text(text)] + attachments)
+        var msg = TaggedLLMMessage(role: .user, content: [.text(text)] + attachments)
         let folderURL = store.model.folder
         let curFile = store.model.selectedFileInEditorRelativeToFolder
 
-        // Generate title if this is the first message
         if store.model.thread.steps.isEmpty {
+            if let ctx = try await self.fetchProjectContext() {
+                msg.content.append(ctx)
+            }
+            
+            // Generate title if this is the first message
             Task {
                 try? await generateAndApplyAutoTitle(firstMessage: text)
+            }
+        } else {
+            // This is a subsequent message
+            if let updates = try await self.fetchFSUpdates() {
+                msg.content.append(updates)
             }
         }
         
