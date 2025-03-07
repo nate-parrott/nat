@@ -153,6 +153,9 @@ private struct ContextItemView: View {
             case .omission(let msg):
                 Text("Omission: \(msg)")
                     .foregroundStyle(.red)
+            case .proactiveContext(title: let title, content: let content):
+                Text("[Proactive ctx] \(title)").bold()
+                Text(content)
             }
         }
     }

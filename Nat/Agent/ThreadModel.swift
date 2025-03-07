@@ -185,6 +185,8 @@ func truncateContent(_ items: [ContextItem]) -> [ContextItem] {
             return .largePaste(string.truncateMiddleWithEllipsis(chars: 200))
         case .omission(let string):
             return .omission(string)
+        case .proactiveContext(title: let title, content: let content):
+            return .proactiveContext(title: title, content: content.truncateMiddleWithEllipsis(chars: 200))
         }
     }
     if let first = items.first {

@@ -60,10 +60,16 @@ extension Document {
         var msg = TaggedLLMMessage(role: .user, content: [.text(text)] + attachments)
         let folderURL = store.model.folder
         let curFile = store.model.selectedFileInEditorRelativeToFolder
+        
+        stop()
 
         if store.model.thread.steps.isEmpty {
-            if let ctx = try await self.fetchProjectContext() {
-                msg.content.append(ctx)
+            do {
+                if let ctx = try await self.fetchProjectContext() {
+                    msg.content.append(ctx)
+                }
+            } catch {
+                Swift.print("Error feching initial context: \(error)")
             }
             
             // Generate title if this is the first message
@@ -72,13 +78,16 @@ extension Document {
             }
         } else {
             // This is a subsequent message
-            if let updates = try await self.fetchFSUpdates() {
-                msg.content.append(updates)
+            do {
+                if let updates = try await self.fetchUpdates() {
+                    msg.content.append(updates)
+                }
+            }
+            catch {
+               Swift.print("Error feching updates: \(error)")
             }
         }
-        
-        stop()
- 
+         
         currentAgentTask = Task {
             guard let llm = try? LLMs.smartAgentModel() else {
                 await Alerts.showAppAlert(title: "No API Key", message: "Add your API key in Nat → Settings")
