@@ -177,6 +177,7 @@ struct FileSnippet: Equatable, Codable {
     var linesCount: Int
     var fileTotalLen: Int
     var content: String
+    var fullContentHash: String // Hash of the entire file content when created
 
     init(path: URL, projectRelativePath: String, lineStart: Int, linesCount: Int) throws {
         // Written by Phil
@@ -186,6 +187,8 @@ struct FileSnippet: Equatable, Codable {
 
         var enc: String.Encoding = .utf8
         let fileContent = try String(contentsOf: path, usedEncoding: &enc)
+        // Calculate hash of the full file content
+        self.fullContentHash = fileContent.data(using: .utf8)?.sha256Hash ?? "hash-error"
         let allLines = fileContent.lines
 
 //        guard lineStart >= 0, linesCount > 0, lineStart + linesCount <= allLines.count else {
