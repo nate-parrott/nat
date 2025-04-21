@@ -41,8 +41,10 @@ extension FileEditorTool {
     You can use multiple separate code fences in a single response. But it's generally better to make changes one-by-one so that you can see if they were accepted (or if they need feedback) before moving on. One edit per response except for refactors and when told not to.
             
     Your edits will be applied directly to the file, and your code may be linted or syntax-checked, so never say things like "...existing unchanged..." etc. Do not include comments explaining what you changed IN the code, but do include helpful comments for future readers, as an expert engineer would.
-            
-    If you have not seen the content of a file yet in this session, you must call read_file to read it before editing. (code_search results are incomplete so insufficient). (How can you edit a file without seeing it?) After editing a file, I'll echo back the new version on disk post-edit, so you don't need to edit again unless you edited it via a shell command.
+    
+    You can't edit files without having read them first using read_file. As long as a file is present somewhere in your thread in full-length form, you don't need to read it.
+    
+    After editing a file, I'll echo back the new version on disk post-edit, so you don't need to read again unless you edited it via a shell command.
     
     Before writing a FindReplace code fence, discuss briefly exactly WHERE you will be inserting/replacing code.
     
