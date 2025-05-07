@@ -5,6 +5,8 @@ import Combine
 private struct FileResultsFetcher {
     let baseURL: URL
     
+    @Environment(\.document) private var document
+    
     func fetchAllFiles() throws -> [AttachmentSearchResult] {
         let allFiles = try FileTree.allFileURLs(folder: baseURL)
         
@@ -15,6 +17,7 @@ private struct FileResultsFetcher {
                 return nil
             }
             
+            var enc = String.Encoding.utf8
             return AttachmentSearchResult(
                 title: filename,
                 subtitle: relativePath,
@@ -22,6 +25,7 @@ private struct FileResultsFetcher {
                 searchStrings: [filename, relativePath],
                 getContextItem: {
                     return try .fileSnippet(FileSnippet(
+                        content: document.store.model.stagedEdits?[url] ?? String(contentsOf: url, usedEncoding: &enc),
                         path: url,
                         projectRelativePath: relativePath,
                         lineStart: 0,

@@ -77,5 +77,5 @@ private func generateReadFileString(path: String, context: ToolContext, offset: 
     
 //    let endLine = min(startLine + nLines, totalLines)
 
-    return try FileSnippet(path: absoluteURL, projectRelativePath: path, lineStart: startLine, linesCount: linesCount)
+    return try FileSnippet(content: context.readFileContentIncludingStaged(absoluteURL), path: absoluteURL, projectRelativePath: path, lineStart: startLine, linesCount: linesCount)
 }

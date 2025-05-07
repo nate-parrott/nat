@@ -49,7 +49,7 @@ struct CodeSearchTool: Tool {
 
             async let grepSnippets_: [(String, Result<[FileSnippet], Error>)] = try await args.regexes?.concurrentMap({ pattern in
                 do {
-                    let snippets = try await grepToSnippets(pattern: pattern, folder: folderURL, linesAroundMatchToInclude: 3, limit: effort.grepLimit)
+                    let snippets = try await grepToSnippets(pattern: pattern, folder: folderURL, linesAroundMatchToInclude: 3, limit: effort.grepLimit, toolContext: context)
                     return (pattern, .success(snippets))
                 } catch {
                     return (pattern, .failure(error))

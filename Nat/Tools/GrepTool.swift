@@ -31,7 +31,7 @@ struct GrepTool: Tool {
         await context.log(.grepped(args.pattern))
 
         do {
-            let hits = try await grepToSnippets(pattern: args.pattern, folder: folderURL, linesAroundMatchToInclude: 2, limit: 20)
+            let hits = try await grepToSnippets(pattern: args.pattern, folder: folderURL, linesAroundMatchToInclude: 2, limit: 20, toolContext: context)
             let str: String = "\(hits.count) hits:\n" + hits.map { hit in
                 return hit.asString(withLineNumbers: useLineNumbers)
             }.joined(separator: "\n\n")

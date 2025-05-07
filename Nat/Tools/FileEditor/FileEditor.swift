@@ -108,15 +108,16 @@ struct FileEditorTool: Tool {
     private func showLatestFileVersions(fileEdits: [FileEdit], context: ToolContext) throws -> [ContextItem] {
         var output = [ContextItem]()
         for fileEdit in fileEdits {
-            if let content = try? String(contentsOf: fileEdit.path) {
+            if let content = try? context.readFileContentIncludingStaged(fileEdit.path) {
                 let projectRelativePath = context.activeDirectory.flatMap { fileEdit.path.asPathRelativeTo(base: $0) } ?? fileEdit.path.path()
                 output.append(.text("\nLatest version of \(projectRelativePath):"))
-                try output.append(.fileSnippet(FileSnippet(path: fileEdit.path, projectRelativePath: projectRelativePath, lineStart: 0, linesCount: content.lines.count)))
+                try output.append(.fileSnippet(FileSnippet(content: content, path: fileEdit.path, projectRelativePath: projectRelativePath, lineStart: 0, linesCount: content.lines.count)))
             }
         }
         return output
     }
 
+    @MainActor
     private func apply(fileEdits: [FileEdit], context: ToolContext) async throws -> [ContextItem] {
         var allWrites = [(URL, String)]()
         var output = [ContextItem]()
@@ -137,9 +138,16 @@ struct FileEditorTool: Tool {
                 return path.path()
             }()
 
-            try content.write(to: path, atomically: true, encoding: .utf8)
+//            try content.write(to: path, atomically: true, encoding: .utf8)
+            let doc = context.document!
+            await doc.store.modifyAsync { state in
+                if state.stagedEdits == nil {
+                    state.stagedEdits = [:]
+                }
+                state.stagedEdits![path] = content
+            }
             output.append(.text("Updated \(projectRelativePath):"))
-            try output.append(.fileSnippet(FileSnippet(path: path, projectRelativePath: projectRelativePath, lineStart: 0, linesCount: content.lines.count)))
+            try output.append(.fileSnippet(FileSnippet(content: content, path: path, projectRelativePath: projectRelativePath, lineStart: 0, linesCount: content.lines.count)))
         }
         return output
     }

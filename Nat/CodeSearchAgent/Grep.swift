@@ -35,13 +35,14 @@ func grepToSnippetRanges(pattern: String, folder: URL, linesAroundMatchToInclude
     return FileSnippetRange.mergeOverlaps(ranges: snippetRanges)
 }
 
-func grepToSnippets(pattern: String, folder: URL, linesAroundMatchToInclude spread: Int, limit: Int) async throws -> [FileSnippet] {
+func grepToSnippets(pattern: String, folder: URL, linesAroundMatchToInclude spread: Int, limit: Int, toolContext: ToolContext) async throws -> [FileSnippet] {
     do {
         return try await grepToSnippetRanges(pattern: pattern, folder: folder, linesAroundMatchToInclude: spread, limit: limit).compactMap { range -> FileSnippet? in
             guard let relative = range.path.asPathRelativeTo(base: folder) else {
                 return nil
             }
-            return try! FileSnippet(path: range.path, projectRelativePath: relative, lineStart: range.lineRangeStart, linesCount: range.lineRangeEnd - range.lineRangeStart)
+            let content = try toolContext.readFileContentIncludingStaged(range.path)
+            return try! FileSnippet(content: content, path: range.path, projectRelativePath: relative, lineStart: range.lineRangeStart, linesCount: range.lineRangeEnd - range.lineRangeStart)
         }
     } catch {
         print("[Grep] Error for pattern '\(pattern)': \(error)")

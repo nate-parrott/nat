@@ -71,6 +71,14 @@ extension ToolContext {
 
         return resolved
     }
+    
+    func readFileContentIncludingStaged(_ url: URL) throws -> String {
+        if let staged = document?.store.model.stagedEdits?[url] {
+            return staged
+        }
+        var enc: String.Encoding = .utf8
+        return try String(contentsOf: url, usedEncoding: &enc)
+    }
 
     // Pass a block that takes a `dismiss` block and renders AnyView. The `dismiss` block lets you pass a result.
     @MainActor

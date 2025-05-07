@@ -179,7 +179,7 @@ struct FileSnippet: Equatable, Codable {
     var content: String
     var fullContentHash: String // Hash of the entire file content when created
 
-    init(path: URL, projectRelativePath: String, lineStart: Int, linesCount: Int) throws {
+    init(content: String, path: URL, projectRelativePath: String, lineStart: Int, linesCount: Int) throws {
         // Written by Phil
         self.path = path
         self.projectRelativePath = projectRelativePath

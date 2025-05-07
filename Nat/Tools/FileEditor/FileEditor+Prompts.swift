@@ -58,7 +58,7 @@ extension FileEditorTool {
     When refactoring more than 60% of a file, replace the whole thing; otherwise try to make targeted edits to specific lines.
     Targeted edits should replace whole code units, like functions, properties, definitions, subtrees, etc. Do not try to do weird edits across logic boundaries.
     Make sure to match the indent of the area you are replacing.
-        
+    
     # Editing examples
     
     Original snippet:

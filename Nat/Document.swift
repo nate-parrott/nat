@@ -38,6 +38,7 @@ enum DocumentMode: String, Equatable, Codable, CaseIterable {
 
 struct DocumentState: Equatable, Codable {
     var thread: ThreadModel = .init()
+    var stagedEdits: [URL: String]?
     
     var folder: URL?
     var isWorktreeFromOriginalFolder: URL?
@@ -152,5 +153,26 @@ class Document: NSDocument {
         }
         webSession = .init(document: self)
         return webSession!
+    }
+    
+    // MARK: - Staging
+    
+    // Returns snippets
+    @MainActor func commitStagedEditsToDisk() -> [ContextItem] {
+        // TODO
+    }
+    
+    @MainActor func clearStagedEditsAndEchoBackOldVersions() -> [ContextItem] {
+        // TODO
+    }
+    
+    func hasStagedEdits() async -> Bool {
+        return hasStagedEdits()
+    }
+}
+
+extension ToolContext {
+    func presentStagedEditsForApproval() async throws -> [ContextItem] {
+        // TODO
     }
 }

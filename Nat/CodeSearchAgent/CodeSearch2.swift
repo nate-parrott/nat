@@ -121,7 +121,12 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
                 guard let relative = $0.path.asPathRelativeTo(base: folder) else {
                     throw CodeSearchError.notRelativeToProjectDir
                 }
-                return try FileSnippet(path: $0.path, projectRelativePath: relative, lineStart: $0.lineRangeStart, linesCount: $0.lineRangeEnd)
+                return try FileSnippet(
+                    content: context.readFileContentIncludingStaged($0.path),
+                    path: $0.path,
+                    projectRelativePath: relative,
+                    lineStart: $0.lineRangeStart,
+                    linesCount: $0.lineRangeEnd)
             } catch {
                 print("[CodeSearch2] Error: \(error)")
                 return nil
@@ -174,9 +179,10 @@ private func _codeSearch2(queries: [String], folder: URL, context: ToolContext, 
             let path = try context.resolvePath(snippet.path)
             if let (start, end) = parseRange(range) {
                 do {
+                    let content = try context.readFileContentIncludingStaged(path)
                     try items.append((
                         snippet.score,
-                        FileSnippet(path: path, projectRelativePath: snippet.path, lineStart: start, linesCount: end - start + 1)
+                        FileSnippet(content: content, path: path, projectRelativePath: snippet.path, lineStart: start, linesCount: end - start + 1)
                     ))
                 } catch {
                     print("[_CodeSearch2] ⚠️ Error creating final snippet ranges: \(error)")
